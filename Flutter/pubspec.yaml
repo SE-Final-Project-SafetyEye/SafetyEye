@@ -37,7 +37,17 @@ dependencies:
   cupertino_icons: ^1.0.2
   firebase_core: ^2.24.2
   firebase_auth: ^4.15.3
-  camera: ^0.10.3
+  camera: ^0.10.5+8
+  path_provider: ^2.1.1
+  video_player: ^2.1.14
+  keep_screen_on: ^3.0.0
+  permission_handler: ^11.1.0
+  gallery_saver: ^2.3.2
+  device_info_plus: ^9.1.1
+  network_info_plus: ^4.1.0
+  avatar_glow: ^3.0.1
+  highlight_text: ^1.7.0
+  speech_to_text: ^6.5.1
 
 dev_dependencies:
   flutter_test:
