@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'LoginRegisterPage.dart';
+import './LoginRegisterPage.dart';
 
 class MyHomePage extends StatelessWidget {
   final String title;

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 
 import 'FirstPage.dart';
-import 'SecondPage.dart';
+import './SecondPage.dart';
 import 'ThirdPage.dart';
 
 class NavigatAppPage extends StatefulWidget {
