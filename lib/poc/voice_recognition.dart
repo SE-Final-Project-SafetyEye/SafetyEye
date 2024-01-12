@@ -23,6 +23,8 @@ class MyApp extends StatelessWidget {
 }
 
 class SpeechScreen extends StatefulWidget {
+  const SpeechScreen({super.key});
+
   @override
   _SpeechScreenState createState() => _SpeechScreenState();
 }

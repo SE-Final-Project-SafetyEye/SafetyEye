@@ -7,9 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
 class CameraHomeScreen extends StatefulWidget {
-  List<CameraDescription> cameras;
 
-  CameraHomeScreen(this.cameras);
+
+  const CameraHomeScreen({super.key});
 
   @override
   State<StatefulWidget> createState() {
@@ -21,7 +21,7 @@ class _CameraHomeScreenState extends State<CameraHomeScreen> {
   late String imagePath;
   bool _toggleCamera = false;
   bool _startRecording = false;
-  final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late CameraController controller;
 
   final String _assetVideoRecorder = 'assets/images/ic_video_shutter.png';
@@ -30,12 +30,14 @@ class _CameraHomeScreenState extends State<CameraHomeScreen> {
   late String videoPath;
   late VideoPlayerController videoController;
   late VoidCallback videoPlayerListener;
-
+  late List<CameraDescription> cameras;
 
   @override
-  void initState() {
+  Future<void> initState() async {
     try {
-      onCameraSelected(widget.cameras[0]);
+      cameras = await availableCameras();
+      controller = CameraController(cameras[0], ResolutionPreset.medium);
+      onCameraSelected(cameras[0]);
     } catch (e) {
       print(e.toString());
     }
@@ -44,17 +46,17 @@ class _CameraHomeScreenState extends State<CameraHomeScreen> {
 
   @override
   void dispose() {
-    controller?.dispose();
     super.dispose();
+    controller.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (widget.cameras.isEmpty) {
+    if (cameras.isEmpty) {
       return Container(
         alignment: Alignment.center,
-        padding: EdgeInsets.all(16.0),
-        child: Text(
+        padding: const EdgeInsets.all(16.0),
+        child: const Text(
           'No Camera Found!',
           style: TextStyle(
             fontSize: 16.0,
@@ -80,8 +82,8 @@ class _CameraHomeScreenState extends State<CameraHomeScreen> {
               child: Container(
                 width: double.infinity,
                 height: 120.0,
-                padding: EdgeInsets.all(20.0),
-                color: Color.fromRGBO(00, 00, 00, 0.7),
+                padding: const EdgeInsets.all(20.0),
+                color: const Color.fromRGBO(00, 00, 00, 0.7),
                 child: Stack(
                   //mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
@@ -90,7 +92,7 @@ class _CameraHomeScreenState extends State<CameraHomeScreen> {
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(
-                          borderRadius: BorderRadius.all(Radius.circular(50.0)),
+                          borderRadius: const BorderRadius.all(Radius.circular(50.0)),
                           onTap: () {
                             !_startRecording
                                 ? onVideoRecordButtonPressed()
@@ -100,7 +102,7 @@ class _CameraHomeScreenState extends State<CameraHomeScreen> {
                             });
                           },
                           child: Container(
-                            padding: EdgeInsets.all(4.0),
+                            padding: const EdgeInsets.all(4.0),
                             child: Image.asset(
                               !_startRecording
                                   ? _assetVideoRecorder
@@ -130,11 +132,11 @@ class _CameraHomeScreenState extends State<CameraHomeScreen> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.all(Radius.circular(50.0)),
+          borderRadius: const BorderRadius.all(Radius.circular(50.0)),
           onTap: () {
             !_toggleCamera
-                ? onCameraSelected(widget.cameras[1])
-                : onCameraSelected(widget.cameras[0]);
+                ? onCameraSelected(cameras[1])
+                : onCameraSelected(cameras[0]);
             setState(() {
               _toggleCamera = !_toggleCamera;
             });
