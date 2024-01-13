@@ -114,7 +114,7 @@ class _CameraHomeScreenState extends State<CameraHomeScreen> {
                         ),
                       ),
                     ),
-                    !_startRecording ? _getToggleCamera() : new Container(),
+                    !_startRecording ? _getToggleCamera() : Container(),
                   ],
                 ),
               ),
@@ -142,7 +142,7 @@ class _CameraHomeScreenState extends State<CameraHomeScreen> {
             });
           },
           child: Container(
-            padding: EdgeInsets.all(4.0),
+            padding: const EdgeInsets.all(4.0),
             child: Image.asset(
               'assets/images/ic_switch_camera_3.png',
               color: Colors.grey[200],
@@ -156,7 +156,7 @@ class _CameraHomeScreenState extends State<CameraHomeScreen> {
   }
 
   void onCameraSelected(CameraDescription cameraDescription) async {
-    if (controller != null) await controller.dispose();
+    await controller.dispose();
     controller = CameraController(cameraDescription, ResolutionPreset.medium);
 
     controller.addListener(() {
@@ -175,7 +175,7 @@ class _CameraHomeScreenState extends State<CameraHomeScreen> {
     if (mounted) setState(() {});
   }
 
-  String timestamp() => new DateTime.now().millisecondsSinceEpoch.toString();
+  String timestamp() => DateTime.now().millisecondsSinceEpoch.toString();
 
   void setCameraResult() {
     print("Recording Done!");
@@ -205,7 +205,7 @@ class _CameraHomeScreenState extends State<CameraHomeScreen> {
 
     final Directory extDir = await getApplicationDocumentsDirectory();
     final String dirPath = '${extDir.path}/Videos';
-    await new Directory(dirPath).create(recursive: true);
+    await Directory(dirPath).create(recursive: true);
     final String filePath = '$dirPath/${timestamp()}.mp4';
 
     if (controller.value.isRecordingVideo) {
@@ -224,14 +224,14 @@ class _CameraHomeScreenState extends State<CameraHomeScreen> {
 
   Future<void> stopVideoRecording() async {
     if (!controller.value.isRecordingVideo) {
-      return null;
+      return;
     }
 
     try {
       await controller.stopVideoRecording();
     } on CameraException catch (e) {
       _showException(e);
-      return null;
+      return;
     }
 
     setCameraResult();

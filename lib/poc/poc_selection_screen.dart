@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:safrt_eye_app/poc/FirstPage.dart';
 import 'package:safrt_eye_app/poc/SecondPage.dart';
 import 'package:safrt_eye_app/poc/camera.dart';
 import 'package:safrt_eye_app/poc/voice_recognition.dart';
@@ -9,7 +8,7 @@ import './LoginRegisterPage.dart';
 class MyHomePage extends StatelessWidget {
   final String title;
 
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
+  const MyHomePage({super.key, required this.title});
 
   @override
   Widget build(BuildContext context) {

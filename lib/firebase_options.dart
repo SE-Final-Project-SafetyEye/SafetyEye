@@ -45,35 +45,35 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyD0gD6Pj5jEaJAwoZnB6d444jpeYnSQP-E',
-    appId: '1:448213785394:web:d9a2865b0f77142c2e552b',
-    messagingSenderId: '448213785394',
-    projectId: 'safetyeye-e9274',
-    authDomain: 'safetyeye-e9274.firebaseapp.com',
-    storageBucket: 'safetyeye-e9274.appspot.com',
+    appId: '1:480737538286:web:d9a2865b0f77142c2e552b',
+    messagingSenderId: '480737538286',
+    projectId: 'saftyeye-16eb2',
+    authDomain: 'saftyeye-16eb2.firebaseapp.com',
+    storageBucket: 'saftyeye-16eb2.appspot.com',
     measurementId: 'G-JKXNZ6G5GR',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyAIiZLT1a5ZhWqbPfjx_vUiN1czPgVVrUA',
-    appId: '1:448213785394:android:c564c98b54278ad22e552b',
-    messagingSenderId: '448213785394',
-    projectId: 'safetyeye-e9274',
-    storageBucket: 'safetyeye-e9274.appspot.com',
+    appId: '1:480737538286:android:c564c98b54278ad22e552b',
+    messagingSenderId: '480737538286',
+    projectId: 'saftyeye-16eb2',
+    storageBucket: 'saftyeye-16eb2.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyBKRLWSMj27IChGXF5bCfeFfeeLc8kATdI',
-    appId: '1:448213785394:ios:b0db1122dd2c77922e552b',
-    messagingSenderId: '448213785394',
-    projectId: 'safetyeye-e9274',
+    appId: '1:480737538286:ios:b0db1122dd2c77922e552b',
+    messagingSenderId: '480737538286',
+    projectId: 'saftyeye-16eb2',
     storageBucket: 'safetyeye-e9274.appspot.com',
     iosBundleId: 'com.example.appTamplate',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyBKRLWSMj27IChGXF5bCfeFfeeLc8kATdI',
-    appId: '1:448213785394:ios:f8dd5b5d01e5f8862e552b',
-    messagingSenderId: '448213785394',
+    appId: '1:480737538286:ios:f8dd5b5d01e5f8862e552b',
+    messagingSenderId: '480737538286',
     projectId: 'safetyeye-e9274',
     storageBucket: 'safetyeye-e9274.appspot.com',
     iosBundleId: 'com.example.appTamplate.RunnerTests',
