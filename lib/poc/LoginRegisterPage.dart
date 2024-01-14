@@ -151,9 +151,8 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
   Widget buildElevatedButton(String label, void Function() onPressed) {
     return ElevatedButton(
       onPressed: onPressed,
-      child: Text(label),
       style: ElevatedButton.styleFrom(
-        primary: Colors.grey.withOpacity(0.5),
+        backgroundColor: Colors.grey.withOpacity(0.5),
         padding: const EdgeInsets.symmetric(vertical: 16.0),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10.0),
@@ -161,6 +160,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
         shadowColor: Colors.grey.withOpacity(0.5),
         elevation: 5,
       ),
+      child: Text(label),
     );
   }
 

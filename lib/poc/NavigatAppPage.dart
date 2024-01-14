@@ -7,7 +7,7 @@ import 'ThirdPage.dart';
 
 class NavigatAppPage extends StatefulWidget {
   final userEmail;
-  const NavigatAppPage({Key? key, required this.userEmail}) : super(key: key);
+  const NavigatAppPage({super.key, required this.userEmail});
   @override
   State<NavigatAppPage> createState() => _NavigatAppPageState();
 }

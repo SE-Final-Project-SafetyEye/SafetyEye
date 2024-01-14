@@ -4,10 +4,12 @@ import 'package:highlight_text/highlight_text.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -17,7 +19,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.red,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: SpeechScreen(),
+      home: const SpeechScreen(),
     );
   }
 }
