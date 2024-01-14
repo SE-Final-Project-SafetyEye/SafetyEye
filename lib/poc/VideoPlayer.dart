@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
@@ -14,14 +15,15 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(primaryColor: Colors.green),
-      home: VideoPlayerScreen(),
+      home: VideoPlayerScreen('https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4'),
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
 class VideoPlayerScreen extends StatefulWidget {
-  VideoPlayerScreen({super.key});
+  final String galleryFile;
+  VideoPlayerScreen(this.galleryFile, {Key? key}) : super(key: key);
 
   @override
   State<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
@@ -34,7 +36,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   @override
   void initState() {
     _controller = VideoPlayerController.network(
-      'https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4',
+     widget.galleryFile,
     );
     _initializeVideoPlayerFuture = _controller.initialize();
 
@@ -53,10 +55,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('GeeksForGeeks'),
-        backgroundColor: Colors.green,
-      ),
       body: FutureBuilder(
         future: _initializeVideoPlayerFuture,
         builder: (context, snapshot) {

@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'VideoPlayer.dart';
+
 enum MediaType {
   photo,
   video,
@@ -33,6 +35,7 @@ class CameraHomeScreen extends StatefulWidget {
 }
 
 class _CameraHomeScreenState extends State<CameraHomeScreen> {
+  late MediaType mediaType;
   File? galleryFile;
   final picker = ImagePicker();
 
@@ -68,16 +71,13 @@ class _CameraHomeScreenState extends State<CameraHomeScreen> {
                   width: 300.0,
                   child: galleryFile == null
                       ? const Center(child: Text('Sorry nothing selected!!'))
-                      : Center(child: Image.file(galleryFile!)),
-                ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 18.0),
-                  child: Text(
-                    "GFG",
-                    textScaleFactor: 3,
-                    style: TextStyle(color: Colors.green),
+                      : mediaType == MediaType.photo
+                      ? Center(child: Image.file(galleryFile!))
+                      : Center(
+                    child: VideoPlayerScreen(galleryFile!.path),
                   ),
                 )
+                ,
               ],
             ),
           );
@@ -117,24 +117,27 @@ class _CameraHomeScreenState extends State<CameraHomeScreen> {
             children: <Widget>[
               ListTile(
                 leading: const Icon(Icons.photo_library),
-                title: const Text('Photo Library'),
+                title: const Text('Video Library'),
                 onTap: () {
-                  _captureMedia(ImageSource.gallery, MediaType.photo);
+                  mediaType = MediaType.video;
+                  _captureMedia(ImageSource.gallery, MediaType.video);
                   Navigator.of(context).pop();
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.photo_camera),
-                title: const Text('Camera'),
+                title: const Text('Take a photo'),
                 onTap: () {
+                  mediaType = MediaType.photo;
                   _captureMedia(ImageSource.camera, MediaType.photo);
                   Navigator.of(context).pop();
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.videocam),
-                title: const Text('Video'),
+                title: const Text('Record a video'),
                 onTap: () {
+                  mediaType = MediaType.video;
                   _captureMedia(ImageSource.camera, MediaType.video);
                   Navigator.of(context).pop();
                 },

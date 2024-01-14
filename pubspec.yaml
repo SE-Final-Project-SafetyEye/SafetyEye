@@ -39,7 +39,7 @@ dependencies:
   firebase_auth: ^4.15.3
   camera: ^0.10.5+8
   path_provider: ^2.1.1
-  video_player: ^2.1.14
+  video_player: ^2.3.9
   keep_screen_on: ^3.0.0
   permission_handler: ^11.1.0
   gallery_saver: ^2.3.2
