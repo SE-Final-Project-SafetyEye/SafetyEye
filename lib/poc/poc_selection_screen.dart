@@ -4,6 +4,7 @@ import 'package:safrt_eye_app/poc/camera.dart';
 import 'package:safrt_eye_app/poc/voice_recognition.dart';
 
 import './LoginRegisterPage.dart';
+import 'VideoPlayer.dart';
 
 class MyHomePage extends StatelessWidget {
   final String title;
@@ -29,6 +30,7 @@ class MyHomePage extends StatelessWidget {
             PocButtonWidget(title: "Camera", page: CameraHomeScreen()),
             PocButtonWidget(title: "Text to speech", page: SpeechScreen()),
             PocButtonWidget(title: "compression", page: SecondPage(userEmail: "")),
+            PocButtonWidget(title: "VideoPlayer", page: CameraHomeScreen()),
           ],
         ),
       ),
