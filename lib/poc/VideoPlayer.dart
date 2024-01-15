@@ -4,22 +4,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      theme: ThemeData(primaryColor: Colors.green),
-      home: VideoPlayerScreen('https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4'),
-      debugShowCheckedModeBanner: false,
-    );
-  }
-}
 
 class VideoPlayerScreen extends StatefulWidget {
   final String galleryFile;

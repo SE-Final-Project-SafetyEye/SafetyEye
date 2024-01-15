@@ -10,23 +10,6 @@ enum MediaType {
   video,
 }
 
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      theme: ThemeData(primaryColor: Colors.green),
-      home: const CameraHomeScreen(),
-      debugShowCheckedModeBanner: false,
-    );
-  }
-}
-
 class CameraHomeScreen extends StatefulWidget {
   const CameraHomeScreen({super.key});
 
