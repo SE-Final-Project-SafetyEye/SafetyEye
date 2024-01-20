@@ -1,9 +1,11 @@
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:video_player/video_player.dart';
 
 void main() async {
@@ -49,17 +51,18 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
   VideoPlayerController? videoController;
   File? _videoFile;
   File? _imageFile;
+  List<File> allFileList = [];
+  bool _isCameraPermissionGranted = false;
 
   @override
   void initState() {
-    // Hide the status bar
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
-
+    //getPermissionStatus();
     WidgetsBinding.instance.addObserver(this);
+    refreshAlreadyCapturedImages();
     onNewCameraSelected(cameras.isNotEmpty ? cameras[0] : null);
     super.initState();
   }
-
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
@@ -67,6 +70,22 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
     videoController?.dispose();
     super.dispose();
   }
+
+  // getPermissionStatus() async {
+  //   await Permission.camera.request();
+  //   var status = await Permission.camera.status;
+  //   if (status.isGranted) {
+  //     log('Camera Permission: GRANTED');
+  //     setState(() {
+  //       _isCameraPermissionGranted = true;
+  //     });
+  //     // Set and initialize the new camera
+  //     onNewCameraSelected(cameras[0]);
+  //     refreshAlreadyCapturedImages();
+  //   } else {
+  //     log('Camera Permission: DENIED');
+  //   }
+  // }
 
   void onNewCameraSelected(CameraDescription? cameraDescription) async {
     if (controller != null) {
@@ -98,7 +117,6 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
       print('Error initializing camera: $e');
     }
   }
-
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -234,7 +252,6 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
     }
   }
 
-
   Future<void> startVideoRecording() async {
     final CameraController? cameraController = controller;
     if (controller!.value.isRecordingVideo) {
@@ -309,6 +326,42 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
     }
   }
 
+  refreshAlreadyCapturedImages() async {
+    // Get the directory
+    final directory = await getApplicationDocumentsDirectory();
+    List<FileSystemEntity> fileList = await directory.list().toList();
+    allFileList.clear();
+
+    List<Map<int, dynamic>> fileNames = [];
+
+    // Searching for all the image and video files using
+    // their default format, and storing them
+    fileList.forEach((file) {
+      if (file.path.contains('.jpg') || file.path.contains('.mp4')) {
+        allFileList.add(File(file.path));
+
+        String name = file.path.split('/').last.split('.').first;
+        fileNames.add({0: int.parse(name), 1: file.path.split('/').last});
+      }
+    });
+
+    // Retrieving the recent file
+    if (fileNames.isNotEmpty) {
+      final recentFile =
+      fileNames.reduce((curr, next) => curr[0] > next[0] ? curr : next);
+      String recentFileName = recentFile[1];
+      // Checking whether it is an image or a video file
+      if (recentFileName.contains('.mp4')) {
+        _videoFile = File('${directory.path}/$recentFileName');
+        _startVideoPlayer();
+      } else {
+        _imageFile = File('${directory.path}/$recentFileName');
+      }
+
+      setState(() {});
+    }
+  }
+
   Widget _buildCameraPreview() {
     if (!_isCameraInitialized || !controller!.value.isInitialized) {
       return Center(
@@ -360,7 +413,6 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
           : Container(),
     );
   }
-
   Widget _buildCaptureButton() {
     return  InkWell(
       onTap: _isVideoCameraSelected
