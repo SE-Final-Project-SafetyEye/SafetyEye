@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:safrt_eye_app/poc/Location.dart';
 import 'package:safrt_eye_app/poc/SecondPage.dart';
 import 'package:safrt_eye_app/poc/camera.dart';
 import 'package:safrt_eye_app/poc/voice_recognition.dart';
 
 import './LoginRegisterPage.dart';
 import 'VideoPlayer.dart';
+import 'inAppCamera.dart';
 
 class MyHomePage extends StatelessWidget {
   final String title;
@@ -27,10 +29,11 @@ class MyHomePage extends StatelessWidget {
             ),
             SizedBox(height: 20),
             PocButtonWidget(title: "Login/Register", page: LoginRegisterPage()),
-            PocButtonWidget(title: "Camera", page: CameraHomeScreen()),
+            PocButtonWidget(title: "CameraDefaultAppAndGalleryAccessHomeScreen", page: CameraDefaultAppAndGalleryAccessHomeScreen()),
+            PocButtonWidget(title: "InAppCameraScreen", page: InAppCameraScreen()),
             PocButtonWidget(title: "Text to speech", page: SpeechScreen()),
             PocButtonWidget(title: "compression", page: SecondPage(userEmail: "")),
-            PocButtonWidget(title: "VideoPlayer", page: CameraHomeScreen()),
+            PocButtonWidget(title: "Accelerometer", page: AccelerometerScreen()),
           ],
         ),
       ),

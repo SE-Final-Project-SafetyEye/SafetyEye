@@ -10,14 +10,14 @@ enum MediaType {
   video,
 }
 
-class CameraHomeScreen extends StatefulWidget {
-  const CameraHomeScreen({super.key});
+class CameraDefaultAppAndGalleryAccessHomeScreen extends StatefulWidget {
+  const CameraDefaultAppAndGalleryAccessHomeScreen({super.key});
 
   @override
-  State<CameraHomeScreen> createState() => _CameraHomeScreenState();
+  State<CameraDefaultAppAndGalleryAccessHomeScreen> createState() => _CameraHomeScreenState();
 }
 
-class _CameraHomeScreenState extends State<CameraHomeScreen> {
+class _CameraHomeScreenState extends State<CameraDefaultAppAndGalleryAccessHomeScreen> {
   late MediaType mediaType;
   File? galleryFile;
   final picker = ImagePicker();
