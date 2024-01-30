@@ -7,7 +7,7 @@ import 'package:video_player/video_player.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final String galleryFile;
-  VideoPlayerScreen(this.galleryFile, {Key? key}) : super(key: key);
+  const VideoPlayerScreen({super.key, required this.galleryFile});
 
   @override
   State<VideoPlayerScreen> createState() => _VideoPlayerScreenState();

@@ -8,7 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:safrt_eye_app/poc/InAppVideoListScreen.dart';
 import 'package:video_player/video_player.dart';
-import 'temp.dart';
+import '../printColoredMessage.dart';
 
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -395,10 +395,16 @@ class _CameraScreenState extends State<InAppCameraScreen> with WidgetsBindingObs
           int currentUnix = DateTime.now().millisecondsSinceEpoch;
 
           final directory = await getApplicationDocumentsDirectory();
+          final videosDirectory = Directory('${directory.path}/videos');
+          if (!videosDirectory.existsSync()) {
+            videosDirectory.createSync();
+          }
+          String videosDirectory_Path = videosDirectory.path;
+          printColoredMessage('videosDirectory: $videosDirectory_Path', color: 'red');
           String fileFormat = videoFile.path.split('.').last;
 
           _videoFile = await videoFile.copy(
-            '${directory.path}/$currentUnix.$fileFormat',
+            '${videosDirectory.path}/$currentUnix.$fileFormat',
           );
 
           _startVideoPlayer();
@@ -441,3 +447,4 @@ class _CameraScreenState extends State<InAppCameraScreen> with WidgetsBindingObs
 
 
 }
+

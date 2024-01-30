@@ -50,18 +50,6 @@ class _CameraHomeScreenState extends State<CameraDefaultAppAndGalleryAccessHomeS
                 const SizedBox(
                   height: 20,
                 ),
-                SizedBox(
-                  height: 200.0,
-                  width: 300.0,
-                  child: galleryFile == null
-                      ? const Center(child: Text('Sorry nothing selected!!'))
-                      : mediaType == MediaType.photo
-                      ? Center(child: Image.file(galleryFile!))
-                      : Center(
-                    child: VideoPlayerScreen(galleryFile!.path),
-                  ),
-                )
-                ,
               ],
             ),
           );
