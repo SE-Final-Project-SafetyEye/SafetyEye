@@ -6,6 +6,7 @@ import 'package:safrt_eye_app/poc/camera.dart';
 import 'package:safrt_eye_app/poc/voice_recognition.dart';
 
 import './LoginRegisterPage.dart';
+import 'Compress.dart';
 import 'VideoPlayer.dart';
 import 'inAppCamera.dart';
 
@@ -34,7 +35,7 @@ class MyHomePage extends StatelessWidget {
             const PocButtonWidget(title: "CameraDefaultAppAndGalleryAccessHomeScreen", page: CameraDefaultAppAndGalleryAccessHomeScreen()),
             PocButtonWidget(title: "InAppCameraScreen", page: InAppCameraScreen(cameras: cameras)),
             const PocButtonWidget(title: "Text to speech", page: SpeechScreen()),
-            const PocButtonWidget(title: "compression", page: SecondPage(userEmail: "")),
+            const PocButtonWidget(title: "compression", page: VideoCompressorWidget()),
             const PocButtonWidget(title: "Accelerometer", page: AccelerometerScreen()),
           ],
         ),
