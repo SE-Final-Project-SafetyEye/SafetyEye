@@ -135,14 +135,31 @@ class _VideoCardState extends State<VideoCard> {
   Widget build(BuildContext context) {
     String videoName = widget.videoPath.split('/').last.split('.').first;
 
+    void handleVideoCardTap() {
+      // Handle video card tap
+      // You can navigate to a detail screen or play the video, for example.
+    }
+
+    void handleHighlightsButtonPress() {
+      // Handle Highlights button press
+    }
+
+    void handleCloudUploadButtonPress() {
+      showCompressionDialog(context);
+    }
+
+    void handlePlayButtonPress() {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => VideoPlayerScreen(videoUrl: widget.videoPath),
+        ),
+      );
+    }
+
+
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => VideoPlayerScreen(galleryFile: widget.videoPath),
-          ),
-        );
       },
       child: Card(
         margin: const EdgeInsets.all(8.0),
@@ -178,17 +195,13 @@ class _VideoCardState extends State<VideoCard> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.highlight),
-                      onPressed: () {
-                        // Handle Highlights button press
-                      },
+                      onPressed: handleHighlightsButtonPress,
                       tooltip: 'Add Highlights',
                     ),
                     const SizedBox(width: 8.0),
                     IconButton(
                       icon: const Icon(Icons.cloud_upload),
-                      onPressed: () {
-                        // Handle Cloud Upload button press
-                      },
+                      onPressed: handleCloudUploadButtonPress,
                       tooltip: 'Upload to Cloud',
                     ),
                   ],
@@ -197,9 +210,7 @@ class _VideoCardState extends State<VideoCard> {
             ),
             const Spacer(),
             IconButton(
-              onPressed: () {
-                // Handle Play button press
-              },
+              onPressed: handlePlayButtonPress,
               icon: const Icon(Icons.play_arrow),
               tooltip: 'Play video',
             ),
@@ -207,5 +218,89 @@ class _VideoCardState extends State<VideoCard> {
         ),
       ),
     );
+  }
+  Future<void> showCompressionDialog(BuildContext context) async {
+    late String originalSize;
+    late String compressedSize;
+    late String? originalPath;
+    late String? compressedPath;
+
+    MediaInfo? mediaInfoOriginal = await VideoCompress.compressVideo(
+      widget.videoPath,
+      //quality: VideoQuality.LowQuality,
+      deleteOrigin: false,
+    );
+    MediaInfo? mediaInfoCompress = await VideoCompress.compressVideo(
+      widget.videoPath,
+      quality: VideoQuality.LowQuality,
+      deleteOrigin: false,
+    );
+
+    File? c = mediaInfoCompress?.file;
+    Directory appDocumentsDirectory = await getApplicationDocumentsDirectory();
+    final compressDirectory = Directory('${appDocumentsDirectory.path}/compress_videos');
+
+    if (!compressDirectory.existsSync()) {
+      compressDirectory.createSync();
+    }
+    String compressName = widget.videoPath.split('/').last;
+    compressName = compressName.split('.').first;
+    await c?.copy('${compressDirectory.path}/$compressName.mp4');
+
+    setState(() {
+      originalSize = formatFileSize(mediaInfoOriginal?.filesize ?? 0);
+      originalPath = mediaInfoOriginal?.path;
+      compressedSize = formatFileSize(mediaInfoCompress?.filesize ?? 0);
+      compressedPath = mediaInfoCompress?.path;
+    });
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('File Sizes'),
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Original Size: $originalSize'),
+              Text('Original Path: $originalPath'),
+              Text('Compressed Size: $compressedSize'),
+              Text('Compressed Path: $compressedPath'),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  String formatFileSize(int fileSize) {
+    const int KB = 1024;
+    const int MB = KB * KB;
+    const int GB = MB * KB;
+
+    if (fileSize >= GB) {
+      return '${(fileSize / GB).toStringAsFixed(2)} GB';
+    } else if (fileSize >= MB) {
+      return '${(fileSize / MB).toStringAsFixed(2)} MB';
+    } else if (fileSize >= KB) {
+      return '${(fileSize / KB).toStringAsFixed(2)} KB';
+    } else {
+      return '$fileSize bytes';
+    }
+  }
+
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 }
