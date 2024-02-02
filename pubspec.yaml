@@ -50,6 +50,8 @@ dependencies:
   speech_to_text: ^6.5.1
   image_picker: ^0.8.4+4
   sensors_plus: ^4.0.2
+  cryptography: ^2.7.0
+  cryptography_flutter: ^2.3.2
 
 dev_dependencies:
   flutter_test:
