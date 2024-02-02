@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:safrt_eye_app/printColoredMessage.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:video_compress/video_compress.dart';
 
@@ -15,7 +14,7 @@ class InAppVideoListScreen extends StatefulWidget {
 
 class _InAppVideoListScreenState extends State<InAppVideoListScreen> {
   List<String> videoPaths = [];
-  List<String> videoCompressPaths = []; //video_compress
+  List<String> videoCompressPaths = [];
 
   @override
   void initState() {
@@ -26,12 +25,8 @@ class _InAppVideoListScreenState extends State<InAppVideoListScreen> {
 
   Future<void> getVideoList() async {
     try {
-      // Get the application documents directory
       Directory appDocumentsDirectory = await getApplicationDocumentsDirectory();
-
       final videosDirectory = Directory('${appDocumentsDirectory.path}/videos');
-      String videosDirectory_Path = videosDirectory.path;
-      printColoredMessage('videosDirectory: $videosDirectory_Path', color: 'red');
       videoPaths = videosDirectory
           .listSync()
           .where((entity) => entity.path.endsWith(".mp4"))
@@ -39,17 +34,14 @@ class _InAppVideoListScreenState extends State<InAppVideoListScreen> {
           .toList();
       setState(() {});
     } catch (e) {
-      print("Error getting video list: $e");
+      print("Error getting original video list: $e");
     }
   }
+
   Future<void> getVideoCompressList() async {
     try {
-      // Get the application documents directory
       Directory appDocumentsDirectory = await getApplicationDocumentsDirectory();
-
       final videosDirectory = Directory('${appDocumentsDirectory.path}/compress_videos');
-      String videosDirectory_Path = videosDirectory.path;
-      printColoredMessage('videosDirectory: $videosDirectory_Path', color: 'red');
       videoCompressPaths = videosDirectory
           .listSync()
           .where((entity) => entity.path.endsWith(".mp4"))
@@ -57,7 +49,7 @@ class _InAppVideoListScreenState extends State<InAppVideoListScreen> {
           .toList();
       setState(() {});
     } catch (e) {
-      print("Error getting video list: $e");
+      print("Error getting compressed video list: $e");
     }
   }
 
@@ -67,61 +59,54 @@ class _InAppVideoListScreenState extends State<InAppVideoListScreen> {
       appBar: AppBar(
         title: const Text('Videos List'),
       ),
-      body: videoPaths.isEmpty && videoCompressPaths.isEmpty
+      body: (videoPaths.isEmpty && videoCompressPaths.isEmpty)
           ? const Center(child: Text('No videos available'))
-          : Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+          : ListView(
         children: [
           if (videoPaths.isNotEmpty)
-            Container(
-              padding: EdgeInsets.all(8.0),
-              child: const Text(
-                'Original Videos',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
-          if (videoPaths.isNotEmpty)
-            Expanded(
-              child: ListView.builder(
-                itemCount: videoPaths.length,
-                itemBuilder: (context, index) {
-                  return VideoCard(videoPath: videoPaths[index]);
-                },
-              ),
-            ),
+            _buildVideoList(videoPaths, 'Original Videos'),
           if (videoCompressPaths.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.all(8.0),
-              child: const Text(
-                'Compressed Videos',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
-          if (videoCompressPaths.isNotEmpty)
-            Expanded(
-              child: ListView.builder(
-                itemCount: videoCompressPaths.length,
-                itemBuilder: (context, index) {
-                  return VideoCard(videoPath: videoCompressPaths[index]);
-                },
-              ),
-            ),
+            _buildVideoList(videoCompressPaths, 'Compressed Videos'),
         ],
       ),
     );
   }
 
+  Widget _buildVideoList(List<String> paths, String title) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8.0),
+          child: Text(
+            title,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+        ),
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: paths.length,
+          itemBuilder: (context, index) {
+            return VideoCard(videoPath: paths[index]);
+          },
+        ),
+      ],
+    );
+  }
 }
 
 class VideoCard extends StatefulWidget {
   final String videoPath;
-  const VideoCard({super.key, required this.videoPath});
+  const VideoCard({Key? key, required this.videoPath}) : super(key: key);
+
   @override
   State<StatefulWidget> createState() => _VideoCardState();
 }
 
 class _VideoCardState extends State<VideoCard> {
-  late String _thumbnailPath;
+  late String _thumbnailPath = '';
+
   @override
   void initState() {
     super.initState();
@@ -130,26 +115,24 @@ class _VideoCardState extends State<VideoCard> {
 
   Future<void> _generateThumbnail() async {
     try {
-      _thumbnailPath = (await VideoThumbnail.thumbnailFile(
+      String? thumbnail = await VideoThumbnail.thumbnailFile(
         video: widget.videoPath,
         thumbnailPath: (await getTemporaryDirectory()).path,
         imageFormat: ImageFormat.JPEG,
         maxWidth: 100,
         quality: 25,
-      ))!;
-      setState(() {});
+      );
+      setState(() {
+        _thumbnailPath = thumbnail!;
+      });
     } catch (e) {
       print('Error generating thumbnail: $e');
-      // Handle the error, or set a default value for _thumbnailPath
-      _thumbnailPath = 'default_thumbnail_path';
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
-    String videoName = widget.videoPath.split('/').last;
-    videoName = videoName.split('.').first;
+    String videoName = widget.videoPath.split('/').last.split('.').first;
 
     void handleVideoCardTap() {
       // Handle video card tap
@@ -174,20 +157,32 @@ class _VideoCardState extends State<VideoCard> {
     }
 
     return GestureDetector(
-      onTap: handleVideoCardTap,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VideoPlayerScreen(galleryFile: widget.videoPath),
+          ),
+        );
+      },
       child: Card(
         margin: const EdgeInsets.all(8.0),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Left side - Video and Name
             ClipRRect(
               borderRadius: BorderRadius.circular(8.0),
-              child: Image.file(
+              child: _thumbnailPath.isNotEmpty
+                  ? Image.file(
                 File(_thumbnailPath),
                 width: 100,
-                height: 56.25, // 16:9 aspect ratio
+                height: 56.25,
                 fit: BoxFit.cover,
+              )
+                  : Container(
+                width: 100,
+                height: 56.25,
+                color: Colors.grey, // Placeholder color
               ),
             ),
             Column(
@@ -204,20 +199,19 @@ class _VideoCardState extends State<VideoCard> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.highlight),
-                      onPressed: handleHighlightsButtonPress,
+                      onPressed:  handleHighlightsButtonPress,
                       tooltip: 'Add Highlights',
                     ),
                     const SizedBox(width: 8.0),
                     IconButton(
                       icon: const Icon(Icons.cloud_upload),
-                      onPressed: handleCloudUploadButtonPress,
+                      onPressed:  handleCloudUploadButtonPress,
                       tooltip: 'Upload to Cloud',
                     ),
                   ],
                 ),
               ],
             ),
-            // Right side - Play button
             const Spacer(),
             IconButton(
               onPressed: handlePlayButtonPress,
@@ -229,6 +223,7 @@ class _VideoCardState extends State<VideoCard> {
       ),
     );
   }
+
   Future<void> showCompressionDialog(BuildContext context) async {
     late String originalSize;
     late String compressedSize;
@@ -307,11 +302,4 @@ class _VideoCardState extends State<VideoCard> {
       return '$fileSize bytes';
     }
   }
-
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
 }
