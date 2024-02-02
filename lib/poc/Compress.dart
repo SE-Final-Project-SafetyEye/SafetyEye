@@ -67,6 +67,8 @@ class _VideoCompressorWidgetState extends State<VideoCompressorWidget> {
         compressedPath = compressedPath;
       });
 
+      saveCompressedVideo(compressedFile);
+
       showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -99,7 +101,7 @@ class _VideoCompressorWidgetState extends State<VideoCompressorWidget> {
   }
 
 
-  Future<MediaInfo?> compressVideo(String videoPath, {VideoQuality quality = VideoQuality.DefaultQuality}) {
+  Future<MediaInfo?> compressVideo(String videoPath, {VideoQuality quality = VideoQuality.LowQuality}) {
     return VideoCompress.compressVideo(
       videoPath,
       quality: quality,
