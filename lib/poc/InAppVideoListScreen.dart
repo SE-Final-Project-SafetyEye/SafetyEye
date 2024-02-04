@@ -219,6 +219,7 @@ class _VideoCardState extends State<VideoCard> {
       ),
     );
   }
+
   Future<void> showCompressionDialog(BuildContext context) async {
     late String originalSize;
     late String compressedSize;

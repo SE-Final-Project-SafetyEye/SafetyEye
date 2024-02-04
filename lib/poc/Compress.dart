@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gallery_saver/gallery_saver.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:video_compress/video_compress.dart';
 import 'dart:io';
 
@@ -45,7 +44,6 @@ class _VideoCompressorWidgetState extends State<VideoCompressorWidget> {
       print('No video selected.');
     }
   }
-
 
   Future<void> compressAndShowDialog() async {
     try {
@@ -100,7 +98,6 @@ class _VideoCompressorWidgetState extends State<VideoCompressorWidget> {
     }
   }
 
-
   Future<MediaInfo?> compressVideo(String videoPath, {VideoQuality quality = VideoQuality.LowQuality}) {
     return VideoCompress.compressVideo(
       videoPath,
@@ -120,9 +117,6 @@ class _VideoCompressorWidgetState extends State<VideoCompressorWidget> {
       }
     }
   }
-
-
-
 
   String formatFileSize(int fileSize) {
     const int KB = 1024;

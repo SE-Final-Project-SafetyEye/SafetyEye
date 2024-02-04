@@ -5,14 +5,9 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:safrt_eye_app/poc/InAppVideoListScreen.dart';
 import 'package:video_player/video_player.dart';
 import '../printColoredMessage.dart';
-
-import 'package:intl/intl.dart';
-import 'package:intl/date_symbol_data_local.dart';
-
 
 class InAppCameraScreen extends StatefulWidget {
   List<CameraDescription> cameras;
@@ -33,7 +28,6 @@ class _CameraScreenState extends State<InAppCameraScreen> with WidgetsBindingObs
   File? _videoFile;
   File? _imageFile;
   List<File> allFileList = [];
-  bool _isCameraPermissionGranted = false;
 
   @override
   void initState() {
@@ -295,7 +289,8 @@ class _CameraScreenState extends State<InAppCameraScreen> with WidgetsBindingObs
   refreshAlreadyCapturedImages() async {
     // Get the directory
     final directory = await getApplicationDocumentsDirectory();
-    List<FileSystemEntity> fileList = await directory.list().toList();
+    final videosDirectory = Directory('${directory.path}/videos');
+    List<FileSystemEntity> fileList = await videosDirectory.list().toList();
     allFileList.clear();
 
     List<Map<int, dynamic>> fileNames = [];
@@ -353,6 +348,7 @@ class _CameraScreenState extends State<InAppCameraScreen> with WidgetsBindingObs
       );
     }
   }
+
   Widget _lastCapturedPreview(){
     return InkWell(
       child: Container(
@@ -384,6 +380,7 @@ class _CameraScreenState extends State<InAppCameraScreen> with WidgetsBindingObs
       MaterialPageRoute(builder: (context) => InAppVideoListScreen()),
     );},);
   }
+
   Widget _buildCaptureButton() {
     return  InkWell(
       onTap: _isVideoCameraSelected
@@ -444,7 +441,5 @@ class _CameraScreenState extends State<InAppCameraScreen> with WidgetsBindingObs
       ),
     );
   }
-
-
 }
 
