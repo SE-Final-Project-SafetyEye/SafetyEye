@@ -1,16 +1,13 @@
-import 'dart:async';
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
-
 class VideoPlayerScreen extends StatefulWidget {
-  final String galleryFile;
-  VideoPlayerScreen(this.galleryFile, {Key? key}) : super(key: key);
+  final String videoUrl; // Change parameter name to match constructor
+
+  const VideoPlayerScreen({Key? key, required this.videoUrl}) : super(key: key); // Correct parameter name here
 
   @override
-  State<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
+  _VideoPlayerScreenState createState() => _VideoPlayerScreenState();
 }
 
 class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
@@ -19,20 +16,17 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   @override
   void initState() {
-    _controller = VideoPlayerController.network(
-     widget.galleryFile,
-    );
-    _initializeVideoPlayerFuture = _controller.initialize();
-
-    _controller.setLooping(true);
-
     super.initState();
+    _controller = VideoPlayerController.network(widget.videoUrl); // Use videoUrl instead of galleryFile
+    _initializeVideoPlayerFuture = _controller.initialize().then((_) {
+      setState(() {});
+    });
+    _controller.setLooping(true);
   }
 
   @override
   void dispose() {
     _controller.dispose();
-
     super.dispose();
   }
 
@@ -42,33 +36,34 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       body: FutureBuilder(
         future: _initializeVideoPlayerFuture,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else {
             return AspectRatio(
               aspectRatio: _controller.value.aspectRatio,
               child: VideoPlayer(_controller),
             );
-          } else {
-            return Center(child: CircularProgressIndicator());
           }
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          setState(() {
-            // pause
-            if (_controller.value.isPlaying) {
-              _controller.pause();
-            } else {
-              // play
-              _controller.play();
-            }
-          });
-        },
-        // icon
+        onPressed: _togglePlayPause,
         child: Icon(
           _controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
         ),
       ),
     );
+  }
+
+  void _togglePlayPause() {
+    setState(() {
+      if (_controller.value.isPlaying) {
+        _controller.pause();
+      } else {
+        _controller.play();
+      }
+    });
   }
 }

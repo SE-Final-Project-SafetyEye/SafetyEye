@@ -1,3 +1,4 @@
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:safrt_eye_app/poc/Location.dart';
 import 'package:safrt_eye_app/poc/SecondPage.dart';
@@ -5,13 +6,15 @@ import 'package:safrt_eye_app/poc/camera.dart';
 import 'package:safrt_eye_app/poc/voice_recognition.dart';
 
 import './LoginRegisterPage.dart';
+import 'Compress.dart';
 import 'VideoPlayer.dart';
 import 'inAppCamera.dart';
 
 class MyHomePage extends StatelessWidget {
   final String title;
+  List<CameraDescription> cameras;
 
-  const MyHomePage({super.key, required this.title});
+  MyHomePage({super.key, required this.title, required this.cameras});
 
   @override
   Widget build(BuildContext context) {
@@ -19,21 +22,21 @@ class MyHomePage extends StatelessWidget {
       appBar: AppBar(
         title: Text(title),
       ),
-      body: const Center(
+      body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
+            const Text(
               'Welcome to SafetyEye!',
               style: TextStyle(fontSize: 24),
             ),
-            SizedBox(height: 20),
-            PocButtonWidget(title: "Login/Register", page: LoginRegisterPage()),
-            PocButtonWidget(title: "CameraDefaultAppAndGalleryAccessHomeScreen", page: CameraDefaultAppAndGalleryAccessHomeScreen()),
-            PocButtonWidget(title: "InAppCameraScreen", page: InAppCameraScreen()),
-            PocButtonWidget(title: "Text to speech", page: SpeechScreen()),
-            PocButtonWidget(title: "compression", page: SecondPage(userEmail: "")),
-            PocButtonWidget(title: "Accelerometer", page: AccelerometerScreen()),
+            const SizedBox(height: 20),
+            const PocButtonWidget(title: "Login/Register", page: LoginRegisterPage()),
+            const PocButtonWidget(title: "CameraDefaultAppAndGalleryAccessHomeScreen", page: CameraDefaultAppAndGalleryAccessHomeScreen()),
+            PocButtonWidget(title: "InAppCameraScreen", page: InAppCameraScreen(cameras: cameras)),
+            const PocButtonWidget(title: "Text to speech", page: SpeechScreen()),
+            const PocButtonWidget(title: "compression", page: VideoCompressorWidget()),
+            const PocButtonWidget(title: "Accelerometer", page: AccelerometerScreen()),
           ],
         ),
       ),

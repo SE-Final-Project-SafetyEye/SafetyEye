@@ -1,3 +1,4 @@
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
@@ -9,11 +10,13 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const MyApp());
+  List<CameraDescription> cameras = await availableCameras();
+  runApp(MyApp(cameras: cameras));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  List<CameraDescription> cameras;
+  MyApp({super.key, required this.cameras});
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +26,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.deepPurple),
         // Other theme configurations if needed
       ),
-      home: const MyHomePage(title: 'SafetyEye'),
+      home: MyHomePage(title: 'SafetyEye',cameras:cameras),
     );
   }
 }
