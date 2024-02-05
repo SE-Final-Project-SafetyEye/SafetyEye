@@ -5,13 +5,13 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:safrt_eye_app/poc/InAppVideoListScreen.dart';
 import 'package:video_player/video_player.dart';
-
-List<CameraDescription> cameras = [];
+import '../printColoredMessage.dart';
 
 class InAppCameraScreen extends StatefulWidget {
-  const InAppCameraScreen({super.key});
+  List<CameraDescription> cameras;
+  InAppCameraScreen({super.key,required this.cameras});
 
   @override
   State<InAppCameraScreen> createState() => _CameraScreenState();
@@ -28,7 +28,6 @@ class _CameraScreenState extends State<InAppCameraScreen> with WidgetsBindingObs
   File? _videoFile;
   File? _imageFile;
   List<File> allFileList = [];
-  bool _isCameraPermissionGranted = false;
 
   @override
   void initState() {
@@ -36,7 +35,8 @@ class _CameraScreenState extends State<InAppCameraScreen> with WidgetsBindingObs
     //getPermissionStatus();
     WidgetsBinding.instance.addObserver(this);
     refreshAlreadyCapturedImages();
-    onNewCameraSelected(cameras.isNotEmpty ? cameras[0] : null);
+    //cameras = await availableCameras();
+    onNewCameraSelected(widget.cameras.isNotEmpty ? widget.cameras[0] : null);
     super.initState();
   }
   @override
@@ -46,22 +46,6 @@ class _CameraScreenState extends State<InAppCameraScreen> with WidgetsBindingObs
     videoController?.dispose();
     super.dispose();
   }
-
-  // getPermissionStatus() async {
-  //   await Permission.camera.request();
-  //   var status = await Permission.camera.status;
-  //   if (status.isGranted) {
-  //     log('Camera Permission: GRANTED');
-  //     setState(() {
-  //       _isCameraPermissionGranted = true;
-  //     });
-  //     // Set and initialize the new camera
-  //     onNewCameraSelected(cameras[0]);
-  //     refreshAlreadyCapturedImages();
-  //   } else {
-  //     log('Camera Permission: DENIED');
-  //   }
-  // }
 
   void onNewCameraSelected(CameraDescription? cameraDescription) async {
     if (controller != null) {
@@ -113,7 +97,7 @@ class _CameraScreenState extends State<InAppCameraScreen> with WidgetsBindingObs
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Camera Screen'),
+        title: const Text('Camera Screen'),
         actions: [
           // Dropdown for resolution presets
           Padding(
@@ -139,7 +123,7 @@ class _CameraScreenState extends State<InAppCameraScreen> with WidgetsBindingObs
                 });
                 onNewCameraSelected(controller!.description);
               },
-              hint: Text(
+              hint: const Text(
                 "Select Resolution",
                 style: TextStyle(color: Colors.black), // Set text color
               ),
@@ -305,7 +289,8 @@ class _CameraScreenState extends State<InAppCameraScreen> with WidgetsBindingObs
   refreshAlreadyCapturedImages() async {
     // Get the directory
     final directory = await getApplicationDocumentsDirectory();
-    List<FileSystemEntity> fileList = await directory.list().toList();
+    final videosDirectory = Directory('${directory.path}/videos');
+    List<FileSystemEntity> fileList = await videosDirectory.list().toList();
     allFileList.clear();
 
     List<Map<int, dynamic>> fileNames = [];
@@ -340,7 +325,7 @@ class _CameraScreenState extends State<InAppCameraScreen> with WidgetsBindingObs
 
   Widget _buildCameraPreview() {
     if (!_isCameraInitialized || !controller!.value.isInitialized) {
-      return Center(
+      return const Center(
         child: CircularProgressIndicator(),
       );
     } else {
@@ -363,32 +348,39 @@ class _CameraScreenState extends State<InAppCameraScreen> with WidgetsBindingObs
       );
     }
   }
+
   Widget _lastCapturedPreview(){
-    return Container(
-      width: 60,
-      height: 60,
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(10.0),
-        border: Border.all(color: Colors.white, width: 2),
-        image: _imageFile != null
-            ? DecorationImage(
-          image: FileImage(_imageFile!),
-          fit: BoxFit.cover,
-        )
-            : null,
-      ),
-      child: videoController != null && videoController!.value.isInitialized
-          ? ClipRRect(
-        borderRadius: BorderRadius.circular(8.0),
-        child: AspectRatio(
-          aspectRatio: videoController!.value.aspectRatio,
-          child: VideoPlayer(videoController!),
+    return InkWell(
+      child: Container(
+        width: 60,
+        height: 60,
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(10.0),
+          border: Border.all(color: Colors.white, width: 2),
+          image: _imageFile != null
+              ? DecorationImage(
+            image: FileImage(_imageFile!),
+            fit: BoxFit.cover,
+          )
+              : null,
         ),
-      )
-          : Container(),
-    );
+        child: videoController != null && videoController!.value.isInitialized
+            ? ClipRRect(
+          borderRadius: BorderRadius.circular(8.0),
+          child: AspectRatio(
+            aspectRatio: videoController!.value.aspectRatio,
+            child: VideoPlayer(videoController!),
+          ),
+        )
+            : Container(),
+      ),
+    onTap: (){ Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => InAppVideoListScreen()),
+    );},);
   }
+
   Widget _buildCaptureButton() {
     return  InkWell(
       onTap: _isVideoCameraSelected
@@ -400,10 +392,16 @@ class _CameraScreenState extends State<InAppCameraScreen> with WidgetsBindingObs
           int currentUnix = DateTime.now().millisecondsSinceEpoch;
 
           final directory = await getApplicationDocumentsDirectory();
+          final videosDirectory = Directory('${directory.path}/videos');
+          if (!videosDirectory.existsSync()) {
+            videosDirectory.createSync();
+          }
+          String videosDirectory_Path = videosDirectory.path;
+          printColoredMessage('videosDirectory: $videosDirectory_Path', color: 'red');
           String fileFormat = videoFile.path.split('.').last;
 
           _videoFile = await videoFile.copy(
-            '${directory.path}/$currentUnix.$fileFormat',
+            '${videosDirectory.path}/$currentUnix.$fileFormat',
           );
 
           _startVideoPlayer();
@@ -443,6 +441,5 @@ class _CameraScreenState extends State<InAppCameraScreen> with WidgetsBindingObs
       ),
     );
   }
-
-
 }
+

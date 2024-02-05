@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'VideoPlayer.dart';
 
@@ -49,18 +50,6 @@ class _CameraHomeScreenState extends State<CameraDefaultAppAndGalleryAccessHomeS
                 const SizedBox(
                   height: 20,
                 ),
-                SizedBox(
-                  height: 200.0,
-                  width: 300.0,
-                  child: galleryFile == null
-                      ? const Center(child: Text('Sorry nothing selected!!'))
-                      : mediaType == MediaType.photo
-                      ? Center(child: Image.file(galleryFile!))
-                      : Center(
-                    child: VideoPlayerScreen(galleryFile!.path),
-                  ),
-                )
-                ,
               ],
             ),
           );
@@ -89,6 +78,7 @@ class _CameraHomeScreenState extends State<CameraDefaultAppAndGalleryAccessHomeS
       );
     }
   }
+
   void _showPicker({
     required BuildContext context,
   }) {
@@ -101,8 +91,9 @@ class _CameraHomeScreenState extends State<CameraDefaultAppAndGalleryAccessHomeS
               ListTile(
                 leading: const Icon(Icons.photo_library),
                 title: const Text('Video Library'),
-                onTap: () {
+                onTap: () async {
                   mediaType = MediaType.video;
+                  //final directory = await getApplicationDocumentsDirectory();
                   _captureMedia(ImageSource.gallery, MediaType.video);
                   Navigator.of(context).pop();
                 },
