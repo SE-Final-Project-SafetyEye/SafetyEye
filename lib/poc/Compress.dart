@@ -23,8 +23,8 @@ class _VideoCompressorWidgetState extends State<VideoCompressorWidget> {
       body: Center(
         child: ElevatedButton(
           onPressed: () async {
-            await pickVideo();
-            await compressAndShowDialog();
+            await pickVideo(compressAndShowDialog);
+            //await ;
           },
           child: Text('Select Video and Compress'),
         ),
@@ -32,13 +32,13 @@ class _VideoCompressorWidgetState extends State<VideoCompressorWidget> {
     );
   }
 
-  Future<void> pickVideo() async {
+  Future<void> pickVideo(VoidCallback voidCallback) async {
     final pickedFile = await ImagePicker().getVideo(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
         videoPath = pickedFile.path ?? '';
       });
-      await compressAndShowDialog();
+      voidCallback();
     } else {
       // Handle case where the user canceled video selection
       print('No video selected.');
@@ -98,7 +98,7 @@ class _VideoCompressorWidgetState extends State<VideoCompressorWidget> {
     }
   }
 
-  Future<MediaInfo?> compressVideo(String videoPath, {VideoQuality quality = VideoQuality.LowQuality}) {
+  Future<MediaInfo?> compressVideo(String videoPath, {VideoQuality quality = VideoQuality.DefaultQuality}) {
     return VideoCompress.compressVideo(
       videoPath,
       quality: quality,
