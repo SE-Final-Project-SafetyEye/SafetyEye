@@ -1,4 +1,4 @@
-import 'dart:convert' show base64Decode, base64Encode;
+import 'dart:convert';
 import 'package:cryptography/cryptography.dart';
 import 'package:cryptography_flutter/cryptography_flutter.dart';
 import 'package:flutter/material.dart';
@@ -14,9 +14,14 @@ class DigitalSignatureScreen extends StatefulWidget {
 
 class _DigitalSignatureScreenState extends State<DigitalSignatureScreen> {
   final KeysService _keysGenerationService = KeysService();
+  final TextEditingController controller = TextEditingController();
+  Signature? generatedSignature;
+  bool isValidSignature = false;
+  bool verifiedCalled = false;
 
   @override
   initState() {
+    generatedSignature = null;
     super.initState();
   }
 
@@ -28,21 +33,50 @@ class _DigitalSignatureScreenState extends State<DigitalSignatureScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final future = _keysGenerationService.init().then((_) => _keysGenerationService.getKeys());
+    final future = _keysGenerationService.init();
     return Scaffold(
+      appBar: AppBar(title: const Text("Digital signature")),
       backgroundColor: Colors.white70,
       body: FutureBuilder(
           future: future,
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
-              return Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Text(
-                  'Public Key: ${snapshot.data?.$1}',
-                ),
-                Text('Private Key: ${snapshot.data?.$2}'),
-              ]);
+            if (snapshot.connectionState == ConnectionState.done) {
+              return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Text("keys ready for signing"),
+                    TextField(controller: controller),
+                    ElevatedButton(
+                        onPressed: () async {
+                          var sig = await _keysGenerationService.signMessage(controller.text);
+                          setState(() {
+                            generatedSignature = sig;
+                            verifiedCalled = false;
+                          });
+                        },
+                        child: const Text("Generate Signature")),
+                    if (generatedSignature != null) ...[
+                      Text(base64Encode(generatedSignature!.bytes)),
+                      ElevatedButton(
+                          onPressed: () async {
+                            String textValue = controller.text;
+                            bool isValid = await _keysGenerationService.verifySignature(textValue, generatedSignature!);
+                            setState(() {
+                              verifiedCalled = true;
+                              isValidSignature = isValid;
+                            });
+                          },
+                          child: const Text("Verify Signature")),
+                      if (verifiedCalled)
+                        if (isValidSignature) const Text("data is valid") else const Text("data is not valid"),
+                    ] else
+                      const Text("No signature generated"),
+                  ]);
             } else {
-              return const CircularProgressIndicator();
+              return const Column(
+                children: [CircularProgressIndicator(), Text("initializing keys")],
+              );
             }
           }),
     );
@@ -126,5 +160,14 @@ interface class KeysService {
     logger.i("key pair and constructed key pair are equal: ${constructedKeyPair == _keyPair}");
 
     return (base64Encode(publicKeyBytes), base64Encode(privateKeyBytes));
+  }
+
+  Future<Signature> signMessage(String message) async {
+    final signature = await _generationAlgorithm.sign(utf8.encode(message), keyPair: _keyPair);
+    return signature;
+  }
+
+  Future<bool> verifySignature(String message, Signature signature) async {
+    return await _generationAlgorithm.verify(utf8.encode(message), signature: signature);
   }
 }
