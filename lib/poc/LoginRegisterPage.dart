@@ -109,7 +109,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
-                              NavigatAppPage(userEmail: email),
+                              NavigateAppPage(cameras: [],),
                         ),
                       );
                     } catch (error) {

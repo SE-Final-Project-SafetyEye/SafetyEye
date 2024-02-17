@@ -1,29 +1,26 @@
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:safrt_eye_app/poc/InAppFoldersListScreen.dart';
+import 'Settings.dart';
+import 'Records_chanks.dart';
 
-
-import 'FirstPage.dart';
-import './SecondPage.dart';
-import 'ThirdPage.dart';
-
-class NavigatAppPage extends StatefulWidget {
-  final userEmail;
-  const NavigatAppPage({super.key, required this.userEmail});
+class NavigateAppPage extends StatefulWidget {
+  List<CameraDescription> cameras;
+  NavigateAppPage({super.key,required this.cameras});
   @override
-  State<NavigatAppPage> createState() => _NavigatAppPageState();
+  State<NavigateAppPage> createState() => _NavigateAppPageState();
 }
 
-class _NavigatAppPageState extends State<NavigatAppPage> {
+class _NavigateAppPageState extends State<NavigateAppPage> {
   int _currentIndex = 0;
-  late String userEmail;
   late List<Widget> _pages;
 
   @override
   void initState() {
-    userEmail = widget.userEmail;
     _pages = [
-      FirstPage(userEmail: userEmail),
-      SecondPage(userEmail: userEmail),
-      ThirdPage(userEmail: userEmail)
+      CameraScreen(title: "SafetyEye",cameras: widget.cameras,),
+      const InAppFolderListScreen(),
+      const Settings(),
     ];
     super.initState();
   }
@@ -41,16 +38,16 @@ class _NavigatAppPageState extends State<NavigatAppPage> {
         },
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: 'Home',
+            icon: Icon(Icons.emergency_recording_outlined),
+            label: 'Drive',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.book_sharp),
-            label: 'BookToRead',
+            icon: Icon(Icons.drive_eta_sharp),
+            label: 'Journeys',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.bookmark_add_outlined),
-            label: 'RecommendationSystem',
+            label: 'Settings',
           ),
         ],
       ),

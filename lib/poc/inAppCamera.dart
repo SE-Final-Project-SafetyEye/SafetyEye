@@ -289,7 +289,7 @@ class _CameraScreenState extends State<InAppCameraScreen> with WidgetsBindingObs
   refreshAlreadyCapturedImages() async {
     // Get the directory
     final directory = await getApplicationDocumentsDirectory();
-    final videosDirectory = Directory('${directory.path}/videos');
+    final videosDirectory = Directory('${directory.path}/videos/ABC');
     List<FileSystemEntity> fileList = await videosDirectory.list().toList();
     allFileList.clear();
 
@@ -377,8 +377,14 @@ class _CameraScreenState extends State<InAppCameraScreen> with WidgetsBindingObs
       ),
     onTap: (){ Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => InAppVideoListScreen()),
+      MaterialPageRoute(builder: (context) => const InAppVideoListScreen(path:'',)), //TODO: pay Attention to this update
     );},);
+  }
+
+  Future<String> getPath() async {
+    final directory = await getApplicationDocumentsDirectory();
+    final videosDirectory = Directory('${directory.path}/videos');
+    return videosDirectory.path;
   }
 
   Widget _buildCaptureButton() {
