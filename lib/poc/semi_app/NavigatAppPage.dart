@@ -1,8 +1,8 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:safrt_eye_app/poc/semi_app/InAppFoldersListScreen.dart';
-import 'semi_app/Settings.dart';
-import 'semi_app/Records_chanks.dart';
+import 'Settings.dart';
+import 'Records_chanks.dart';
 
 class NavigateAppPage extends StatefulWidget {
   List<CameraDescription> cameras;
