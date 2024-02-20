@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
@@ -157,14 +158,13 @@ class _CameraScreenState extends State<InAppCameraScreen> with WidgetsBindingObs
                         }
                       },
                       style: TextButton.styleFrom(
-                        primary: _isVideoCameraSelected
+                        foregroundColor: _isVideoCameraSelected
                             ? Colors.black54
-                            : Colors.black,
-                        backgroundColor: _isVideoCameraSelected
+                            : Colors.black, backgroundColor: _isVideoCameraSelected
                             ? Colors.white30
                             : Colors.white,
                       ),
-                      child: Text('IMAGE'),
+                      child: const Text('IMAGE'),
                     ),
                   ),
                 ),
@@ -180,14 +180,13 @@ class _CameraScreenState extends State<InAppCameraScreen> with WidgetsBindingObs
                         }
                       },
                       style: TextButton.styleFrom(
-                        primary: _isVideoCameraSelected
+                        foregroundColor: _isVideoCameraSelected
                             ? Colors.black
-                            : Colors.black54,
-                        backgroundColor: _isVideoCameraSelected
+                            : Colors.black54, backgroundColor: _isVideoCameraSelected
                             ? Colors.white
                             : Colors.white30,
                       ),
-                      child: Text('VIDEO'),
+                      child: const Text('VIDEO'),
                     ),
                   ),
                 ),
@@ -225,7 +224,9 @@ class _CameraScreenState extends State<InAppCameraScreen> with WidgetsBindingObs
         print(_isRecordingInProgress);
       });
     } on CameraException catch (e) {
-      print('Error starting to record video: $e');
+      if (kDebugMode) {
+        print('Error starting to record video: $e');
+      }
     }
   }
 
