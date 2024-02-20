@@ -5,9 +5,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:video_compress/video_compress.dart';
 
-import 'InAppVideoListScreen.dart';
-import 'VideoListScreen.dart';
-import 'VideoPlayer.dart';
+import '../InAppVideoListScreen.dart';
+import '../VideoListScreen.dart';
+import '../VideoPlayer.dart';
 
 
 class InAppFolderListScreen extends StatefulWidget {
