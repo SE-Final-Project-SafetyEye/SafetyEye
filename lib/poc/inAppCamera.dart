@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:safrt_eye_app/poc/InAppVideoListScreen.dart';
+import 'InAppVideoListScreen.dart';
 import 'package:video_player/video_player.dart';
 import '../printColoredMessage.dart';
 

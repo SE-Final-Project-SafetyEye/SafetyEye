@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:avatar_glow/avatar_glow.dart';
 import 'package:highlight_text/highlight_text.dart';
-import 'package:safrt_eye_app/poc/provider/SpeechProvider.dart';
+import 'SpeechProvider.dart';
 
 class SpeechScreen extends StatelessWidget {
   const SpeechScreen({super.key});

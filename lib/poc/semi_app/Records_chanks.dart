@@ -5,7 +5,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:keep_screen_on/keep_screen_on.dart';
-import 'package:safrt_eye_app/printColoredMessage.dart';
+import '../../printColoredMessage.dart';
 
 
 Directory? saveDir;

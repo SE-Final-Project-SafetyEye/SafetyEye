@@ -1,10 +1,6 @@
-import 'dart:js';
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:safrt_eye_app/main.dart';
-import 'package:safrt_eye_app/poc/provider/CounterProvider.dart';
+import 'CounterProvider.dart';
 
 class Counter extends StatefulWidget {
   const Counter({super.key});

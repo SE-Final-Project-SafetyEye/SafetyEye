@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:safrt_eye_app/poc/provider/CompressProvider.dart';
+import 'CompressProvider.dart';
 
 class CompressScreen extends StatelessWidget {
   const CompressScreen({Key? key});

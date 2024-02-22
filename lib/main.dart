@@ -2,9 +2,9 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-import 'package:safrt_eye_app/poc/poc_selection_screen.dart';
-import 'package:safrt_eye_app/poc/provider/CompressProvider.dart';
-import 'package:safrt_eye_app/poc/provider/SpeechProvider.dart';
+import 'poc/poc_selection_screen.dart';
+import 'poc/provider/CompressProvider.dart';
+import 'poc/provider/SpeechProvider.dart';
 import 'firebase_options.dart';
 
 void main() async {

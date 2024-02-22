@@ -1,6 +1,6 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:safrt_eye_app/poc/semi_app/InAppFoldersListScreen.dart';
+import 'InAppFoldersListScreen.dart';
 import 'Settings.dart';
 import 'Records_chanks.dart';
 

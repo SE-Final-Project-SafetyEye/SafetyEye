@@ -17,7 +17,10 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      return web;
+      throw UnsupportedError(
+        'DefaultFirebaseOptions have not been configured for web - '
+        'you can reconfigure this by running the FlutterFire CLI again.',
+      );
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -25,7 +28,10 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        return macos;
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for macos - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
       case TargetPlatform.windows:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for windows - '
@@ -43,39 +49,22 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyD0gD6Pj5jEaJAwoZnB6d444jpeYnSQP-E',
-    appId: '1:480737538286:web:d9a2865b0f77142c2e552b',
-    messagingSenderId: '480737538286',
-    projectId: 'saftyeye-16eb2',
-    authDomain: 'saftyeye-16eb2.firebaseapp.com',
-    storageBucket: 'saftyeye-16eb2.appspot.com',
-    measurementId: 'G-JKXNZ6G5GR',
-  );
-
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyAIiZLT1a5ZhWqbPfjx_vUiN1czPgVVrUA',
-    appId: '1:480737538286:android:c564c98b54278ad22e552b',
-    messagingSenderId: '480737538286',
-    projectId: 'saftyeye-16eb2',
-    storageBucket: 'saftyeye-16eb2.appspot.com',
+    appId: '1:448213785394:android:58c912167a648b652e552b',
+    messagingSenderId: '448213785394',
+    projectId: 'safetyeye-e9274',
+    storageBucket: 'safetyeye-e9274.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyBKRLWSMj27IChGXF5bCfeFfeeLc8kATdI',
-    appId: '1:480737538286:ios:b0db1122dd2c77922e552b',
-    messagingSenderId: '480737538286',
-    projectId: 'saftyeye-16eb2',
-    storageBucket: 'safetyeye-e9274.appspot.com',
-    iosBundleId: 'com.example.appTamplate',
-  );
-
-  static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyBKRLWSMj27IChGXF5bCfeFfeeLc8kATdI',
-    appId: '1:480737538286:ios:f8dd5b5d01e5f8862e552b',
-    messagingSenderId: '480737538286',
+    appId: '1:448213785394:ios:b32ac2a5ed95abae2e552b',
+    messagingSenderId: '448213785394',
     projectId: 'safetyeye-e9274',
     storageBucket: 'safetyeye-e9274.appspot.com',
-    iosBundleId: 'com.example.appTamplate.RunnerTests',
+    androidClientId: '448213785394-4msae9ullhkqaiauou8c7btukfh0ejqm.apps.googleusercontent.com',
+    iosClientId: '448213785394-03hl271enpultmho97a89mc06h5p7nfi.apps.googleusercontent.com',
+    iosBundleId: 'com.example.safrtEyeApp',
   );
 }
