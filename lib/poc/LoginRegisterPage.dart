@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'NavigatAppPage.dart';
+import 'semi_app/NavigatAppPage.dart';
 
 class LoginRegisterPage extends StatefulWidget {
   const LoginRegisterPage({super.key});
@@ -109,7 +109,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
-                              NavigatAppPage(userEmail: email),
+                              NavigateAppPage(cameras: [],),
                         ),
                       );
                     } catch (error) {

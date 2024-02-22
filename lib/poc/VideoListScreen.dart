@@ -8,23 +8,21 @@ import 'package:video_compress/video_compress.dart';
 import 'VideoPlayer.dart';
 
 
-class InAppVideoListScreen extends StatefulWidget {
+class VideoListScreen extends StatefulWidget {
   final String path;
-  const InAppVideoListScreen({super.key, required this.path});
+  const VideoListScreen({super.key, required this.path});
 
   @override
-  _InAppVideoListScreenState createState() => _InAppVideoListScreenState();
+  _VideoListScreenState createState() => _VideoListScreenState();
 }
 
-class _InAppVideoListScreenState extends State<InAppVideoListScreen> {
+class _VideoListScreenState extends State<VideoListScreen> {
   List<String> videoPaths = [];
-  List<String> videoCompressPaths = [];
 
   @override
   void initState() {
     super.initState();
     getVideoList();
-    getVideoCompressList();
   }
 
   Future<void> getVideoList() async {
@@ -42,35 +40,18 @@ class _InAppVideoListScreenState extends State<InAppVideoListScreen> {
     }
   }
 
-  Future<void> getVideoCompressList() async {
-    try {
-      Directory appDocumentsDirectory = await getApplicationDocumentsDirectory();
-      final videosDirectory = Directory('${appDocumentsDirectory.path}/compress_videos');
-      videoCompressPaths = videosDirectory
-          .listSync()
-          .where((entity) => entity.path.endsWith(".mp4"))
-          .map((file) => file.path)
-          .toList();
-      setState(() {});
-    } catch (e) {
-      print("Error getting compressed video list: $e");
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Videos List'),
       ),
-      body: (videoPaths.isEmpty && videoCompressPaths.isEmpty)
+      body: (videoPaths.isEmpty)
           ? const Center(child: Text('No videos available'))
           : ListView(
         children: [
           if (videoPaths.isNotEmpty)
-            _buildVideoList(videoPaths, 'Original Videos'),
-          if (videoCompressPaths.isNotEmpty)
-            _buildVideoList(videoCompressPaths, 'Compressed Videos'),
+            _buildVideoList(videoPaths, 'Journey''s Videos'),
         ],
       ),
     );
