@@ -60,6 +60,7 @@ dependencies:
   cryptography_flutter: ^2.3.2
   logger: ^2.0.2+1
   shared_preferences: ^2.2.2
+  google_sign_in: ^6.2.1
 
 dev_dependencies:
   flutter_test:
@@ -113,3 +114,7 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
+  assets:
+    - lib/poc/
+    - lib/poc/provider/
+    - lib/poc/semi_app/

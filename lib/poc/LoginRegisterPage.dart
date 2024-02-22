@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:logger/logger.dart';
+import 'package:provider/provider.dart';
 
+import 'AuthProvider.dart';
 import 'semi_app/NavigatAppPage.dart';
 
 class LoginRegisterPage extends StatefulWidget {
@@ -13,6 +15,7 @@ class LoginRegisterPage extends StatefulWidget {
 class _LoginRegisterPageState extends State<LoginRegisterPage> {
   late final TextEditingController _email;
   late final TextEditingController _password;
+  final Logger _log = Logger();
 
   @override
   void initState() {
@@ -30,6 +33,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
     return Scaffold(
       body: ListView(
         padding: EdgeInsets.zero,
@@ -69,75 +73,79 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                buildTextField(
-                    _email, 'Enter your email', Icons.email_outlined),
+                buildTextField(_email, 'Enter your email', Icons.email_outlined),
                 const SizedBox(height: 16.0),
-                buildTextField(
-                    _password, 'Enter your password', Icons.lock_clock_outlined,
-                    isPassword: true),
+                buildTextField(_password, 'Enter your password', Icons.lock_clock_outlined, isPassword: true),
                 const SizedBox(height: 16.0),
                 buildElevatedButton(
                   'Register',
-                  () async {
+                  () {
                     final email = _email.text;
                     final password = _password.text;
-                    try {
-                      await FirebaseAuth.instance
-                          .createUserWithEmailAndPassword(
-                        email: email,
-                        password: password,
-                      );
-                      print('User registered successfully');
-                    } catch (error) {
-                      showAlertDialog(
-                          context, 'Register Failed', error.toString());
-                    }
+                    authProvider.signUpWithEmailAndPassword(email, password).then((_) {
+                      Navigator.pop(context);
+                      showSnackBar(context, 'Successfully registered');
+                    }).catchError((error) {
+                      showSnackBar(context, "Failed to register to app");
+                      _log.e(error);
+                    });
                   },
                 ),
                 const SizedBox(height: 8.0),
                 buildElevatedButton(
                   'Login',
-                  () async {
+                  () {
                     final email = _email.text;
                     final password = _password.text;
-                    try {
-                      await FirebaseAuth.instance.signInWithEmailAndPassword(
-                        email: email,
-                        password: password,
-                      );
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              NavigateAppPage(cameras: [],),
-                        ),
-                      );
-                    } catch (error) {
-                      showAlertDialog(context, 'Sign-In Failed',
-                          'The email or password you entered is incorrect.');
-                    }
+                    authProvider.signInWithEmailAndPassword(email, password).then((_) {
+                      showSnackBar(context, 'Successfully logged in');
+                      Navigator.pop(context);
+                    }).catchError((error) {
+                      showSnackBar(context, "Failed to login");
+                      _log.e(error);
+                    });
                   },
                 ),
+                const SizedBox(height: 16.0),
+                buildElevatedButton(
+                    'Sign with Google',
+                    () => authProvider.signInWithGoogle().then((_) {
+                          showSnackBar(context, "Successfully signed in");
+                          Navigator.pop(context);
+                        }).catchError((error) {
+                          showSnackBar(context, "Failed to sign in with Google");
+                          _log.e(error);
+                        })),
               ],
             ),
           ),
           const SizedBox(height: 20),
+          buildElevatedButton("sign out", () {
+            authProvider.signOut().then((_) {
+              showSnackBar(context, "signed out");
+              Navigator.pop(context);
+            }).catchError((error) {
+              showSnackBar(context, "failed to sign out");
+              _log.e(error);
+            });
+          }),
         ],
       ),
     );
   }
 
-  Widget buildTextField(
-      TextEditingController controller, String hintText, IconData prefixIcon,
+  void showSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Widget buildTextField(TextEditingController controller, String hintText, IconData prefixIcon,
       {bool isPassword = false}) {
     return TextField(
       controller: controller,
       obscureText: isPassword,
       enableSuggestions: false,
       autocorrect: false,
-      keyboardType: isPassword
-          ? TextInputType.visiblePassword
-          : TextInputType.emailAddress,
+      keyboardType: isPassword ? TextInputType.visiblePassword : TextInputType.emailAddress,
       decoration: InputDecoration(
         prefixIcon: Icon(prefixIcon),
         hintText: hintText,
