@@ -1,9 +1,14 @@
 import 'dart:convert';
 import 'package:cryptography/cryptography.dart';
 import 'package:cryptography_flutter/cryptography_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+import 'package:provider/provider.dart';
+import 'package:safety_eye_app/poc/BackendService.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'AuthProvider.dart';
 
 class DigitalSignatureScreen extends StatefulWidget {
   const DigitalSignatureScreen({super.key});
@@ -33,7 +38,8 @@ class _DigitalSignatureScreenState extends State<DigitalSignatureScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final future = _keysGenerationService.init();
+    final currentUser = Provider.of<AuthProvider>(context).currentUser;
+    final future = _keysGenerationService.init(currentUser!);
     return Scaffold(
       appBar: AppBar(title: const Text("Digital signature")),
       backgroundColor: Colors.white70,
@@ -91,7 +97,17 @@ interface class KeysService {
   late SimpleKeyPair _keyPair;
   bool _keysGenerated = false;
 
-  Future<void> init() async {
+  // Future<void> init() async {
+  //   if ((await areKeysStored())) {
+  //     logger.i('found keys on device');
+  //     _keyPair = (await _loadKeys())!;
+  //     _keysGenerated = true;
+  //   } else {
+  //     _generateKeys();
+  //   }
+  // }
+
+  Future<void> init(User current) async {
     if ((await areKeysStored())) {
       logger.i('found keys on device');
       _keyPair = (await _loadKeys())!;
@@ -99,6 +115,12 @@ interface class KeysService {
     } else {
       _generateKeys();
     }
+    final keyBytes =(await _keyPair.extractPublicKey()).bytes;
+    BackendService(current).exchangeKey(base64Encode(keyBytes)).then((value) {
+      logger.d("received key from backend: $value");
+    }).catchError((error) {
+      logger.e("failed to receive key from backend: $error");
+    });
   }
 
   dispose() async {
