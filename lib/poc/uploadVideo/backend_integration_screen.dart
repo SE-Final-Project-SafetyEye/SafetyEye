@@ -7,10 +7,11 @@ import 'package:flutter/widgets.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
-import 'package:safety_eye_app/poc/BackendService.dart';
+import 'package:safety_eye_app/poc/uploadVideo/BackendService.dart';
 import 'package:safety_eye_app/poc/payloads/request/requests.dart';
+import 'package:safety_eye_app/poc/uploadVideo/upload_screen.dart';
 
-import 'AuthProvider.dart';
+import '../AuthProvider.dart';
 
 class BackendIntegrationScreen extends StatefulWidget {
   const BackendIntegrationScreen({super.key});
@@ -22,8 +23,9 @@ class BackendIntegrationScreen extends StatefulWidget {
 class _BackendIntegrationScreenState extends State<BackendIntegrationScreen> {
   late BackendService _backendService;
   String responseText = '';
-  String journeyId = '';
+  List<String> journeyIds = [];
   List<String> chunksNames = [];
+  String currentJourneyId = '';
 
   void updateResponseText(String text) {
     setState(() {
@@ -53,11 +55,10 @@ class _BackendIntegrationScreenState extends State<BackendIntegrationScreen> {
     };
     metadata.writeAsString(json.encode(metadataMap));
 
-
     UploadChunkSignaturesRequest req = UploadChunkSignaturesRequest(
         videoSig: "123456789", picturesSig: ["12345", "12345", "12345"], metadataSig: "123456789", key: "123456789");
     try {
-      await _backendService.uploadChunk(video, [pic1, pic2, pic3], metadata, req);
+      await _backendService.uploadChunk(video, [pic1, pic2, pic3], metadata, req, null);
       updateResponseText('Uploaded');
     } catch (e) {
       updateResponseText('failed to upload files');
@@ -80,29 +81,43 @@ class _BackendIntegrationScreenState extends State<BackendIntegrationScreen> {
             ElevatedButton(
                 onPressed: () {
                   _backendService.getJourneys().then((response) {
-                    journeyId = response.journeys[0];
+                    journeyIds = response.journeys;
                     updateResponseText(response.journeys.toString());
                   });
                 },
                 child: const Text('Get Journeys')),
+            if (journeyIds.isNotEmpty)
+              ...journeyIds.map((journeyId) => ElevatedButton(
+                  onPressed: () {
+                    _backendService.getJourneyChunks(journeyId).then((response) {
+                      setState(() {
+                        currentJourneyId = journeyId;
+                        chunksNames = response;
+                        journeyIds = [];
+                      });
+                      updateResponseText(chunksNames.toString());
+                    });
+                  },
+                  child: Text(journeyId))),
+            if (chunksNames.isNotEmpty)
+              ...chunksNames.map((chunkName) => Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(chunkName),
+                      ElevatedButton(
+                          onPressed: () async {
+                            await _backendService.downloadChunk(currentJourneyId, chunkName);
+                            updateResponseText('Downloaded $chunkName');
+                          },
+                          child: const Text('download'))
+                    ],
+                  )),
             ElevatedButton(
                 onPressed: () {
-                  _backendService.getJourneyChunks(journeyId).then((response) {
-                    chunksNames = response;
-                    updateResponseText(response.toString());
-                  }).catchError((error) {
-                    updateResponseText(error.toString());
-                  });
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const UploadScreen()));
                 },
-                child: const Text("Journey's chunks")),
-            ElevatedButton(
-                onPressed: () {
-                  _backendService.downloadChunk(journeyId, chunksNames[0]).then((response) {
-                    updateResponseText("chunk was saved under ${response.path}");
-                  });
-                },
-                child: const Text('Download Chunk')),
-            ElevatedButton(onPressed: uploadChunk, child: const Text('Upload Chunk')),
+                child: const Text("upload chunk")),
             BackendResponseWidget(responseText: responseText),
           ],
         ),

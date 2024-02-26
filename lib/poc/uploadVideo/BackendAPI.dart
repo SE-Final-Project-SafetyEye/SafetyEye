@@ -5,7 +5,7 @@ import 'package:retrofit/retrofit.dart';
 import 'package:safety_eye_app/poc/payloads/request/requests.dart';
 import 'package:safety_eye_app/poc/payloads/response/responses.dart';
 
-import '../environment_config.dart';
+import '../../environment_config.dart';
 
 part 'BackendAPI.g.dart';
 
@@ -33,5 +33,6 @@ abstract class BackendApi {
       @Part(name: "signatures") String signatures,
       @Part(name: 'video') File video,
       @Part(name: "pictures") List<File> pictures,
-      @Part(name: "metadata") File metadata);
+      @Part(name: "metadata") File metadata,
+      @SendProgress() ProgressCallback? onSendProgress);
 }

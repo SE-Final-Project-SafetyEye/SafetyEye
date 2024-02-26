@@ -6,10 +6,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:safety_eye_app/poc/payloads/request/requests.dart';
-import 'package:http_parser/http_parser.dart' show MediaType;
 
 import 'BackendAPI.dart';
-import 'payloads/response/responses.dart';
+import '../payloads/response/responses.dart';
 
 class BackendService {
   Logger log = Logger();
@@ -49,13 +48,9 @@ class BackendService {
     return await chunkFile.writeAsBytes(chunkBytes);
   }
 
-  Future<void> uploadChunk(
-      File video, List<File> pictures, File metadata, UploadChunkSignaturesRequest signaturesRequest) async {
-    try {
-      await api.uploadChunk(json.encoder.convert(signaturesRequest.toJson()), video, pictures, metadata);
-    } catch (e) {
-      print(e);
-      throw e;
-    }
+  Future<void> uploadChunk(File video, List<File> pictures, File metadata,
+      UploadChunkSignaturesRequest signaturesRequest, ProgressCallback? progressCallback) async {
+    await api.uploadChunk(
+        json.encoder.convert(signaturesRequest.toJson()), video, pictures, metadata, progressCallback);
   }
 }

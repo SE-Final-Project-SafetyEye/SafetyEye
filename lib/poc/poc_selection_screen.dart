@@ -1,6 +1,6 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:safety_eye_app/poc/backend_integration_screen.dart';
+import 'package:safety_eye_app/poc/uploadVideo/backend_integration_screen.dart';
 import 'provider/SpeechScreen.dart';
 import 'provider/CompressScreen.dart';
 import 'DigitalSignitureScreen.dart';

@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
-import 'package:safety_eye_app/poc/BackendService.dart';
+import 'package:safety_eye_app/poc/uploadVideo/BackendService.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'AuthProvider.dart';
