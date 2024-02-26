@@ -72,6 +72,7 @@ dependencies:
   retrofit: '>=4.0.0 <5.0.0'
   json_annotation: ^4.8.1
   dio: ^5.4.1
+  sqflite: ^2.3.2
 
 dev_dependencies:
   retrofit_generator: '>=7.0.0 <8.0.0'
