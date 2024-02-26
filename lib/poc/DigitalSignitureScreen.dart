@@ -100,7 +100,7 @@ interface class KeysService {
   late SimpleKeyPair _keyPair;
   bool _keysGenerated = false;
 
-  Future<void> init() async {
+  Future<void> init(User current) async {
     if ((await areKeysStored())) {
       logger.i('found keys on device');
       _keyPair = (await _loadKeys())!;
