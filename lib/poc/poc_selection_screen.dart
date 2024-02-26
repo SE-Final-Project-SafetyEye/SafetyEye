@@ -1,5 +1,6 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:safety_eye_app/poc/backend_integration_screen.dart';
 import 'provider/SpeechScreen.dart';
 import 'provider/CompressScreen.dart';
 import 'DigitalSignitureScreen.dart';
@@ -39,7 +40,8 @@ class MyHomePage extends StatelessWidget {
             const PocButtonWidget(title: "Text to speech", page: SpeechScreen()),
             const PocButtonWidget(title: "compression", page: CompressScreen()),
             const PocButtonWidget(title: "Accelerometer", page: AccelerometerScreen()),
-            const PocButtonWidget(title: "Key Generation", page: DigitalSignatureScreen())
+            const PocButtonWidget(title: "Key Generation", page: DigitalSignatureScreen()),
+            PocButtonWidget(title: "backend Integration", page: BackendIntegrationScreen())
           ],
         ),
       ),
