@@ -18,6 +18,13 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # of the product and file versions while build-number is used as the build suffix.
 version: 1.0.0+1
 
+environment_config:
+  class: EnvironmentConfig
+  fields:
+    BACKEND_URL:
+      type: String
+
+
 environment:
   sdk: '>=3.2.3 <4.0.0'
 
@@ -60,9 +67,17 @@ dependencies:
   cryptography_flutter: ^2.3.2
   logger: ^2.0.2+1
   shared_preferences: ^2.2.2
+  google_sign_in: ^6.2.1
+  environment_config: ^3.1.0
+  retrofit: '>=4.0.0 <5.0.0'
+  json_annotation: ^4.8.1
+  dio: ^5.4.1
   sqflite: ^2.3.2
 
 dev_dependencies:
+  retrofit_generator: '>=7.0.0 <8.0.0'
+  build_runner: '>=2.3.0 <4.0.0'
+  json_serializable: ^6.6.2
   flutter_test:
     sdk: flutter
 
@@ -114,3 +129,7 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
+  assets:
+    - lib/poc/
+    - lib/poc/provider/
+    - lib/poc/semi_app/
