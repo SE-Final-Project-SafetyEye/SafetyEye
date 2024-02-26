@@ -3,7 +3,10 @@ import 'package:cryptography/cryptography.dart';
 import 'package:cryptography_flutter/cryptography_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+import 'package:safety_eye_app/printColoredMessage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart' as path;
 
 class DigitalSignatureScreen extends StatefulWidget {
   const DigitalSignatureScreen({super.key});
@@ -164,10 +167,63 @@ interface class KeysService {
 
   Future<Signature> signMessage(String message) async {
     final signature = await _generationAlgorithm.sign(utf8.encode(message), keyPair: _keyPair);
+    //printColoredMessage('signature: ${signature.toString()}',color: "red");
+    await DBHelper.saveSignature(message, signature.toString());
+    String? verify = await DBHelper.getSignature(message);
+    //printColoredMessage('verify: $verify',color: "red");
     return signature;
   }
 
   Future<bool> verifySignature(String message, Signature signature) async {
     return await _generationAlgorithm.verify(utf8.encode(message), signature: signature);
+  }
+}
+
+class DBHelper {
+  static Database? _database;
+
+  static Future<Database> get database async {
+    if (_database != null) {
+      return _database!;
+    }
+
+    // Open the database (create if it doesn't exist)
+    _database = await openDatabase(
+      path.join(await getDatabasesPath(), 'your_database.db'),
+      onCreate: (db, version) {
+        return db.execute(
+          'CREATE TABLE signatures(id INTEGER PRIMARY KEY, message TEXT, signature TEXT)',
+        );
+      },
+      version: 1,
+    );
+    return _database!;
+  }
+
+  // Save signature into the database
+  static Future<void> saveSignature(String message, String signature) async {
+    final db = await database;
+    await db.insert(
+      'signatures',
+      {
+        'message': message,
+        'signature': signature,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  // Retrieve signature from the database
+  static Future<String?> getSignature(String message) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'signatures',
+      where: 'message = ?',
+      whereArgs: [message],
+    );
+    if (maps.isNotEmpty) {
+      return maps.first['signature'] as String;
+    }
+    return null;
   }
 }
