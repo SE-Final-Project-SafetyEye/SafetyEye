@@ -60,6 +60,7 @@ dependencies:
   cryptography_flutter: ^2.3.2
   logger: ^2.0.2+1
   shared_preferences: ^2.2.2
+  geolocator: ^8.0.1
 
 dev_dependencies:
   flutter_test:

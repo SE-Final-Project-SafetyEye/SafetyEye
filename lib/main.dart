@@ -2,6 +2,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'package:safety_eye_app/poc/semi_app/NavigatAppPage.dart';
 import 'poc/poc_selection_screen.dart';
 import 'poc/provider/CompressProvider.dart';
 import 'poc/provider/SpeechProvider.dart';
@@ -27,7 +28,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.deepPurple),
       ),
-      home: MyHomePage(title: "safetyEye",cameras: cameras),
+      home: NavigateAppPage(cameras: cameras),
     ),);
   }
 }

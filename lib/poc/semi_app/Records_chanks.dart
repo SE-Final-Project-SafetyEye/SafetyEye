@@ -6,43 +6,46 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:keep_screen_on/keep_screen_on.dart';
 import '../../printColoredMessage.dart';
+import 'package:geolocator/geolocator.dart';
+
 
 
 Directory? saveDir;
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  List<CameraDescription> _cameras = await availableCameras();
-  saveDir = await getApplicationDocumentsDirectory();
-  runApp(MyApp(cameras: _cameras));
-}
-
-class MyApp extends StatelessWidget {
-  List<CameraDescription> cameras;
-  MyApp({super.key,required this.cameras});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Circular Video Recorder',
-      theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: const ColorScheme.light(
-              primary: Colors.red, secondary: Colors.amber)),
-      darkTheme: ThemeData(
-          useMaterial3: true,
-          colorScheme: const ColorScheme.dark(
-              primary: Colors.redAccent, secondary: Colors.amberAccent)),
-      home: CameraScreen(title: 'Circular Video Recorder',cameras: cameras,),
-    );
-  }
-}
+// void main() async {
+//   WidgetsFlutterBinding.ensureInitialized();
+//   List<CameraDescription> _cameras = await availableCameras();
+//   saveDir = await getApplicationDocumentsDirectory();
+//   runApp(MyApp(cameras: _cameras));
+// }
+//
+// class MyApp extends StatelessWidget {
+//   List<CameraDescription> cameras;
+//   MyApp({super.key,required this.cameras});
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return MaterialApp(
+//       title: 'Circular Video Recorder',
+//       theme: ThemeData(
+//           useMaterial3: true,
+//           colorScheme: const ColorScheme.light(
+//               primary: Colors.red, secondary: Colors.amber)),
+//       darkTheme: ThemeData(
+//           useMaterial3: true,
+//           colorScheme: const ColorScheme.dark(
+//               primary: Colors.redAccent, secondary: Colors.amberAccent)),
+//       home: CameraScreen(title: 'Circular Video Recorder',cameras: cameras,),
+//     );
+//   }
+// }
 
 var initMins = 1;
 
 class CameraScreen extends StatefulWidget {
   late List<CameraDescription> cameras;
   CameraScreen({super.key, required this.title,required this.cameras});
+
 
   final String title;
 
@@ -53,18 +56,48 @@ class CameraScreen extends StatefulWidget {
 class _CameraScreenState extends State<CameraScreen> {
   late CameraController cameraController;
   int recordMins = initMins;
+  int chunkNumber = 0;
   ResolutionPreset resolutionPreset = ResolutionPreset.max;
   DateTime currentClipStart = DateTime.now();
   String? ip;
   bool saving = false;
   bool moving = false;
   Directory? exportDir;
+  late List<Position> _currentPosition;
 
   @override
   void initState() {
     super.initState();
     KeepScreenOn.turnOn();
     initCam();
+    _getPermission();
+    _currentPosition = [];
+  }
+
+  void _getPermission() async {
+    try {
+      printColoredMessage("_getPermission",color: "red");
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          print('User denied location permission.');
+        }
+      }
+    } catch (e) {
+      print("Error: $e");
+    }
+  }
+
+
+  void _getCurrentLocation() async {
+    try {
+
+      Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+        _currentPosition.add(position);
+    } catch (e) {
+      print("Error: $e");
+    }
   }
 
   Future<void> initCam() async {
@@ -160,7 +193,9 @@ class _CameraScreenState extends State<CameraScreen> {
                           });
                     } else {
                       saveDirUpdate();
+                      _currentPosition = [];
                       recordRecursively();
+                      chunkNumber = 1;
                     }
                   }
                       : null,
@@ -211,6 +246,15 @@ class _CameraScreenState extends State<CameraScreen> {
       setState(() {
         currentClipStart = DateTime.now();
       });
+
+      Timer.periodic(const Duration(seconds: 1), (Timer timer) async {
+        if (!cameraController.value.isRecordingVideo) {
+          timer.cancel();
+        } else {
+          printColoredMessage("_getCurrentLocation",color: "red");
+          _getCurrentLocation();
+        }
+      });
       await Future.delayed(
           Duration(milliseconds: (recordMins * 60 * 1000).toInt()));
       if (cameraController.value.isRecordingVideo) {
@@ -221,7 +265,7 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   String latestFilePath() {
-    return '${saveDir?.path ?? ''}/CVR-${currentClipStart.millisecondsSinceEpoch.toString()}.mp4';
+    return '${saveDir?.path ?? ''}/CVR-chunkNumber_$chunkNumber.mp4';
   }
 
   Future<void> stopRecording(bool cleanup) async {
@@ -229,13 +273,11 @@ class _CameraScreenState extends State<CameraScreen> {
       XFile tempFile = await cameraController.stopVideoRecording();
       setState(() {});
       String lastFilePath = latestFilePath();
+      chunkNumber++;
+      String GPSFile = lastFilePath.split('/').last;
+      GPSFile = GPSFile.substring(0,GPSFile.length-4);
       final videosDirectory = Directory(lastFilePath);
-      String dir = videosDirectory.path;
-      printColoredMessage("dir: $dir");
-
-      //String dir = videosDirectory.path;
-      //printColoredMessage('videosDirectory: $dir',color: 'red');
-      // Once clip is saved, deleting cached copy and cleaning up old clips can be done asynchronously
+      saveGPSData(GPSFile);
       setState(() {
         saving = true;
       });
@@ -247,6 +289,17 @@ class _CameraScreenState extends State<CameraScreen> {
       });
     }
   }
+
+  Future<void> saveGPSData(String directory) async {
+    String filePath = '${saveDir?.path}/${directory}_gps_data.txt';
+    File file = File(filePath);
+    for (Position position in _currentPosition) {
+      await file.writeAsString(
+              'TimeStamp: ${DateTime.now().millisecondsSinceEpoch}, Latitude: ${position.latitude}, Longitude: ${position.longitude}\n',
+          mode: FileMode.append);
+    }
+    }
+
   @override
   void dispose() {
     cameraController.dispose();
@@ -256,10 +309,17 @@ class _CameraScreenState extends State<CameraScreen> {
 
   Future<void> saveDirUpdate() async {
     final dir = await getApplicationDocumentsDirectory();
-    final videosDirectory = Directory('${dir.path}/videos/${DateTime.now().microsecondsSinceEpoch}');
+    final videosDirectory = Directory('${dir.path}/videos');
     if (!videosDirectory.existsSync()) {
-      videosDirectory.createSync();
+      videosDirectory.createSync(recursive: true);
     }
-    saveDir = videosDirectory;
+
+    final subdirectory = Directory('${videosDirectory.path}/${DateTime.now().millisecondsSinceEpoch}');
+    if (!subdirectory.existsSync()) {
+      subdirectory.createSync();
+    }
+    saveDir = subdirectory;
   }
+
+
 }

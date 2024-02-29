@@ -3,13 +3,9 @@ import 'package:flutter/material.dart';
 import 'provider/SpeechScreen.dart';
 import 'provider/CompressScreen.dart';
 import 'DigitalSignitureScreen.dart';
-import 'Location.dart';
+import 'GPS.dart';
 import 'camera.dart';
-
-
-import 'Location.dart';
 import 'LoginRegisterPage.dart';
-import 'camera.dart';
 import 'inAppCamera.dart';
 
 class MyHomePage extends StatelessWidget {
@@ -34,7 +30,7 @@ class MyHomePage extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             const PocButtonWidget(title: "Login/Register", page: LoginRegisterPage()),
-            const PocButtonWidget(title: "CameraDefaultAppAndGalleryAccessHomeScreen", page: CameraDefaultAppAndGalleryAccessHomeScreen()),
+            //const PocButtonWidget(title: "CameraDefaultAppAndGalleryAccessHomeScreen", page: CameraDefaultAppAndGalleryAccessHomeScreen()),
             PocButtonWidget(title: "InAppCameraScreen", page: InAppCameraScreen(cameras: cameras)),
             const PocButtonWidget(title: "Text to speech", page: SpeechScreen()),
             const PocButtonWidget(title: "compression", page: CompressScreen()),
