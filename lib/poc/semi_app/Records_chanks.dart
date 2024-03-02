@@ -5,41 +5,13 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:keep_screen_on/keep_screen_on.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 import '../../printColoredMessage.dart';
 import 'package:geolocator/geolocator.dart';
 
 
 
 Directory? saveDir;
-
-// void main() async {
-//   WidgetsFlutterBinding.ensureInitialized();
-//   List<CameraDescription> _cameras = await availableCameras();
-//   saveDir = await getApplicationDocumentsDirectory();
-//   runApp(MyApp(cameras: _cameras));
-// }
-//
-// class MyApp extends StatelessWidget {
-//   List<CameraDescription> cameras;
-//   MyApp({super.key,required this.cameras});
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       title: 'Circular Video Recorder',
-//       theme: ThemeData(
-//           useMaterial3: true,
-//           colorScheme: const ColorScheme.light(
-//               primary: Colors.red, secondary: Colors.amber)),
-//       darkTheme: ThemeData(
-//           useMaterial3: true,
-//           colorScheme: const ColorScheme.dark(
-//               primary: Colors.redAccent, secondary: Colors.amberAccent)),
-//       home: CameraScreen(title: 'Circular Video Recorder',cameras: cameras,),
-//     );
-//   }
-// }
-
 var initMins = 1;
 
 class CameraScreen extends StatefulWidget {
@@ -64,6 +36,30 @@ class _CameraScreenState extends State<CameraScreen> {
   bool moving = false;
   Directory? exportDir;
   late List<Position> _currentPosition;
+  late List<AccelerometerEvent> accelerometerEvents;
+  late List<UserAccelerometerEvent> userAccelerometerEvents;
+  late List<MagnetometerEvent> magnetometerEvents;
+  late List<GyroscopeEvent> gyroscopeEvents;
+
+  static const Duration _ignoreDuration = Duration(milliseconds: 20);
+
+  UserAccelerometerEvent? _userAccelerometerEvent;
+  AccelerometerEvent? _accelerometerEvent;
+  GyroscopeEvent? _gyroscopeEvent;
+  MagnetometerEvent? _magnetometerEvent;
+
+  DateTime? _userAccelerometerUpdateTime;
+  DateTime? _accelerometerUpdateTime;
+  DateTime? _gyroscopeUpdateTime;
+  DateTime? _magnetometerUpdateTime;
+
+  int? _userAccelerometerLastInterval;
+  int? _accelerometerLastInterval;
+  int? _gyroscopeLastInterval;
+  int? _magnetometerLastInterval;
+  final _streamSubscriptions = <StreamSubscription<dynamic>>[];
+
+  Duration sensorInterval = SensorInterval.normalInterval;
 
   @override
   void initState() {
@@ -72,6 +68,140 @@ class _CameraScreenState extends State<CameraScreen> {
     initCam();
     _getPermission();
     _currentPosition = [];
+    accelerometerEvents = [];
+    userAccelerometerEvents = [];
+    magnetometerEvents = [];
+    gyroscopeEvents = [];
+    _streamSubscriptions.add(
+      userAccelerometerEventStream(samplingPeriod: sensorInterval).listen(
+            (UserAccelerometerEvent event) {
+          final now = DateTime.now();
+          setState(() {
+            _userAccelerometerEvent = event;
+            userAccelerometerEvents.add(event); // Add event to the list
+            if (_userAccelerometerUpdateTime != null) {
+              final interval = now.difference(_userAccelerometerUpdateTime!);
+              if (interval > _ignoreDuration) {
+                _userAccelerometerLastInterval = interval.inMilliseconds;
+              }
+            }
+          });
+          _userAccelerometerUpdateTime = now;
+        },
+        onError: (e) {
+          showDialog(
+            context: context,
+            builder: (context) {
+              return const AlertDialog(
+                title: Text("Sensor Not Found"),
+                content: Text(
+                    "It seems that your device doesn't support User Accelerometer Sensor"),
+              );
+            },
+          );
+        },
+        cancelOnError: true,
+      ),
+    );
+    _streamSubscriptions.add(
+      accelerometerEventStream(samplingPeriod: sensorInterval).listen(
+            (AccelerometerEvent event) {
+          final now = DateTime.now();
+          setState(() {
+            _accelerometerEvent = event;
+            accelerometerEvents.add(event); // Add event to the list
+            if (_accelerometerUpdateTime != null) {
+              final interval = now.difference(_accelerometerUpdateTime!);
+              if (interval > _ignoreDuration) {
+                _accelerometerLastInterval = interval.inMilliseconds;
+              }
+            }
+          });
+          _accelerometerUpdateTime = now;
+        },
+        onError: (e) {
+          showDialog(
+            context: context,
+            builder: (context) {
+              return const AlertDialog(
+                title: Text("Sensor Not Found"),
+                content: Text(
+                    "It seems that your device doesn't support Accelerometer Sensor"),
+              );
+            },
+          );
+        },
+        cancelOnError: true,
+      ),
+    );
+    _streamSubscriptions.add(
+      gyroscopeEventStream(samplingPeriod: sensorInterval).listen(
+            (GyroscopeEvent event) {
+          final now = DateTime.now();
+          setState(() {
+            _gyroscopeEvent = event;
+            gyroscopeEvents.add(event); // Add event to the list
+            if (_gyroscopeUpdateTime != null) {
+              final interval = now.difference(_gyroscopeUpdateTime!);
+              if (interval > _ignoreDuration) {
+                _gyroscopeLastInterval = interval.inMilliseconds;
+              }
+            }
+          });
+          _gyroscopeUpdateTime = now;
+        },
+        onError: (e) {
+          showDialog(
+            context: context,
+            builder: (context) {
+              return const AlertDialog(
+                title: Text("Sensor Not Found"),
+                content: Text(
+                    "It seems that your device doesn't support Gyroscope Sensor"),
+              );
+            },
+          );
+        },
+        cancelOnError: true,
+      ),
+    );
+    _streamSubscriptions.add(
+      magnetometerEventStream(samplingPeriod: sensorInterval).listen(
+            (MagnetometerEvent event) {
+          final now = DateTime.now();
+          setState(() {
+            _magnetometerEvent = event;
+            magnetometerEvents.add(event); // Add event to the list
+            if (_magnetometerUpdateTime != null) {
+              final interval = now.difference(_magnetometerUpdateTime!);
+              if (interval > _ignoreDuration) {
+                _magnetometerLastInterval = interval.inMilliseconds;
+              }
+            }
+          });
+          _magnetometerUpdateTime = now;
+        },
+        onError: (e) {
+          showDialog(
+            context: context,
+            builder: (context) {
+              return const AlertDialog(
+                title: Text("Sensor Not Found"),
+                content: Text(
+                    "It seems that your device doesn't support Magnetometer Sensor"),
+              );
+            },
+          );
+        },
+        cancelOnError: true,
+      ),
+    );
+
+    userAccelerometerEventStream(
+        samplingPeriod: sensorInterval);
+    accelerometerEventStream(samplingPeriod: sensorInterval);
+    gyroscopeEventStream(samplingPeriod: sensorInterval);
+    magnetometerEventStream(samplingPeriod: sensorInterval);
   }
 
   void _getPermission() async {
@@ -92,7 +222,6 @@ class _CameraScreenState extends State<CameraScreen> {
 
   void _getCurrentLocation() async {
     try {
-
       Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
         _currentPosition.add(position);
     } catch (e) {
@@ -194,6 +323,10 @@ class _CameraScreenState extends State<CameraScreen> {
                     } else {
                       saveDirUpdate();
                       _currentPosition = [];
+                      accelerometerEvents = [];
+                      userAccelerometerEvents = [];
+                      magnetometerEvents = [];
+                      gyroscopeEvents = [];
                       recordRecursively();
                       chunkNumber = 1;
                     }
@@ -277,7 +410,7 @@ class _CameraScreenState extends State<CameraScreen> {
       String GPSFile = lastFilePath.split('/').last;
       GPSFile = GPSFile.substring(0,GPSFile.length-4);
       final videosDirectory = Directory(lastFilePath);
-      saveGPSData(GPSFile);
+      saveDataToFile(GPSFile);
       setState(() {
         saving = true;
       });
@@ -290,20 +423,72 @@ class _CameraScreenState extends State<CameraScreen> {
     }
   }
 
-  Future<void> saveGPSData(String directory) async {
-    String filePath = '${saveDir?.path}/${directory}_gps_data.txt';
+  Future<void> saveDataToFile(String directory) async {
+    String filePath = '${saveDir?.path}/${directory}_data.txt';
     File file = File(filePath);
-    for (Position position in _currentPosition) {
+
+    // Write timestamp at the top
+    await file.writeAsString(
+      'TimeStamp: ${DateTime.now().millisecondsSinceEpoch}\n\n',
+    );
+
+    // Create copies of the lists to avoid concurrent modification
+    List<AccelerometerEvent> accelerometerEventsCopy = List.from(accelerometerEvents);
+    List<UserAccelerometerEvent> userAccelerometerEventsCopy = List.from(userAccelerometerEvents);
+    List<MagnetometerEvent> magnetometerEventsCopy = List.from(magnetometerEvents);
+    List<GyroscopeEvent> gyroscopeEventsCopy = List.from(gyroscopeEvents);
+
+    // Write accelerometer events
+    for (var event in accelerometerEventsCopy) {
       await file.writeAsString(
-              'TimeStamp: ${DateTime.now().millisecondsSinceEpoch}, Latitude: ${position.latitude}, Longitude: ${position.longitude}\n',
-          mode: FileMode.append);
+        'Accelerometer: ${event.x.toStringAsFixed(1)}, ${event.y.toStringAsFixed(1)}, ${event.z.toStringAsFixed(1)}\n',
+        mode: FileMode.append,
+      );
     }
+
+    // Write user accelerometer events
+    for (var event in userAccelerometerEventsCopy) {
+      await file.writeAsString(
+        'User Accelerometer: ${event.x.toStringAsFixed(1)}, ${event.y.toStringAsFixed(1)}, ${event.z.toStringAsFixed(1)}\n',
+        mode: FileMode.append,
+      );
     }
+
+    // Write magnetometer events
+    for (var event in magnetometerEventsCopy) {
+      await file.writeAsString(
+        'Magnetometer: ${event.x.toStringAsFixed(1)}, ${event.y.toStringAsFixed(1)}, ${event.z.toStringAsFixed(1)}\n',
+        mode: FileMode.append,
+      );
+    }
+
+    // Write gyroscope events
+    for (var event in gyroscopeEventsCopy) {
+      await file.writeAsString(
+        'Gyroscope: ${event.x.toStringAsFixed(1)}, ${event.y.toStringAsFixed(1)}, ${event.z.toStringAsFixed(1)}\n',
+        mode: FileMode.append,
+      );
+    }
+
+    // Write GPS data
+    for (var position in _currentPosition) {
+      await file.writeAsString(
+        'GPS- Latitude: ${position.latitude}, Longitude: ${position.longitude}\n',
+        mode: FileMode.append,
+      );
+    }
+  }
+
+
+
 
   @override
   void dispose() {
     cameraController.dispose();
     KeepScreenOn.turnOff();
+    for (var subscription in _streamSubscriptions) {
+      subscription.cancel();
+    }
     super.dispose();
   }
 

@@ -15,10 +15,6 @@ class AccelerometerScreen extends StatefulWidget {
 class _AccelerometerScreenState extends State<AccelerometerScreen> {
   static const Duration _ignoreDuration = Duration(milliseconds: 20);
 
-  static const int _snakeRows = 20;
-  static const int _snakeColumns = 20;
-  static const double _snakeCellSize = 10.0;
-
   UserAccelerometerEvent? _userAccelerometerEvent;
   AccelerometerEvent? _accelerometerEvent;
   GyroscopeEvent? _gyroscopeEvent;

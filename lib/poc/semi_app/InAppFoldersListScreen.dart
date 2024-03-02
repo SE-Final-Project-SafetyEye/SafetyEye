@@ -105,11 +105,12 @@ class _VideoCardState extends State<VideoCard> {
   @override
   Widget build(BuildContext context) {
     String videoFolderName = widget.fileSystemEntity.path.split('/').last;
-    return GestureDetector(onTap: () =>{
-    Navigator.push(
-    context,
-    MaterialPageRoute(builder: (context) => VideoListScreen(path: widget.fileSystemEntity.path)),
-    )},child: Card(
+    return GestureDetector(onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => VideoListScreen(path: widget.fileSystemEntity.path)),
+      );
+    }, child: Card(
         child: Column(children: [
           ListTile(title: Text(videoFolderName))
         ])),);

@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'provider/SpeechScreen.dart';
 import 'provider/CompressScreen.dart';
 import 'DigitalSignitureScreen.dart';
-import 'GPS.dart';
 import 'camera.dart';
 import 'LoginRegisterPage.dart';
 import 'inAppCamera.dart';
+import 'Location.dart';
 
 class MyHomePage extends StatelessWidget {
   final String title;
