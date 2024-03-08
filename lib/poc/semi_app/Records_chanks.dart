@@ -40,6 +40,7 @@ class _CameraScreenState extends State<CameraScreen> {
   late List<UserAccelerometerEvent> userAccelerometerEvents;
   late List<MagnetometerEvent> magnetometerEvents;
   late List<GyroscopeEvent> gyroscopeEvents;
+  late List<File> _photos;
 
   static const Duration _ignoreDuration = Duration(milliseconds: 20);
 
@@ -72,6 +73,7 @@ class _CameraScreenState extends State<CameraScreen> {
     userAccelerometerEvents = [];
     magnetometerEvents = [];
     gyroscopeEvents = [];
+    _photos = [];
     _streamSubscriptions.add(
       userAccelerometerEventStream(samplingPeriod: sensorInterval).listen(
             (UserAccelerometerEvent event) {
@@ -327,6 +329,7 @@ class _CameraScreenState extends State<CameraScreen> {
                       userAccelerometerEvents = [];
                       magnetometerEvents = [];
                       gyroscopeEvents = [];
+                      _photos = [];
                       recordRecursively();
                       chunkNumber = 1;
                     }
@@ -384,8 +387,16 @@ class _CameraScreenState extends State<CameraScreen> {
         if (!cameraController.value.isRecordingVideo) {
           timer.cancel();
         } else {
-          printColoredMessage("_getCurrentLocation",color: "red");
+          //printColoredMessage("_getCurrentLocation",color: "red");
           _getCurrentLocation();
+        }
+      });
+      Timer.periodic(const Duration(seconds: 5), (Timer timer) async {
+        if (!cameraController.value.isRecordingVideo) {
+          timer.cancel();
+        } else {
+          //printColoredMessage("_getCurrentLocation",color: "red");
+          _takePhoto();
         }
       });
       await Future.delayed(
@@ -398,7 +409,12 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   String latestFilePath() {
-    return '${saveDir?.path ?? ''}/CVR-chunkNumber_$chunkNumber.mp4';
+    final String latestFilePath = '${saveDir?.path ?? ''}/$chunkNumber';
+    final _latestFilePath = Directory(latestFilePath);
+    if (!_latestFilePath.existsSync()) {
+      _latestFilePath.createSync();
+    }
+    return '$latestFilePath/CVR-chunkNumber_$chunkNumber.mp4';
   }
 
   Future<void> stopRecording(bool cleanup) async {
@@ -406,10 +422,9 @@ class _CameraScreenState extends State<CameraScreen> {
       XFile tempFile = await cameraController.stopVideoRecording();
       setState(() {});
       String lastFilePath = latestFilePath();
-      chunkNumber++;
-      String GPSFile = lastFilePath.split('/').last;
-      GPSFile = GPSFile.substring(0,GPSFile.length-4);
       final videosDirectory = Directory(lastFilePath);
+      chunkNumber++;
+      String GPSFile = lastFilePath.substring(0,lastFilePath.length-4);
       saveDataToFile(GPSFile);
       setState(() {
         saving = true;
@@ -424,9 +439,16 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   Future<void> saveDataToFile(String directory) async {
-    String filePath = '${saveDir?.path}/${directory}_data.txt';
+    String filePath = '${directory}_data.txt';
     File file = File(filePath);
 
+    for (int i = 0; i < _photos.length; i++) {
+      final String filePath0 = '${directory}_photo_$i.jpg';
+      await _photos[i].copy(filePath0);
+    }
+
+    // Clear the list after saving the photos.
+    _photos.clear();
 
     // Write timestamp at the top
     await file.writeAsString(
@@ -483,6 +505,13 @@ class _CameraScreenState extends State<CameraScreen> {
     }
   }
 
+  Future<void> _takePhoto()async{
+    XFile photoFile = await cameraController.takePicture();
+
+    File photo = File(photoFile.path);
+
+    _photos.add(photo);
+  }
 
 
 
