@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:safety_eye_app/printColoredMessage.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:video_compress/video_compress.dart';
 
@@ -124,8 +125,28 @@ class _VideoCardState extends State<VideoCard> {
       // You can navigate to a detail screen or play the video, for example.
     }
 
-    void handleHighlightsButtonPress() {
-      // Handle Highlights button press
+    Future<void> handleHighlightsButtonPress() async {
+      try {
+        // Open the file in read mode
+        String data = widget.videoPath;
+        data = data.replaceAll('.mp4', '_data.txt');
+        var file = File(data);
+        var lines = await file.readAsLines();
+
+        // Find the line containing 'Highligth: false'
+        var lineNumber = lines.indexWhere((line) => line.contains('Highlight: false'));
+
+        if (lineNumber != -1) {
+          printColoredMessage("update highlight",color: "red");
+          // Replace 'Highligth: false' with 'Highligth: true'
+          lines[lineNumber] = lines[lineNumber].replaceFirst('Highlight: false', 'Highlight: true');
+
+          // Write the modified content back to the file
+          await file.writeAsString(lines.join('\n'));
+        }
+      } catch (e) {
+        print('Error: $e');
+      }
     }
 
     void handleCloudUploadButtonPress() {

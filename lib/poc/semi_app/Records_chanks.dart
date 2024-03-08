@@ -12,7 +12,7 @@ import 'package:geolocator/geolocator.dart';
 
 
 Directory? saveDir;
-var initMins = 1;
+var initMins = 0.25;
 
 class CameraScreen extends StatefulWidget {
   late List<CameraDescription> cameras;
@@ -27,7 +27,7 @@ class CameraScreen extends StatefulWidget {
 
 class _CameraScreenState extends State<CameraScreen> {
   late CameraController cameraController;
-  int recordMins = initMins;
+  double recordMins = initMins;
   int chunkNumber = 0;
   ResolutionPreset resolutionPreset = ResolutionPreset.max;
   DateTime currentClipStart = DateTime.now();
@@ -427,9 +427,13 @@ class _CameraScreenState extends State<CameraScreen> {
     String filePath = '${saveDir?.path}/${directory}_data.txt';
     File file = File(filePath);
 
+
     // Write timestamp at the top
     await file.writeAsString(
       'TimeStamp: ${DateTime.now().millisecondsSinceEpoch}\n\n',
+    );
+    await file.writeAsString(
+      'Highlight: false\n\n',
     );
 
     // Create copies of the lists to avoid concurrent modification
