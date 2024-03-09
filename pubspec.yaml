@@ -61,6 +61,7 @@ dependencies:
   logger: ^2.0.2+1
   shared_preferences: ^2.2.2
   geolocator: ^8.0.1
+  flutter_ffmpeg: ^0.4.2
 
 dev_dependencies:
   flutter_test:

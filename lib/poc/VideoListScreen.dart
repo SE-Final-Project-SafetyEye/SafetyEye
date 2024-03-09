@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -18,28 +19,38 @@ class VideoListScreen extends StatefulWidget {
 }
 
 class _VideoListScreenState extends State<VideoListScreen> {
-  List<String> videoPaths = [];
+  late List<String> videoPaths = [];
 
   @override
   void initState() {
-    super.initState();
     getVideoList();
+    super.initState();
   }
 
   Future<void> getVideoList() async {
     try {
-      //Directory appDocumentsDirectory = await getApplicationDocumentsDirectory();
       final videosDirectory = Directory(widget.path);
-      videoPaths = videosDirectory
-          .listSync()
-          .where((entity) => entity.path.endsWith(".mp4"))
-          .map((file) => file.path)
-          .toList();
-      setState(() {});
+      List<String> videoDirectories = [];
+
+      await for (FileSystemEntity entity in videosDirectory.list(recursive: true)) {
+        if (entity is File && entity.path.endsWith(".mp4")) {
+          String videoDirectory = entity.path;
+          if (!videoDirectories.contains(videoDirectory)) {
+            videoDirectories.add(videoDirectory);
+          }
+        }
+      }
+
+      setState(() {
+        videoPaths = videoDirectories;
+        //printColoredMessage(videoDirectories.length.toString(),color: "red");
+      });
     } catch (e) {
       print("Error getting original video list: $e");
     }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +102,7 @@ class VideoCard extends StatefulWidget {
 }
 
 class _VideoCardState extends State<VideoCard> {
-  late String _thumbnailPath = '';
+  late String _thumbnailPath = ''; // Initialize with an empty string
 
   @override
   void initState() {
@@ -109,7 +120,7 @@ class _VideoCardState extends State<VideoCard> {
         quality: 25,
       );
       setState(() {
-        _thumbnailPath = thumbnail!;
+        _thumbnailPath = thumbnail ?? ''; // Update _thumbnailPath with the actual value
       });
     } catch (e) {
       print('Error generating thumbnail: $e');
@@ -127,27 +138,29 @@ class _VideoCardState extends State<VideoCard> {
 
     Future<void> handleHighlightsButtonPress() async {
       try {
-        // Open the file in read mode
+        // Construct the path to the JSON file
         String data = widget.videoPath;
-        data = data.replaceAll('.mp4', '_data.txt');
+        data = data.replaceAll('.mp4', '_data.json');
+
+        // Open the JSON file
         var file = File(data);
-        var lines = await file.readAsLines();
+        var jsonData = json.decode(await file.readAsString()) as Map<String, dynamic>;
 
-        // Find the line containing 'Highligth: false'
-        var lineNumber = lines.indexWhere((line) => line.contains('Highlight: false'));
-
-        if (lineNumber != -1) {
+        // Check if the JSON contains the 'Highlight' field
+        if (jsonData.containsKey('Highlight') && !jsonData['Highlight']) {
           printColoredMessage("update highlight",color: "red");
-          // Replace 'Highligth: false' with 'Highligth: true'
-          lines[lineNumber] = lines[lineNumber].replaceFirst('Highlight: false', 'Highlight: true');
 
-          // Write the modified content back to the file
-          await file.writeAsString(lines.join('\n'));
+          // Update the 'Highlight' field to true
+          jsonData['Highlight'] = true;
+
+          // Write the modified JSON back to the file
+          await file.writeAsString(json.encode(jsonData));
         }
       } catch (e) {
         print('Error: $e');
       }
     }
+
 
     void handleCloudUploadButtonPress() {
       showCompressionDialog(context);

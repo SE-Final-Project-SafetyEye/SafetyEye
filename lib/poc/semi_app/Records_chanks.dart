@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:camera/camera.dart';
@@ -8,6 +9,7 @@ import 'package:keep_screen_on/keep_screen_on.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import '../../printColoredMessage.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter_ffmpeg/flutter_ffmpeg.dart';
 
 
 
@@ -225,7 +227,7 @@ class _CameraScreenState extends State<CameraScreen> {
   void _getCurrentLocation() async {
     try {
       Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-        _currentPosition.add(position);
+      _currentPosition.add(position);
     } catch (e) {
       print("Error: $e");
     }
@@ -254,12 +256,12 @@ class _CameraScreenState extends State<CameraScreen> {
     }
   }
 
-  Future<List<FileSystemEntity>> getExistingClips() async {
-    List<FileSystemEntity>? existingFiles = await saveDir?.list().toList();
-    existingFiles?.removeWhere(
-            (element) => element.uri.pathSegments.last == 'index.html');
-    return existingFiles ?? [];
-  }
+  // Future<List<FileSystemEntity>> getExistingClips() async {
+  //   List<FileSystemEntity>? existingFiles = await saveDir?.list().toList();
+  //   existingFiles?.removeWhere(
+  //           (element) => element.uri.pathSegments.last == 'index.html');
+  //   return existingFiles ?? [];
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -391,14 +393,7 @@ class _CameraScreenState extends State<CameraScreen> {
           _getCurrentLocation();
         }
       });
-      Timer.periodic(const Duration(seconds: 5), (Timer timer) async {
-        if (!cameraController.value.isRecordingVideo) {
-          timer.cancel();
-        } else {
-          //printColoredMessage("_getCurrentLocation",color: "red");
-          _takePhoto();
-        }
-      });
+
       await Future.delayed(
           Duration(milliseconds: (recordMins * 60 * 1000).toInt()));
       if (cameraController.value.isRecordingVideo) {
@@ -407,6 +402,9 @@ class _CameraScreenState extends State<CameraScreen> {
       }
     }
   }
+
+
+
 
   String latestFilePath() {
     final String latestFilePath = '${saveDir?.path ?? ''}/$chunkNumber';
@@ -435,83 +433,110 @@ class _CameraScreenState extends State<CameraScreen> {
           saving = false;
         });
       });
+        FlutterFFmpeg flutterFFmpeg = FlutterFFmpeg();
+
+        // Specify the output directory where the frames will be saved
+        String outputDir = videosDirectory.path;
+
+        // Specify the time intervals at which frames will be extracted
+        int intervalInSeconds = 5;
+
+        // Run FFmpeg command to extract frames
+        int rc = await flutterFFmpeg.execute(
+            '-i ${videosDirectory.path} -vf fps=1/$intervalInSeconds ${outputDir}frame-%03d.jpg');
+
+        if (rc == 0) {
+          printColoredMessage('Frames extracted successfully',color: "red");
+        } else {
+          print('Error extracting frames: $rc');
+        }
     }
   }
 
   Future<void> saveDataToFile(String directory) async {
-    String filePath = '${directory}_data.txt';
-    File file = File(filePath);
+    // Save photos first
+    try {
+      for (int i = 0; i < _photos.length; i++) {
+        final String filePath = '${directory}photo_$i.jpg';
+        await _photos[i].copy(filePath);
+      }
 
-    for (int i = 0; i < _photos.length; i++) {
-      final String filePath0 = '${directory}_photo_$i.jpg';
-      await _photos[i].copy(filePath0);
+      // Clear the list after saving the photos.
+      _photos.clear();
+    } catch (e) {
+      print('Error saving photos: $e');
     }
 
-    // Clear the list after saving the photos.
-    _photos.clear();
+    // Continue with saving other data to the file
+    try {
+      String filePath = '${directory}_data.json';
+      File file = File(filePath);
 
-    // Write timestamp at the top
-    await file.writeAsString(
-      'TimeStamp: ${DateTime.now().millisecondsSinceEpoch}\n\n',
-    );
-    await file.writeAsString(
-      'Highlight: false\n\n',
-    );
+      // Create a map to hold all the data
+      Map<String, dynamic> dataMap = {
+        'TimeStamp': DateTime.now().millisecondsSinceEpoch,
+        'Highlight': false,
+        'Accelerometer': [],
+        'UserAccelerometer': [],
+        'Magnetometer': [],
+        'Gyroscope': [],
+        'GPS': [],
+      };
 
-    // Create copies of the lists to avoid concurrent modification
-    List<AccelerometerEvent> accelerometerEventsCopy = List.from(accelerometerEvents);
-    List<UserAccelerometerEvent> userAccelerometerEventsCopy = List.from(userAccelerometerEvents);
-    List<MagnetometerEvent> magnetometerEventsCopy = List.from(magnetometerEvents);
-    List<GyroscopeEvent> gyroscopeEventsCopy = List.from(gyroscopeEvents);
+      // Add accelerometer events
+      accelerometerEvents.forEach((event) {
+        dataMap['Accelerometer'].add({
+          'x': event.x.toStringAsFixed(1),
+          'y': event.y.toStringAsFixed(1),
+          'z': event.z.toStringAsFixed(1),
+        });
+      });
 
-    // Write accelerometer events
-    for (var event in accelerometerEventsCopy) {
-      await file.writeAsString(
-        'Accelerometer: ${event.x.toStringAsFixed(1)}, ${event.y.toStringAsFixed(1)}, ${event.z.toStringAsFixed(1)}\n',
-        mode: FileMode.append,
-      );
-    }
+      // Add user accelerometer events
+      userAccelerometerEvents.forEach((event) {
+        dataMap['UserAccelerometer'].add({
+          'x': event.x.toStringAsFixed(1),
+          'y': event.y.toStringAsFixed(1),
+          'z': event.z.toStringAsFixed(1),
+        });
+      });
 
-    // Write user accelerometer events
-    for (var event in userAccelerometerEventsCopy) {
-      await file.writeAsString(
-        'User Accelerometer: ${event.x.toStringAsFixed(1)}, ${event.y.toStringAsFixed(1)}, ${event.z.toStringAsFixed(1)}\n',
-        mode: FileMode.append,
-      );
-    }
+      // Add magnetometer events
+      magnetometerEvents.forEach((event) {
+        dataMap['Magnetometer'].add({
+          'x': event.x.toStringAsFixed(1),
+          'y': event.y.toStringAsFixed(1),
+          'z': event.z.toStringAsFixed(1),
+        });
+      });
 
-    // Write magnetometer events
-    for (var event in magnetometerEventsCopy) {
-      await file.writeAsString(
-        'Magnetometer: ${event.x.toStringAsFixed(1)}, ${event.y.toStringAsFixed(1)}, ${event.z.toStringAsFixed(1)}\n',
-        mode: FileMode.append,
-      );
-    }
+      // Add gyroscope events
+      gyroscopeEvents.forEach((event) {
+        dataMap['Gyroscope'].add({
+          'x': event.x.toStringAsFixed(1),
+          'y': event.y.toStringAsFixed(1),
+          'z': event.z.toStringAsFixed(1),
+        });
+      });
 
-    // Write gyroscope events
-    for (var event in gyroscopeEventsCopy) {
-      await file.writeAsString(
-        'Gyroscope: ${event.x.toStringAsFixed(1)}, ${event.y.toStringAsFixed(1)}, ${event.z.toStringAsFixed(1)}\n',
-        mode: FileMode.append,
-      );
-    }
+      // Add GPS data
+      _currentPosition.forEach((position) {
+        dataMap['GPS'].add({
+          'latitude': position.latitude,
+          'longitude': position.longitude,
+        });
+      });
 
-    // Write GPS data
-    for (var position in _currentPosition) {
-      await file.writeAsString(
-        'GPS- Latitude: ${position.latitude}, Longitude: ${position.longitude}\n',
-        mode: FileMode.append,
-      );
+      // Convert the map to JSON string
+      String jsonData = jsonEncode(dataMap);
+
+      // Write the JSON string to the file
+      await file.writeAsString(jsonData);
+    } catch (e) {
+      print('Error saving data: $e');
     }
   }
 
-  Future<void> _takePhoto()async{
-    XFile photoFile = await cameraController.takePicture();
-
-    File photo = File(photoFile.path);
-
-    _photos.add(photo);
-  }
 
 
 
