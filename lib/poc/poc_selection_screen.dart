@@ -1,5 +1,6 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:safety_eye_app/poc/semi_app/NavigatAppPage.dart';
 import 'provider/SpeechScreen.dart';
 import 'provider/CompressScreen.dart';
 import 'DigitalSignitureScreen.dart';
@@ -31,11 +32,12 @@ class MyHomePage extends StatelessWidget {
             const SizedBox(height: 20),
             const PocButtonWidget(title: "Login/Register", page: LoginRegisterPage()),
             //const PocButtonWidget(title: "CameraDefaultAppAndGalleryAccessHomeScreen", page: CameraDefaultAppAndGalleryAccessHomeScreen()),
-            PocButtonWidget(title: "InAppCameraScreen", page: InAppCameraScreen(cameras: cameras)),
+            //PocButtonWidget(title: "InAppCameraScreen", page: InAppCameraScreen(cameras: cameras)),
             const PocButtonWidget(title: "Text to speech", page: SpeechScreen()),
             const PocButtonWidget(title: "compression", page: CompressScreen()),
             const PocButtonWidget(title: "Accelerometer", page: AccelerometerScreen()),
-            const PocButtonWidget(title: "Key Generation", page: DigitalSignatureScreen())
+            const PocButtonWidget(title: "Key Generation", page: DigitalSignatureScreen()),
+            PocButtonWidget(title: "semi App", page: NavigateAppPage(cameras: cameras,))
           ],
         ),
       ),

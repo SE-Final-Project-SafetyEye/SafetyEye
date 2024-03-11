@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.deepPurple),
       ),
-      home: NavigateAppPage(cameras: cameras,),
+      home: MyHomePage(title:"SafetyEye",cameras: cameras,),
     ),);
   }
 }
