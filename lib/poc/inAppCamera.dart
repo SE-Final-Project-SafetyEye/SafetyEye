@@ -1,6 +1,4 @@
-import 'dart:developer';
 import 'dart:io';
-
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -33,10 +31,8 @@ class _CameraScreenState extends State<InAppCameraScreen> with WidgetsBindingObs
   @override
   void initState() {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
-    //getPermissionStatus();
     WidgetsBinding.instance.addObserver(this);
     refreshAlreadyCapturedImages();
-    //cameras = await availableCameras();
     onNewCameraSelected(widget.cameras.isNotEmpty ? widget.cameras[0] : null);
     super.initState();
   }
@@ -47,25 +43,20 @@ class _CameraScreenState extends State<InAppCameraScreen> with WidgetsBindingObs
     videoController?.dispose();
     super.dispose();
   }
-
   void onNewCameraSelected(CameraDescription? cameraDescription) async {
     if (controller != null) {
       await controller!.dispose();
     }
-
     controller = CameraController(
       cameraDescription!,
       currentResolutionPreset,
       imageFormatGroup: ImageFormatGroup.jpeg,
     );
-
-    // Add a listener for camera updates
     controller!.addListener(() {
       if (mounted) {
         setState(() {});
       }
     });
-
     try {
       await controller!.initialize();
 
@@ -78,7 +69,6 @@ class _CameraScreenState extends State<InAppCameraScreen> with WidgetsBindingObs
       print('Error initializing camera: $e');
     }
   }
-
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (controller == null || !controller!.value.isInitialized) {
@@ -93,7 +83,6 @@ class _CameraScreenState extends State<InAppCameraScreen> with WidgetsBindingObs
       onNewCameraSelected(controller!.description);
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

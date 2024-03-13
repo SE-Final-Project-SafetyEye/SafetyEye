@@ -1,17 +1,12 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:safety_eye_app/poc/uploadVideo/backend_integration_screen.dart';
+import 'package:safety_eye_app/poc/semi_app/NavigatAppPage.dart';
 import 'provider/SpeechScreen.dart';
 import 'provider/CompressScreen.dart';
 import 'DigitalSignitureScreen.dart';
-import 'Location.dart';
-import 'camera.dart';
-
-
-import 'Location.dart';
 import 'LoginRegisterPage.dart';
-import 'camera.dart';
-import 'inAppCamera.dart';
+import 'Location.dart';
 
 class MyHomePage extends StatelessWidget {
   final String title;
@@ -35,13 +30,12 @@ class MyHomePage extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             const PocButtonWidget(title: "Login/Register", page: LoginRegisterPage()),
-            const PocButtonWidget(title: "CameraDefaultAppAndGalleryAccessHomeScreen", page: CameraDefaultAppAndGalleryAccessHomeScreen()),
-            PocButtonWidget(title: "InAppCameraScreen", page: InAppCameraScreen(cameras: cameras)),
             const PocButtonWidget(title: "Text to speech", page: SpeechScreen()),
             const PocButtonWidget(title: "compression", page: CompressScreen()),
             const PocButtonWidget(title: "Accelerometer", page: AccelerometerScreen()),
             const PocButtonWidget(title: "Key Generation", page: DigitalSignatureScreen()),
-            PocButtonWidget(title: "backend Integration", page: BackendIntegrationScreen())
+            PocButtonWidget(title: "semi App", page: NavigateAppPage(cameras: cameras)),
+            const PocButtonWidget(title: "backend Integration", page: BackendIntegrationScreen())
           ],
         ),
       ),

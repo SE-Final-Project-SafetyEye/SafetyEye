@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:safety_eye_app/printColoredMessage.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:video_compress/video_compress.dart';
 
@@ -36,7 +37,7 @@ class _InAppVideoListScreenState extends State<InAppFolderListScreen> {
         FileSystemEntity fileSystemEntity = file.absolute;
         FileStat fileStat = file.statSync();
         if(fileStat.type == FileSystemEntityType.directory){
-          print(fileStat.toString());
+          //printColoredMessage(fi,color: "red");
           videoFolders.add(fileSystemEntity);
         }
       }
@@ -105,11 +106,12 @@ class _VideoCardState extends State<VideoCard> {
   @override
   Widget build(BuildContext context) {
     String videoFolderName = widget.fileSystemEntity.path.split('/').last;
-    return GestureDetector(onTap: () =>{
-    Navigator.push(
-    context,
-    MaterialPageRoute(builder: (context) => VideoListScreen(path: widget.fileSystemEntity.path)),
-    )},child: Card(
+    return GestureDetector(onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => VideoListScreen(path: widget.fileSystemEntity.path)),
+      );
+    }, child: Card(
         child: Column(children: [
           ListTile(title: Text(videoFolderName))
         ])),);

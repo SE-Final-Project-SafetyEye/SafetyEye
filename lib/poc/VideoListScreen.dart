@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:safety_eye_app/printColoredMessage.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:video_compress/video_compress.dart';
 
@@ -17,28 +19,38 @@ class VideoListScreen extends StatefulWidget {
 }
 
 class _VideoListScreenState extends State<VideoListScreen> {
-  List<String> videoPaths = [];
+  late List<String> videoPaths = [];
 
   @override
   void initState() {
-    super.initState();
     getVideoList();
+    super.initState();
   }
 
   Future<void> getVideoList() async {
     try {
-      //Directory appDocumentsDirectory = await getApplicationDocumentsDirectory();
       final videosDirectory = Directory(widget.path);
-      videoPaths = videosDirectory
-          .listSync()
-          .where((entity) => entity.path.endsWith(".mp4"))
-          .map((file) => file.path)
-          .toList();
-      setState(() {});
+      List<String> videoDirectories = [];
+
+      await for (FileSystemEntity entity in videosDirectory.list(recursive: true)) {
+        if (entity is File && entity.path.endsWith(".mp4")) {
+          String videoDirectory = entity.path;
+          if (!videoDirectories.contains(videoDirectory)) {
+            videoDirectories.add(videoDirectory);
+          }
+        }
+      }
+
+      setState(() {
+        videoPaths = videoDirectories;
+        //printColoredMessage(videoDirectories.length.toString(),color: "red");
+      });
     } catch (e) {
       print("Error getting original video list: $e");
     }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +102,7 @@ class VideoCard extends StatefulWidget {
 }
 
 class _VideoCardState extends State<VideoCard> {
-  late String _thumbnailPath = '';
+  late String _thumbnailPath = ''; // Initialize with an empty string
 
   @override
   void initState() {
@@ -108,7 +120,7 @@ class _VideoCardState extends State<VideoCard> {
         quality: 25,
       );
       setState(() {
-        _thumbnailPath = thumbnail!;
+        _thumbnailPath = thumbnail ?? ''; // Update _thumbnailPath with the actual value
       });
     } catch (e) {
       print('Error generating thumbnail: $e');
@@ -124,9 +136,31 @@ class _VideoCardState extends State<VideoCard> {
       // You can navigate to a detail screen or play the video, for example.
     }
 
-    void handleHighlightsButtonPress() {
-      // Handle Highlights button press
+    Future<void> handleHighlightsButtonPress() async {
+      try {
+        // Construct the path to the JSON file
+        String data = widget.videoPath;
+        data = data.replaceAll('.mp4', '_data.json');
+
+        // Open the JSON file
+        var file = File(data);
+        var jsonData = json.decode(await file.readAsString()) as Map<String, dynamic>;
+
+        // Check if the JSON contains the 'Highlight' field
+        if (jsonData.containsKey('Highlight') && !jsonData['Highlight']) {
+          printColoredMessage("update highlight",color: "red");
+
+          // Update the 'Highlight' field to true
+          jsonData['Highlight'] = true;
+
+          // Write the modified JSON back to the file
+          await file.writeAsString(json.encode(jsonData));
+        }
+      } catch (e) {
+        print('Error: $e');
+      }
     }
+
 
     void handleCloudUploadButtonPress() {
       showCompressionDialog(context);
