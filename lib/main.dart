@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:safety_eye_app/poc/AuthProvider.dart';
+import 'package:safety_eye_app/poc/semi_app/InAppFoldersListProvider.dart';
+import 'package:safety_eye_app/poc/semi_app/VideoListProvider.dart';
 import 'poc/poc_selection_screen.dart';
 import 'poc/provider/CompressProvider.dart';
 import 'poc/provider/SpeechProvider.dart';
@@ -27,7 +29,9 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (context) => SpeechProvider()),
         ChangeNotifierProvider(create: (context) => CompressProvider()),
-        ChangeNotifierProvider(create: (context) => AuthProvider())
+        ChangeNotifierProvider(create: (context) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => VideoFolderProvider()),
+        ChangeNotifierProvider(create: (_)=> VideoListProvider())
       ],
       child: MaterialApp(
         title: 'SafetyEye',

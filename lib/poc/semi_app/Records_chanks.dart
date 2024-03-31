@@ -256,13 +256,6 @@ class _CameraScreenState extends State<CameraScreen> {
     }
   }
 
-  // Future<List<FileSystemEntity>> getExistingClips() async {
-  //   List<FileSystemEntity>? existingFiles = await saveDir?.list().toList();
-  //   existingFiles?.removeWhere(
-  //           (element) => element.uri.pathSegments.last == 'index.html');
-  //   return existingFiles ?? [];
-  // }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
