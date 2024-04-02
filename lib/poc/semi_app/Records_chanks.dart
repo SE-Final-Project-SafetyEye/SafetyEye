@@ -37,12 +37,11 @@ class _CameraScreenState extends State<CameraScreen> {
   bool saving = false;
   bool moving = false;
   Directory? exportDir;
-  late List<Position> _currentPosition;
-  late List<AccelerometerEvent> accelerometerEvents;
-  late List<UserAccelerometerEvent> userAccelerometerEvents;
-  late List<MagnetometerEvent> magnetometerEvents;
-  late List<GyroscopeEvent> gyroscopeEvents;
-  //late List<File> _photos;
+  late List<_PositionData> _currentPosition;
+  late List<_AccelerometerData> accelerometerEvents;
+  late List<_UserAccelerometerData> userAccelerometerEvents;
+  late List<_MagnetometerData> magnetometerEvents;
+  late List<_GyroscopeData> gyroscopeEvents;
 
   static const Duration _ignoreDuration = Duration(milliseconds: 20);
 
@@ -70,19 +69,15 @@ class _CameraScreenState extends State<CameraScreen> {
     KeepScreenOn.turnOn();
     initCam();
     _getPermission();
-    _currentPosition = [];
-    accelerometerEvents = [];
-    userAccelerometerEvents = [];
-    magnetometerEvents = [];
-    gyroscopeEvents = [];
-    //_photos = [];
+    restart();
     _streamSubscriptions.add(
       userAccelerometerEventStream(samplingPeriod: sensorInterval).listen(
             (UserAccelerometerEvent event) {
           final now = DateTime.now();
           setState(() {
-            _userAccelerometerEvent = event;
-            userAccelerometerEvents.add(event); // Add event to the list
+            //_userAccelerometerEvent = event;
+            _UserAccelerometerData userAccelerometerData = _UserAccelerometerData(event, now);
+            userAccelerometerEvents.add(userAccelerometerData); // Add event to the list
             if (_userAccelerometerUpdateTime != null) {
               final interval = now.difference(_userAccelerometerUpdateTime!);
               if (interval > _ignoreDuration) {
@@ -112,8 +107,9 @@ class _CameraScreenState extends State<CameraScreen> {
             (AccelerometerEvent event) {
           final now = DateTime.now();
           setState(() {
-            _accelerometerEvent = event;
-            accelerometerEvents.add(event); // Add event to the list
+            //_accelerometerEvent = event;
+            _AccelerometerData accelerometerData = _AccelerometerData(event, now);
+            accelerometerEvents.add(accelerometerData); // Add event to the list
             if (_accelerometerUpdateTime != null) {
               final interval = now.difference(_accelerometerUpdateTime!);
               if (interval > _ignoreDuration) {
@@ -143,8 +139,9 @@ class _CameraScreenState extends State<CameraScreen> {
             (GyroscopeEvent event) {
           final now = DateTime.now();
           setState(() {
-            _gyroscopeEvent = event;
-            gyroscopeEvents.add(event); // Add event to the list
+            //_gyroscopeEvent = event;
+            _GyroscopeData gyroscopeData = _GyroscopeData(event, now);
+            gyroscopeEvents.add(gyroscopeData); // Add event to the list
             if (_gyroscopeUpdateTime != null) {
               final interval = now.difference(_gyroscopeUpdateTime!);
               if (interval > _ignoreDuration) {
@@ -174,8 +171,9 @@ class _CameraScreenState extends State<CameraScreen> {
             (MagnetometerEvent event) {
           final now = DateTime.now();
           setState(() {
-            _magnetometerEvent = event;
-            magnetometerEvents.add(event); // Add event to the list
+            //_magnetometerEvent = event;
+            _MagnetometerData magnetometerData  = _MagnetometerData(event, now);
+            magnetometerEvents.add(magnetometerData); // Add event to the list
             if (_magnetometerUpdateTime != null) {
               final interval = now.difference(_magnetometerUpdateTime!);
               if (interval > _ignoreDuration) {
@@ -208,7 +206,7 @@ class _CameraScreenState extends State<CameraScreen> {
     magnetometerEventStream(samplingPeriod: sensorInterval);
   }
 
-  void _getPermission() async {
+  Future<void> _getPermission() async {
     try {
       printColoredMessage("_getPermission",color: "red");
       LocationPermission permission = await Geolocator.checkPermission();
@@ -223,11 +221,11 @@ class _CameraScreenState extends State<CameraScreen> {
     }
   }
 
-
   void _getCurrentLocation() async {
     try {
       Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-      _currentPosition.add(position);
+      _PositionData positionData = _PositionData(position, DateTime.now());
+      _currentPosition.add(positionData);
     } catch (e) {
       print("Error: $e");
     }
@@ -319,11 +317,7 @@ class _CameraScreenState extends State<CameraScreen> {
                           });
                     } else {
                       saveDirUpdate();
-                      _currentPosition = [];
-                      accelerometerEvents = [];
-                      userAccelerometerEvents = [];
-                      magnetometerEvents = [];
-                      gyroscopeEvents = [];
+                      restart();
                       //_photos = [];
                       recordRecursively();
                       chunkNumber = 1;
@@ -353,6 +347,14 @@ class _CameraScreenState extends State<CameraScreen> {
         if (saving || moving) const LinearProgressIndicator(),
       ]),
     );
+  }
+
+  void restart() {
+    _currentPosition = [];
+    accelerometerEvents = [];
+    userAccelerometerEvents = [];
+    magnetometerEvents = [];
+    gyroscopeEvents = [];
   }
 
   void showInSnackBar(String message) {
@@ -394,9 +396,6 @@ class _CameraScreenState extends State<CameraScreen> {
       }
     }
   }
-
-
-
 
   String latestFilePath() {
     final String latestFilePath = '${saveDir?.path ?? ''}/$chunkNumber';
@@ -465,48 +464,65 @@ class _CameraScreenState extends State<CameraScreen> {
       };
 
       // Add accelerometer events
-      accelerometerEvents.forEach((event) {
+      for (var data in accelerometerEvents) {
         dataMap['Accelerometer'].add({
-          'x': event.x.toStringAsFixed(1),
-          'y': event.y.toStringAsFixed(1),
-          'z': event.z.toStringAsFixed(1),
+          'timestamp': data.timestamp.toIso8601String(), // Actual timestamp
+          'event': {
+            'x': data.accelerometerEvent.x.toStringAsFixed(1),
+            'y': data.accelerometerEvent.y.toStringAsFixed(1),
+            'z': data.accelerometerEvent.z.toStringAsFixed(1),
+          },
         });
-      });
+      }
+
 
       // Add user accelerometer events
-      userAccelerometerEvents.forEach((event) {
+      for (var data in userAccelerometerEvents) {
         dataMap['UserAccelerometer'].add({
-          'x': event.x.toStringAsFixed(1),
-          'y': event.y.toStringAsFixed(1),
-          'z': event.z.toStringAsFixed(1),
+          'timestamp': data.timeStamp.toIso8601String(), // Actual timestamp
+          'event': {
+            'x': data.userAccelerometerEvent.x.toStringAsFixed(1),
+            'y': data.userAccelerometerEvent.y.toStringAsFixed(1),
+            'z': data.userAccelerometerEvent.z.toStringAsFixed(1),
+          },
         });
-      });
+      }
+
 
       // Add magnetometer events
-      magnetometerEvents.forEach((event) {
+      for (var data in magnetometerEvents) {
         dataMap['Magnetometer'].add({
-          'x': event.x.toStringAsFixed(1),
-          'y': event.y.toStringAsFixed(1),
-          'z': event.z.toStringAsFixed(1),
+          'timestamp': data.timestamp.toIso8601String(), // Actual timestamp
+          'event': {
+            'x': data.magnetometerEvent.x.toStringAsFixed(1),
+            'y': data.magnetometerEvent.y.toStringAsFixed(1),
+            'z': data.magnetometerEvent.z.toStringAsFixed(1),
+          },
         });
-      });
+      }
 
       // Add gyroscope events
-      gyroscopeEvents.forEach((event) {
+      for (var data in gyroscopeEvents) {
         dataMap['Gyroscope'].add({
-          'x': event.x.toStringAsFixed(1),
-          'y': event.y.toStringAsFixed(1),
-          'z': event.z.toStringAsFixed(1),
+          'timestamp': data.timestamp.toIso8601String(), // Actual timestamp
+          'event': {
+            'x': data.gyroscopeEvent.x.toStringAsFixed(1),
+            'y': data.gyroscopeEvent.y.toStringAsFixed(1),
+            'z': data.gyroscopeEvent.z.toStringAsFixed(1),
+          },
         });
-      });
+      }
+
 
       // Add GPS data
-      _currentPosition.forEach((position) {
+      for (var data in _currentPosition) {
         dataMap['GPS'].add({
-          'latitude': position.latitude,
-          'longitude': position.longitude,
+          'timestamp': data.timestamp.toIso8601String(), // Actual timestamp
+          'latitude': data.position.latitude,
+          'longitude': data.position.longitude,
         });
-      });
+      }
+
 
       // Convert the map to JSON string
       String jsonData = jsonEncode(dataMap);
@@ -517,9 +533,6 @@ class _CameraScreenState extends State<CameraScreen> {
       print('Error saving data: $e');
     }
   }
-
-
-
 
   @override
   void dispose() {
@@ -545,5 +558,38 @@ class _CameraScreenState extends State<CameraScreen> {
     saveDir = subdirectory;
   }
 
+}
 
+class _UserAccelerometerData{
+  final UserAccelerometerEvent userAccelerometerEvent;
+  final DateTime timeStamp;
+
+  _UserAccelerometerData(this.userAccelerometerEvent,this.timeStamp);
+}
+class _AccelerometerData {
+  final AccelerometerEvent accelerometerEvent;
+  final DateTime timestamp;
+
+  _AccelerometerData(this.accelerometerEvent, this.timestamp);
+}
+
+class _GyroscopeData {
+  final GyroscopeEvent gyroscopeEvent;
+  final DateTime timestamp;
+
+  _GyroscopeData(this.gyroscopeEvent, this.timestamp);
+}
+
+class _MagnetometerData {
+  final MagnetometerEvent magnetometerEvent;
+  final DateTime timestamp;
+
+  _MagnetometerData(this.magnetometerEvent, this.timestamp);
+}
+
+class _PositionData {
+  final Position position;
+  final DateTime timestamp;
+
+  _PositionData(this.position, this.timestamp);
 }
