@@ -33,9 +33,9 @@ class MyHomePage extends StatelessWidget {
             const PocButtonWidget(title: "Text to speech", page: SpeechScreen()),
             const PocButtonWidget(title: "compression", page: CompressScreen()),
             const PocButtonWidget(title: "Accelerometer", page: AccelerometerScreen()),
-            const PocButtonWidget(title: "Key Generation", page: DigitalSignatureScreen()),
+            //const PocButtonWidget(title: "Key Generation", page: DigitalSignatureScreen()),
             PocButtonWidget(title: "semi App", page: NavigateAppPage(cameras: cameras)),
-            const PocButtonWidget(title: "backend Integration", page: BackendIntegrationScreen())
+            //const PocButtonWidget(title: "backend Integration", page: BackendIntegrationScreen())
           ],
         ),
       ),

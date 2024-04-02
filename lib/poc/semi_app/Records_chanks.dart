@@ -42,7 +42,7 @@ class _CameraScreenState extends State<CameraScreen> {
   late List<UserAccelerometerEvent> userAccelerometerEvents;
   late List<MagnetometerEvent> magnetometerEvents;
   late List<GyroscopeEvent> gyroscopeEvents;
-  late List<File> _photos;
+  //late List<File> _photos;
 
   static const Duration _ignoreDuration = Duration(milliseconds: 20);
 
@@ -75,7 +75,7 @@ class _CameraScreenState extends State<CameraScreen> {
     userAccelerometerEvents = [];
     magnetometerEvents = [];
     gyroscopeEvents = [];
-    _photos = [];
+    //_photos = [];
     _streamSubscriptions.add(
       userAccelerometerEventStream(samplingPeriod: sensorInterval).listen(
             (UserAccelerometerEvent event) {
@@ -324,7 +324,7 @@ class _CameraScreenState extends State<CameraScreen> {
                       userAccelerometerEvents = [];
                       magnetometerEvents = [];
                       gyroscopeEvents = [];
-                      _photos = [];
+                      //_photos = [];
                       recordRecursively();
                       chunkNumber = 1;
                     }
@@ -390,8 +390,7 @@ class _CameraScreenState extends State<CameraScreen> {
       await Future.delayed(
           Duration(milliseconds: (recordMins * 60 * 1000).toInt()));
       if (cameraController.value.isRecordingVideo) {
-        await stopRecording(true);
-        recordRecursively();
+        stopRecording(true);
       }
     }
   }
@@ -408,7 +407,7 @@ class _CameraScreenState extends State<CameraScreen> {
     return '$latestFilePath/CVR-chunkNumber_$chunkNumber.mp4';
   }
 
-  Future<void> stopRecording(bool cleanup) async {
+  Future<void> stopRecording(bool recursive) async {
     if (cameraController.value.isRecordingVideo) {
       XFile tempFile = await cameraController.stopVideoRecording();
       setState(() {});
@@ -421,45 +420,34 @@ class _CameraScreenState extends State<CameraScreen> {
         saving = true;
       });
       tempFile.saveTo(videosDirectory.path).then((_) {
+        processVideoChunk(tempFile,videosDirectory.path);
         File(tempFile.path).delete();
         setState(() {
           saving = false;
         });
       });
-        FlutterFFmpeg flutterFFmpeg = FlutterFFmpeg();
+      if(recursive){
+        recordRecursively();
+      }
+    }
+  }
 
-        // Specify the output directory where the frames will be saved
-        String outputDir = videosDirectory.path;
+  Future<void> processVideoChunk(XFile videoChunk,String outputDir) async {
+    FlutterFFmpeg flutterFFmpeg = FlutterFFmpeg();
 
-        // Specify the time intervals at which frames will be extracted
-        int intervalInSeconds = 5;
+    int intervalInSeconds = 5;
 
-        // Run FFmpeg command to extract frames
-        int rc = await flutterFFmpeg.execute(
-            '-i ${videosDirectory.path} -vf fps=1/$intervalInSeconds ${outputDir}frame-%03d.jpg');
+    int rc = await flutterFFmpeg.execute(
+        '-i $outputDir -vf fps=1/$intervalInSeconds ${outputDir}frame-%03d.jpg');
 
-        if (rc == 0) {
-          printColoredMessage('Frames extracted successfully',color: "red");
-        } else {
-          print('Error extracting frames: $rc');
-        }
+    if (rc == 0) {
+      printColoredMessage('Frames extracted successfully',color: "red");
+    } else {
+      print('Error extracting frames: $rc');
     }
   }
 
   Future<void> saveDataToFile(String directory) async {
-    // Save photos first
-    try {
-      for (int i = 0; i < _photos.length; i++) {
-        final String filePath = '${directory}photo_$i.jpg';
-        await _photos[i].copy(filePath);
-      }
-
-      // Clear the list after saving the photos.
-      _photos.clear();
-    } catch (e) {
-      print('Error saving photos: $e');
-    }
-
     // Continue with saving other data to the file
     try {
       String filePath = '${directory}_data.json';
