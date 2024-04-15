@@ -32,6 +32,7 @@ class _NavigateAppPageState extends State<NavigateAppPage> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (int index) {
+
           setState(() {
             _currentIndex = index;
           });

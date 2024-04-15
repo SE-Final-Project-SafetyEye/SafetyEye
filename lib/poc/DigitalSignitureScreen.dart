@@ -139,6 +139,7 @@ interface class KeysService {
     final String privateKey = base64Encode(privKeyBytes);
 
     sharedPreferences.setString('publicKey', publicKey);
+    logger.i('Stored public key: $publicKey');
     sharedPreferences.setString('privateKey', privateKey);
     sharedPreferences.setBool("initialize", _keysGenerated);
   }
@@ -179,7 +180,7 @@ interface class KeysService {
 
   Future<Signature> signMessage(String message) async {
     final signature = await _generationAlgorithm.sign(utf8.encode(message), keyPair: _keyPair);
-    //printColoredMessage('signature: ${signature.toString()}',color: "red");
+    logger.i('signature: ${base64.encode(signature.bytes)}');
     await DBHelper.saveSignature(message, signature.toString());
     String? verify = await DBHelper.getSignature(message);
     //printColoredMessage('verify: $verify',color: "red");
