@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:keep_screen_on/keep_screen_on.dart';
 import 'package:sensors_plus/sensors_plus.dart';
-import '../../printColoredMessage.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_ffmpeg/flutter_ffmpeg.dart';
 
@@ -210,7 +209,6 @@ class _CameraScreenState extends State<CameraScreen> {
 
   void _getPermission() async {
     try {
-      printColoredMessage("_getPermission",color: "red");
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
@@ -446,7 +444,7 @@ class _CameraScreenState extends State<CameraScreen> {
             '-i ${videosDirectory.path} -vf fps=1/$intervalInSeconds ${outputDir}frame-%03d.jpg');
 
         if (rc == 0) {
-          printColoredMessage('Frames extracted successfully',color: "red");
+          print('Frames extracted successfully');
         } else {
           print('Error extracting frames: $rc');
         }

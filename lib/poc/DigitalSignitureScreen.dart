@@ -4,7 +4,7 @@ import 'package:cryptography_flutter/cryptography_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
-import 'package:safety_eye_app/printColoredMessage.dart';
+import 'package:safety_eye_app/Deprecated/printColoredMessage.dart';
 import 'package:provider/provider.dart';
 import 'package:safety_eye_app/poc/uploadVideo/BackendService.dart';
 import 'package:shared_preferences/shared_preferences.dart';

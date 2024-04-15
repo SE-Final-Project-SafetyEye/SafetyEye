@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'InAppVideoListScreen.dart';
 import 'package:video_player/video_player.dart';
-import '../printColoredMessage.dart';
 
 class InAppCameraScreen extends StatefulWidget {
   List<CameraDescription> cameras;
@@ -393,7 +392,6 @@ class _CameraScreenState extends State<InAppCameraScreen> with WidgetsBindingObs
             videosDirectory.createSync();
           }
           String videosDirectory_Path = videosDirectory.path;
-          printColoredMessage('videosDirectory: $videosDirectory_Path', color: 'red');
           String fileFormat = videoFile.path.split('.').last;
 
           _videoFile = await videoFile.copy(
