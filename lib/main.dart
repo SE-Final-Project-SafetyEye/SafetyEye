@@ -37,7 +37,7 @@ class MyApp extends StatelessWidget {
         ),
         home: authProvider.isSignedIn() ? AuthScreen() : HomeScreen(),
         routes: {
-          "/home": (context) => HomeScreen(),
+          "/home": (context) => HomeScreen(cameras),
           "/auth": (context) => AuthScreen(),
         });
   }
