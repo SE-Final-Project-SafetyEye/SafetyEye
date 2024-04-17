@@ -4,11 +4,13 @@ import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:flutter_ffmpeg/flutter_ffmpeg.dart';
+import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 
 class FileSystemRepository{
   Directory? _saveDir;
   String userEmail;
+  final Logger _logger = Logger();
 
   FileSystemRepository({ required this.userEmail});
 
@@ -20,6 +22,7 @@ class FileSystemRepository{
     String filePath = '${directory}_data.json';
     File file = File(filePath);
     await file.writeAsString(jsonData);
+    _logger.i('save metaDate into json.');
   }
 
   Future<void> processVideoChunk(XFile videoChunk,String outputDir) async {
@@ -31,9 +34,9 @@ class FileSystemRepository{
         '-i $outputDir -vf fps=1/$intervalInSeconds ${outputDir}frame-%03d.jpg');
 
     if (rc == 0) {
-      //printColoredMessage('Frames extracted successfully',color: "red");
+      _logger.i('Frames extracted successfully');
     } else {
-      print('Error extracting frames: $rc');
+      _logger.e('Error extracting frames: $rc');
     }
   }
 

@@ -2,6 +2,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
+import 'package:safety_eye_app/providers/permissions_provider.dart';
 import 'package:safety_eye_app/views/components/journeys/journeys_content.dart';
 import 'package:safety_eye_app/views/components/recording/recording_content.dart';
 
@@ -9,8 +10,7 @@ import '../../providers/video_recording_provider.dart';
 import '../components/settings/settings_content.dart';
 
 class HomeScreen extends StatefulWidget {
-  List<CameraDescription> cameras;
-  HomeScreen({super.key,required this.cameras});
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -29,7 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(providers: [ChangeNotifierProvider(create: (context)=>VideoRecordingProvider(cameras: widget.cameras))],child:Scaffold(
+    return MultiProvider(providers: [ChangeNotifierProvider(create: (context)=>VideoRecordingProvider(cameras: Provider.of<PermissionsProvider>(context,listen: false).cameras))],child:Scaffold(
       appBar: AppBar(title: Text(_pageTitles[_currentIndex]),),
       body: _pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
