@@ -1,10 +1,16 @@
 import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/Settings.dart';
+
 enum PreferencesKeys {
   initializeKeys('initialize_keys'),
   publicKey('public_key'),
-  privateKey('private_key');
+  privateKey('private_key'),
+  chunkDuration('chunk_duration'),
+  autoUpload('auto_upload'),
+  gracePeriodInterval('grace_period_interval'),
+  videoResolution('video_resolution');
 
   const PreferencesKeys(String value) : _value = value;
   final String _value;
@@ -12,12 +18,6 @@ enum PreferencesKeys {
   @visibleForTesting
   String get value => _value;
 }
-
-final Map<String, dynamic> defaultPreferences = {
-  PreferencesKeys.privateKey._value: 'default_private_key',
-  PreferencesKeys.publicKey._value: 'default_public_key',
-  PreferencesKeys.initializeKeys._value: false,
-};
 
 class PreferencesService {
   SharedPreferences? _prefs;
@@ -57,6 +57,30 @@ class PreferencesService {
       bool => _prefs!.getBool(keyString) as T?,
       _ => throw Exception('Type not supported'),
     };
-    return preference ?? defaultPreferences[keyString] as T;
+    return preference ?? defaultPreferences[key] as T;
   }
+
+  Future<Map<PreferencesKeys, dynamic>> createSettingsMap() async {
+    return {
+      PreferencesKeys.privateKey:
+          await getPrefOrDefault<String>(PreferencesKeys.privateKey),
+      PreferencesKeys.publicKey:
+          await getPrefOrDefault<String>(PreferencesKeys.publicKey),
+      PreferencesKeys.initializeKeys:
+          await getPrefOrDefault<bool>(PreferencesKeys.initializeKeys),
+      PreferencesKeys.chunkDuration:
+          await getPrefOrDefault<int>(PreferencesKeys.chunkDuration),
+      PreferencesKeys.autoUpload:
+          await getPrefOrDefault<bool>(PreferencesKeys.autoUpload),
+      PreferencesKeys.gracePeriodInterval:
+          await getPrefOrDefault<int>(PreferencesKeys.gracePeriodInterval),
+      PreferencesKeys.videoResolution:
+          await getPrefOrDefault<String>(PreferencesKeys.videoResolution),
+    };
+  }
+
+  Future<Settings> getSettings() async {
+    return Settings(await createSettingsMap());
+  }
+
 }
