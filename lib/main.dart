@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
         title: 'SafetyEye',
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.deepPurple),
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, secondary: Colors.blue),
         ),
         home: authProvider.isSignedIn() ? AuthScreen() : HomeScreen(),
         routes: {
