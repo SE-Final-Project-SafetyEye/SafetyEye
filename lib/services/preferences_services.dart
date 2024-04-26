@@ -1,5 +1,4 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:logger/logger.dart';
 
 enum PreferencesKeys {
   initializeKeys('initialize_keys'),
@@ -47,7 +46,7 @@ abstract class PreferencesService {
     await _prefs();
     String keyString = key._value;
     T? preference = switch (T) {
-      String _ => prefs!.getString(keyString) as T?,
+      String => prefs!.getString(keyString) as T?,
       int => prefs!.getInt(keyString) as T?,
       double => prefs!.getDouble(keyString) as T?,
       bool => prefs!.getBool(keyString) as T?,
