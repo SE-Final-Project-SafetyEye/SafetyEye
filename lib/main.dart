@@ -1,5 +1,4 @@
 import 'package:camera/camera.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
@@ -7,9 +6,6 @@ import 'package:safety_eye_app/providers/auth_provider.dart';
 import 'package:safety_eye_app/providers/settings_provider.dart';
 import 'package:safety_eye_app/views/screens/auth_screen.dart';
 import 'package:safety_eye_app/views/screens/home_screen.dart';
-import 'poc/poc_selection_screen.dart';
-import 'poc/provider/CompressProvider.dart';
-import 'poc/provider/SpeechProvider.dart';
 import 'firebase_options.dart';
 
 void main() async {
