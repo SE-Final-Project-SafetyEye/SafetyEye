@@ -29,7 +29,7 @@ class PreferencesService {
   Future<void> setPref<T>(PreferencesKeys key, T value) async {
     await _getPrefs();
     String keyString = key._value;
-    switch (T) {
+    switch (value.runtimeType) {
       case String:
         _prefs!.setString(keyString, value as String);
         break;
@@ -43,20 +43,28 @@ class PreferencesService {
         _prefs!.setBool(keyString, value as bool);
         break;
       default:
-        throw Exception('Type not supported');
+        throw Exception('Type not supported - setPref');
     }
   }
 
   Future<T> getPrefOrDefault<T>(PreferencesKeys key) async {
     await _getPrefs();
     String keyString = key._value;
-    T? preference = switch (T) {
-      String => _prefs!.getString(keyString) as T?,
-      int => _prefs!.getInt(keyString) as T?,
-      double => _prefs!.getDouble(keyString) as T?,
-      bool => _prefs!.getBool(keyString) as T?,
-      _ => throw Exception('Type not supported'),
-    };
+
+    T? preference;
+
+    if (T == String) {
+      preference = _prefs!.getString(keyString) as T?;
+    } else if (T == int) {
+      preference = _prefs!.getInt(keyString) as T?;
+    } else if (T == double) {
+      preference = _prefs!.getDouble(keyString) as T?;
+    } else if (T == bool) {
+      preference = _prefs!.getBool(keyString) as T?;
+    } else {
+      throw Exception('Type not supported - getPrefOrDefault');
+    }
+
     return preference ?? defaultPreferences[key] as T;
   }
 

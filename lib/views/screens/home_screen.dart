@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+import 'package:provider/provider.dart';
+import 'package:safety_eye_app/providers/settings_provider.dart';
 import 'package:safety_eye_app/views/components/journeys/journeys_content.dart';
 import 'package:safety_eye_app/views/components/recording/recording_content.dart';
 
@@ -14,7 +16,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
-  final List<Widget> _pages = const [RecordingPage(), JourneysPage(), SettingsPage()];
+  late SettingsProvider settingsProvider;
+  late List<Widget> _pages;
   final List<String> _pageTitles = const ['Recording', 'Journeys', 'Settings'];
   final Logger _logger = Logger();
 
@@ -25,8 +28,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    settingsProvider = Provider.of<SettingsProvider>(context);
+    _pages = [RecordingPage(), JourneysPage(), SettingsPage(settingsProvider)];
+
     return Scaffold(
-      appBar: AppBar(title: Text(_pageTitles[_currentIndex]),),
+      appBar: AppBar(
+        title: Text(_pageTitles[_currentIndex]),
+      ),
       body: _pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,

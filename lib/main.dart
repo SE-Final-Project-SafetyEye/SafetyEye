@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:safety_eye_app/providers/auth_provider.dart';
+import 'package:safety_eye_app/providers/settings_provider.dart';
 import 'package:safety_eye_app/views/screens/auth_screen.dart';
 import 'package:safety_eye_app/views/screens/home_screen.dart';
 import 'poc/poc_selection_screen.dart';
@@ -17,9 +18,10 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   List<CameraDescription> cameras = await availableCameras();
-  runApp(MultiProvider(
-      providers: [ChangeNotifierProvider(create: (context) => AuthenticationProvider())],
-      child: MyApp(cameras: cameras)));
+  runApp(MultiProvider(providers: [
+    ChangeNotifierProvider(create: (context) => AuthenticationProvider()),
+    ChangeNotifierProvider(create: (context) => SettingsProvider())
+  ], child: MyApp(cameras: cameras)));
 }
 
 class MyApp extends StatelessWidget {
@@ -35,7 +37,7 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, secondary: Colors.blue),
         ),
-        home: authProvider.isSignedIn() ? AuthScreen() : HomeScreen(),
+        home: !authProvider.isSignedIn() ? AuthScreen() : HomeScreen(),
         routes: {
           "/home": (context) => HomeScreen(),
           "/auth": (context) => AuthScreen(),

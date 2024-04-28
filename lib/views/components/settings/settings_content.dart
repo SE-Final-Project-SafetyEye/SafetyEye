@@ -1,27 +1,73 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:numberpicker/numberpicker.dart';
+import 'package:safety_eye_app/providers/settings_provider.dart';
+
+import '../../../services/preferences_services.dart';
 
 const double fontSize = 12;
-const List<Widget> videoResolution = <Widget>[
-  Text('Low', style: TextStyle(fontSize: fontSize)),
-  Text('Medium', style: TextStyle(fontSize: fontSize)),
-  Text('High', style: TextStyle(fontSize: fontSize)),
-  Text('Max', style: TextStyle(fontSize: fontSize))
-];
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key});
+  final SettingsProvider settingsProvider;
+
+  const SettingsPage(this.settingsProvider, {super.key});
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  int chunkDuration = 60;
-  int gracePeriodInterval = 60;
-  bool autoUpload = true;
-  List<bool> _videoResolution = <bool>[false, false, true, false];
+  late int chunkDuration;
+  late int gracePeriodInterval;
+  late bool autoUpload;
+
+  final List<bool> _videoResolution = [false, false, false, false];
+  List<Widget> videoResolution = const [
+    Text('Low', style: TextStyle(fontSize: fontSize)),
+    Text('Medium', style: TextStyle(fontSize: fontSize)),
+    Text('High', style: TextStyle(fontSize: fontSize)),
+    Text('Max', style: TextStyle(fontSize: fontSize))
+  ];
+  late int selectedResolution;
+
+  void buildVideoResolutionSelection() {
+    for (int i = 0; i < _videoResolution.length; i++) {
+      _videoResolution[i] = i == selectedResolution;
+    }
+  }
+  @override
+  void initState() {
+    super.initState();
+    chunkDuration = widget.settingsProvider.settingsState.chunkDuration;
+    gracePeriodInterval =
+        widget.settingsProvider.settingsState.gracePeriodInterval;
+    autoUpload = widget.settingsProvider.settingsState.autoUpload;
+    selectedResolution = switch (
+        widget.settingsProvider.settingsState.videoResolution) {
+      "low" => 0,
+      'medium' => 1,
+      'high' => 2,
+      'max' => 3,
+      _ => 0
+    };
+    buildVideoResolutionSelection();
+  }
+
+  @override
+  void dispose() {
+    widget.settingsProvider.changeSettings({
+      PreferencesKeys.chunkDuration: chunkDuration,
+      PreferencesKeys.gracePeriodInterval: gracePeriodInterval,
+      PreferencesKeys.autoUpload: autoUpload,
+      PreferencesKeys.videoResolution: switch (selectedResolution) {
+        0 => "low",
+        1 => 'medium',
+        2 => 'high',
+        3 => 'max',
+        _ => "low"
+      }
+    });
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,8 +103,8 @@ class _SettingsPageState extends State<SettingsPage> {
             Spacer(),
             NumberPicker(
               value: gracePeriodInterval,
-              minValue: 40,
-              maxValue: 80,
+              minValue: 10,
+              maxValue: 30,
               itemHeight: 50,
               itemWidth: 50,
               step: 5,
@@ -98,9 +144,8 @@ class _SettingsPageState extends State<SettingsPage> {
                 borderRadius: BorderRadius.circular(25),
                 onPressed: (index) {
                   setState(() {
-                    for (int i = 0; i < _videoResolution.length; i++) {
-                      _videoResolution[i] = i == index;
-                    }
+                    selectedResolution = index;
+                    buildVideoResolutionSelection();
                   });
                 }),
           ],

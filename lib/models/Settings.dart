@@ -4,10 +4,10 @@ final Map<PreferencesKeys, dynamic> defaultPreferences = {
   PreferencesKeys.privateKey: 'default_private_key',
   PreferencesKeys.publicKey: 'default_public_key',
   PreferencesKeys.initializeKeys: false,
-  PreferencesKeys.chunkDuration: 10,
+  PreferencesKeys.chunkDuration: 60,
   PreferencesKeys.autoUpload: false,
-  PreferencesKeys.gracePeriodInterval: 10,
-  PreferencesKeys.videoResolution: '720p',
+  PreferencesKeys.gracePeriodInterval: 20,
+  PreferencesKeys.videoResolution: 'high',
 };
 
 class Settings {

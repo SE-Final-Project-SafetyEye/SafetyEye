@@ -12,7 +12,12 @@ class SettingsProvider extends ChangeNotifier {
   Settings get settingsState => _settingsState;
 
   SettingsProvider() {
-    _settingsState = Settings.defaultSettings();
+    _initSettings();
+  }
+
+  Future<void> _initSettings() async {
+    _settingsState = await _preferencesService.getSettings();
+    notifyListeners();
   }
 
   Future<void> changeSettings(
