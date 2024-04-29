@@ -56,6 +56,7 @@ class FileSystemRepository{
 
   Future<void> stopRecording(XFile videoChunk,int chunkNumber) async{
     String lastFilePath = _latestFilePath(chunkNumber: chunkNumber);
+    _logger.i(lastFilePath);
     final videosDirectory = Directory(lastFilePath);
     videoChunk.saveTo(videosDirectory.path).then((_) {
       processVideoChunk(videoChunk,videosDirectory.path);
@@ -64,6 +65,7 @@ class FileSystemRepository{
 
   String _latestFilePath({required chunkNumber}) {
     final String latestFilePath = '${_saveDir?.path ?? ''}/$chunkNumber';
+    _logger.i(latestFilePath);
     final _latestFilePath = Directory(latestFilePath);
     if (!_latestFilePath.existsSync()) {
       _latestFilePath.createSync();

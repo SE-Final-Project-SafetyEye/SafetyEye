@@ -1,4 +1,3 @@
-import 'dart:js';
 
 import 'package:camera/camera.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -21,7 +20,8 @@ void main() async {
   );
   List<CameraDescription> cameras = await availableCameras();
   runApp(MultiProvider(
-      providers: [ChangeNotifierProvider(create: (context) => AuthenticationProvider()),ChangeNotifierProvider(create: (context)=>PermissionsProvider())],
+      providers: [ChangeNotifierProvider(create: (context) => AuthenticationProvider()),
+                  ChangeNotifierProvider(create: (context)=>PermissionsProvider())],
       child: const MyApp()));
 }
 
@@ -34,16 +34,26 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthenticationProvider>(context, listen: true);
     final permissionsProvider = Provider.of<PermissionsProvider>(context,listen: false);
-    permissionsProvider.init();
-    return MaterialApp(
-        title: 'SafetyEye',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.deepPurple),
-        ),
-        home: authProvider.isSignedIn() ? const AuthScreen() : const HomeScreen(),
-        routes: {
-          "/home": (context) => const HomeScreen(),
-          "/auth": (context) => const AuthScreen(),
-        });
+
+    return FutureBuilder(
+      future:permissionsProvider.init(),
+      builder: (context,snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          return MaterialApp(
+              title: 'SafetyEye',
+              theme: ThemeData(
+                colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.deepPurple),
+              ),
+              home: authProvider.isSignedIn() ? const HomeScreen() : const AuthScreen(),
+              routes: {
+                "/home": (context) => const HomeScreen(),
+                "/auth": (context) => const AuthScreen(),
+              });
+        }
+        else{
+          return const CircularProgressIndicator();
+        }
+      }
+    );
   }
 }

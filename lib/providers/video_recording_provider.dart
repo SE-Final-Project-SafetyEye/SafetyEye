@@ -1,50 +1,74 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:provider/provider.dart';
+import 'package:logger/logger.dart';
+import 'package:safety_eye_app/providers/sensors_provider.dart';
+import 'package:safety_eye_app/providers/permissions_provider.dart';
+import '../repositories/file_system_repo.dart';
+import 'auth_provider.dart';
 
 class VideoRecordingProvider extends ChangeNotifier {
-  late List<CameraDescription> cameras;
-  late CameraController _cameraController;
-  bool _isRecording = false;
+  late CameraController cameraController;
+  final Logger _logger = Logger();
+  late SensorsProvider sensorsProvider;
+  late PermissionsProvider permissions;
+  late AuthenticationProvider authenticationProvider;
+  late FileSystemRepository _fileSystemRepository;
 
-  VideoRecordingProvider({required this.cameras});
+  VideoRecordingProvider(
+      {required this.permissions,
+      required this.sensorsProvider,
+      required this.authenticationProvider});
 
-  CameraController get cameraController => _cameraController;
+  get camera  => cameraController;
 
-  bool get isRecording => _isRecording;
+  get isRecording => cameraController.value.isRecordingVideo;
 
   get isInitialized => cameraController.value.isInitialized;
 
   Future<void> initializeCamera() async {
-    _cameraController = CameraController(
-      cameras[0],
-      ResolutionPreset.high,
-      enableAudio: true,
-    );
-
-    await _cameraController.initialize();
-    notifyListeners();
-  }
-
-  void startRecording() async {
-    if (!_isRecording) {
-      await _cameraController.startVideoRecording();
-      _isRecording = true;
-      notifyListeners();
+    cameraController = CameraController(permissions.cameras[0], ResolutionPreset.max);
+    try{
+      await cameraController.initialize();
+      _fileSystemRepository = FileSystemRepository(
+          userEmail: authenticationProvider.currentUser?.uid ?? "");
+    }
+    catch (e){
+      if (e is CameraException) {
+        switch (e.code) {
+          case 'CameraAccessDenied':
+            _logger.e('User denied camera access');
+            break;
+          default:
+            _logger.e('Unknown error');
+            break;
+        }
+      }
     }
   }
 
-  void stopRecording() async {
-    if (_isRecording) {
-      await _cameraController.stopVideoRecording();
-      _isRecording = false;
-      notifyListeners();
+  Future<void> startRecording() async {
+    _logger.d("start recording: status ${cameraController.value.isRecordingVideo}");
+    if (!cameraController.value.isRecordingVideo) {
+      await cameraController.startVideoRecording();
+      _fileSystemRepository.startRecording();
+      _logger.d("start recording: status ${cameraController.value.isRecordingVideo}");
+    }
+  }
+
+  Future<void> stopRecording() async {
+    _logger.d("stopped recording: status ${cameraController.value.isRecordingVideo}");
+    if (cameraController.value.isRecordingVideo) {
+       cameraController.stopVideoRecording().then((tempFile) {
+        _logger.d("stopped recording: status ${cameraController.value.isRecordingVideo}");
+        return _fileSystemRepository.stopRecording(tempFile, 1);
+      });
+
     }
   }
 
   @override
   void dispose() {
-    _cameraController.dispose();
+    cameraController.dispose();
     super.dispose();
   }
 }
