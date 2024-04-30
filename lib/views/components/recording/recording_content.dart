@@ -16,6 +16,7 @@ class RecordingPage extends StatefulWidget {
 
 class _RecordingPageState extends State<RecordingPage> {
   final Logger _logger = Logger();
+  bool isRecording = false;
 
   @override
   void initState() {
@@ -31,80 +32,82 @@ class _RecordingPageState extends State<RecordingPage> {
 
   @override
   Widget build(BuildContext context) {
-    final cameraProvider =
-        Provider.of<VideoRecordingProvider>(context, listen: false);
+    final cameraProvider = Provider.of<VideoRecordingProvider>(context, listen: false);
 
-    return FutureBuilder(
-        future: cameraProvider.initializeCamera(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            if (cameraProvider.isInitialized) {
-              return Column(
-                children: [
-                  Expanded(
-                    child: Center(
-                      child: cameraProvider.isInitialized
-                          ? CameraPreview(cameraProvider.cameraController)
-                          : const Text('Could not Access Camera'),
-                    ),
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(15, 15, 15, 10),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: <Widget>[
-                        SizedBox(width: 15),
-                        SizedBox(width: 15),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const SizedBox(
-                          width: 15,
-                        ),
-                        ElevatedButton.icon(
-                          label: Text(
-                            cameraProvider.isRecording ? 'Stop' : 'Record',
-                          ),
-                          onPressed: () async {
-                            if (cameraProvider.isRecording) {
-                              _logger.i("Stopping recording...");
-                              await cameraProvider.stopRecording();
-                              _logger.i("Recording stopped.");
-                            } else {
-                              _logger.i("Starting recording...");
-                              await cameraProvider.startRecording();
-                              _logger.i("Recording started.");
-                            }
-                            //setState(() {});
-                          },
-                          icon: Icon(
-                            cameraProvider.isRecording
-                                ? Icons.stop
-                                : Icons.circle,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              );
+    if (cameraProvider.isInitialized) {
+      return buildCamaraPreviewContent(cameraProvider);
+    } else {
+      return FutureBuilder(
+          future: cameraProvider.initializeCamera(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.connectionState == ConnectionState.done) {
+              return buildCamaraPreviewContent(cameraProvider);
             } else {
-              return const Column(children: [
-                CircularProgressIndicator(),
-                Text("Camera not initialized")
-              ]);
+              return const Center(child: CircularProgressIndicator());
             }
-          } else {
-            return const Column(children: [
-              CircularProgressIndicator(),
-              Text("CameraProvider not initialized")
-            ]);
-          }
-        });
+          });
+    }
+  }
+
+  Column buildCamaraPreviewContent(VideoRecordingProvider cameraProvider) {
+    return Column(children: [
+      Expanded(
+        child: Center(child: CameraPreview(cameraProvider.cameraController!)),
+      ),
+      const Padding(
+        padding: EdgeInsets.fromLTRB(15, 15, 15, 10),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: <Widget>[
+            SizedBox(width: 15),
+            SizedBox(width: 15),
+          ],
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const SizedBox(
+              width: 15,
+            ),
+            ElevatedButton.icon(
+              label: Text(
+                isRecording ? 'Stop' : 'Record',
+              ),
+              onPressed: () async {
+                _logger.i(
+                    "Recording button pressed. is recording: ${cameraProvider.isRecording}, isRecordingState: $isRecording");
+                if (cameraProvider.isRecording) {
+                  _logger.i("Stopping recording...");
+                  await cameraProvider.stopRecording();
+                  setIsRecording(false);
+                  _logger.i("Recording stopped.");
+                } else {
+                  _logger.i("Starting recording...");
+                  await cameraProvider.startRecording();
+                  _logger.i("Recording started.");
+                  setIsRecording(true);
+                }
+                _logger.i(
+                    "Recording button pressed. is recording: ${cameraProvider.isRecording}, isRecordingState: $isRecording");
+              },
+              icon: Icon(
+                isRecording ? Icons.stop : Icons.circle,
+              ),
+            ),
+          ],
+        ),
+      )
+    ]);
+  }
+
+  void setIsRecording(bool isRecording) {
+    setState(() {
+      this.isRecording = isRecording;
+    });
   }
 }

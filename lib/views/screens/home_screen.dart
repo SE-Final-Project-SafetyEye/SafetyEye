@@ -36,13 +36,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = Provider.of<AuthenticationProvider>(context, listen: false);
+    final sensors = Provider.of<SensorsProvider>(context, listen: false);
+    final permissions = Provider.of<PermissionsProvider>(context, listen: false);
     return MultiProvider(
         providers: [
-          ChangeNotifierProvider(create: (context) => SensorsProvider()),
-          ChangeNotifierProxyProvider3(create: (context) => VideoRecordingProvider(permissions: Provider.of<PermissionsProvider>(context,listen: false),
-              sensorsProvider: Provider.of<SensorsProvider>(context,listen: false),
-              authenticationProvider: Provider.of<AuthenticationProvider>(context,listen: false)),
-              update: (BuildContext context, PermissionsProvider permissions ,SensorsProvider sensors,AuthenticationProvider auth,
+          ChangeNotifierProxyProvider2(create: (context) => VideoRecordingProvider(permissions: permissions,
+              sensorsProvider: sensors,
+              authenticationProvider: auth),
+              update: (BuildContext context ,SensorsProvider sensors,AuthenticationProvider auth,
                   VideoRecordingProvider? vProvider) =>
                  vProvider ?? VideoRecordingProvider(permissions: permissions, sensorsProvider: sensors,authenticationProvider: auth)),
         ],
