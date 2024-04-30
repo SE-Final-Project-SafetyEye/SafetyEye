@@ -29,7 +29,15 @@ class AuthenticationProvider extends ChangeNotifier{
       }
   }
 
+
+  Future<void> signUpWithEmailAndPassword(String email, String password) async{
+    try {
+      _currentUser = await _auth.signUpWithEmailAndPassword(email: email, password: password);
+    } catch (error,stackTrace) {
+      _logger.e(error.toString(), stackTrace: stackTrace);
+    }
+  }
   bool isSignedIn(){
-    return true;
+    return currentUser!= null;
   }
 }
