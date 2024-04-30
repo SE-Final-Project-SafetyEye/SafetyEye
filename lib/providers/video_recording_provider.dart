@@ -30,7 +30,7 @@ class VideoRecordingProvider extends ChangeNotifier {
     try{
       await cameraController.initialize();
       _fileSystemRepository = FileSystemRepository(
-          userEmail: authenticationProvider.currentUser?.uid ?? "");
+          userEmail: authenticationProvider.currentUser?.uid ?? "nitayv");
     }
     catch (e){
       if (e is CameraException) {

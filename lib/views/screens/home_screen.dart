@@ -2,6 +2,8 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
+import 'package:safety_eye_app/providers/chunks_provider.dart';
+import 'package:safety_eye_app/providers/journeys_provider.dart';
 import 'package:safety_eye_app/providers/permissions_provider.dart';
 import 'package:safety_eye_app/providers/sensors_provider.dart';
 import 'package:safety_eye_app/views/components/journeys/journeys_content.dart';
@@ -36,12 +38,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = Provider.of<AuthenticationProvider>(context,listen: false);
     return MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (context) => SensorsProvider()),
+          ChangeNotifierProvider(create: (context)=>JourneysProvider(authenticationProvider: auth)),
           ChangeNotifierProxyProvider3(create: (context) => VideoRecordingProvider(permissions: Provider.of<PermissionsProvider>(context,listen: false),
               sensorsProvider: Provider.of<SensorsProvider>(context,listen: false),
-              authenticationProvider: Provider.of<AuthenticationProvider>(context,listen: false)),
+              authenticationProvider: auth),
               update: (BuildContext context, PermissionsProvider permissions ,SensorsProvider sensors,AuthenticationProvider auth,
                   VideoRecordingProvider? vProvider) =>
                  vProvider ?? VideoRecordingProvider(permissions: permissions, sensorsProvider: sensors,authenticationProvider: auth)),

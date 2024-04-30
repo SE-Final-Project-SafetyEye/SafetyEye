@@ -1,10 +1,98 @@
-import 'package:flutter/cupertino.dart';
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:safety_eye_app/providers/journeys_provider.dart';
+
+import '../../../providers/auth_provider.dart';
+import '../../../providers/chunks_provider.dart';
+import '../chunks/chunks_content.dart';
 
 class JourneysPage extends StatelessWidget {
   const JourneysPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Center(child: Text("im journeys screen"),);
+    final journeys = Provider.of<JourneysProvider>(context, listen: true);
+
+    return FutureBuilder(
+        future: journeys.initializeJourneys(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            return ListView(
+              children: [
+                _buildVideoList(journeys.videoFolders, 'Video Folders'),
+              ],
+            );
+          } else {
+            return const CircularProgressIndicator();
+          }
+        });
+  }
+}
+
+Widget _buildVideoList(List<FileSystemEntity> paths, String title) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Container(
+        padding: const EdgeInsets.all(8.0),
+        child: Text(
+          title,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+      ),
+      ListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: paths.length,
+        itemBuilder: (context, index) {
+          return VideoCard(fileSystemEntity: paths[index]);
+        },
+      ),
+    ],
+  );
+}
+
+class VideoCard extends StatelessWidget {
+  final FileSystemEntity fileSystemEntity;
+
+  const VideoCard({super.key, required this.fileSystemEntity});
+
+  @override
+  Widget build(BuildContext context) {
+    String videoFolderName = fileSystemEntity.path.split('/').last;
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => MultiProvider(
+                      providers: [
+                        ChangeNotifierProxyProvider<AuthenticationProvider,
+                            ChunksProvider>(
+                          create: (context) => ChunksProvider(
+                            authenticationProvider:
+                                Provider.of<AuthenticationProvider>(context,
+                                    listen: false),
+                          ),
+                          update: (BuildContext context,
+                                  AuthenticationProvider auth,
+                                  ChunksProvider? previous) =>
+                              previous ??
+                              ChunksProvider(authenticationProvider: auth),
+                        ),
+                      ],
+                      child: ChunksPage(path: fileSystemEntity.path),
+                    )));
+      },
+      child: Card(
+        child: Column(
+          children: [
+            ListTile(title: Text(videoFolderName)),
+          ],
+        ),
+      ),
+    );
   }
 }
