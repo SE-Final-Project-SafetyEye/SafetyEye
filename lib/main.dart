@@ -27,15 +27,23 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthenticationProvider>(context, listen: true);
+    final authProvider =
+        Provider.of<AuthenticationProvider>(context, listen: true);
+    final settingsProvider = Provider.of<SettingsProvider>(context);
     return MaterialApp(
         title: 'SafetyEye',
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, secondary: Colors.blue),
+          colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.blue, secondary: Colors.blue),
+          textTheme: const TextTheme(
+            bodySmall: TextStyle(fontSize: 12.0),
+          ),
         ),
-        home: !authProvider.isSignedIn() ? AuthScreen() : HomeScreen(),
+        home: !authProvider.isSignedIn()
+            ? AuthScreen()
+            : HomeScreen(settingsProvider),
         routes: {
-          "/home": (context) => HomeScreen(),
+          "/home": (context) => HomeScreen(settingsProvider),
           "/auth": (context) => AuthScreen(),
         });
   }

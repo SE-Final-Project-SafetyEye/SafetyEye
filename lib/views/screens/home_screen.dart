@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
-import 'package:provider/provider.dart';
 import 'package:safety_eye_app/providers/settings_provider.dart';
 import 'package:safety_eye_app/views/components/journeys/journeys_content.dart';
 import 'package:safety_eye_app/views/components/recording/recording_content.dart';
@@ -8,29 +7,30 @@ import 'package:safety_eye_app/views/components/recording/recording_content.dart
 import '../components/settings/settings_content.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final SettingsProvider settingsProvider;
+  const HomeScreen(this.settingsProvider, {super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
-  late SettingsProvider settingsProvider;
-  late List<Widget> _pages;
-  final List<String> _pageTitles = const ['Recording', 'Journeys', 'Settings'];
+  final List<String> _pageTitles = const ['Journeys', 'Recording', 'Settings'];
   final Logger _logger = Logger();
+
+  late int _currentIndex;
+  late List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
+    _currentIndex = 0;
+    _pages = [const RecordingPage(), const JourneysPage(), SettingsPage(widget.settingsProvider)];
+
   }
 
   @override
   Widget build(BuildContext context) {
-    settingsProvider = Provider.of<SettingsProvider>(context);
-    _pages = [RecordingPage(), JourneysPage(), SettingsPage(settingsProvider)];
-
     return Scaffold(
       appBar: AppBar(
         title: Text(_pageTitles[_currentIndex]),

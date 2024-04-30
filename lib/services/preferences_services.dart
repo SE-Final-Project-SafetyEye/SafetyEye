@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/Settings.dart';
 
 enum PreferencesKeys {
-  initializeKeys('initialize_keys'),
+  areKeysInitialize('are_keys_initialize'),
   publicKey('public_key'),
   privateKey('private_key'),
   chunkDuration('chunk_duration'),
@@ -74,8 +74,8 @@ class PreferencesService {
           await getPrefOrDefault<String>(PreferencesKeys.privateKey),
       PreferencesKeys.publicKey:
           await getPrefOrDefault<String>(PreferencesKeys.publicKey),
-      PreferencesKeys.initializeKeys:
-          await getPrefOrDefault<bool>(PreferencesKeys.initializeKeys),
+      PreferencesKeys.areKeysInitialize:
+          await getPrefOrDefault<bool>(PreferencesKeys.areKeysInitialize),
       PreferencesKeys.chunkDuration:
           await getPrefOrDefault<int>(PreferencesKeys.chunkDuration),
       PreferencesKeys.autoUpload:

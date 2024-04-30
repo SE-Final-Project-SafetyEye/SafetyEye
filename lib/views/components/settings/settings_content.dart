@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:numberpicker/numberpicker.dart';
 import 'package:safety_eye_app/providers/settings_provider.dart';
 
 import '../../../services/preferences_services.dart';
-
-const double fontSize = 12;
 
 class SettingsPage extends StatefulWidget {
   final SettingsProvider settingsProvider;
@@ -16,27 +15,23 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  final List<bool> _videoResolution = [false, false, false, false];
+  final Logger _logger = Logger();
+
   late int chunkDuration;
   late int gracePeriodInterval;
   late bool autoUpload;
-
-  final List<bool> _videoResolution = [false, false, false, false];
-  List<Widget> videoResolution = const [
-    Text('Low', style: TextStyle(fontSize: fontSize)),
-    Text('Medium', style: TextStyle(fontSize: fontSize)),
-    Text('High', style: TextStyle(fontSize: fontSize)),
-    Text('Max', style: TextStyle(fontSize: fontSize))
-  ];
   late int selectedResolution;
 
   void buildVideoResolutionSelection() {
     for (int i = 0; i < _videoResolution.length; i++) {
-      _videoResolution[i] = i == selectedResolution;
+      var isSelectedResolution = i == selectedResolution;
+      _videoResolution[i] = isSelectedResolution;
     }
   }
+
   @override
   void initState() {
-    super.initState();
     chunkDuration = widget.settingsProvider.settingsState.chunkDuration;
     gracePeriodInterval =
         widget.settingsProvider.settingsState.gracePeriodInterval;
@@ -50,10 +45,13 @@ class _SettingsPageState extends State<SettingsPage> {
       _ => 0
     };
     buildVideoResolutionSelection();
+    _logger.i('Settings page initialized');
+    super.initState();
   }
 
   @override
   void dispose() {
+    super.dispose();
     widget.settingsProvider.changeSettings({
       PreferencesKeys.chunkDuration: chunkDuration,
       PreferencesKeys.gracePeriodInterval: gracePeriodInterval,
@@ -66,91 +64,117 @@ class _SettingsPageState extends State<SettingsPage> {
         _ => "low"
       }
     });
-    super.dispose();
+    _logger.i('Settings page disposed');
   }
 
   @override
   Widget build(BuildContext context) {
+    final fontSize = Theme.of(context).textTheme.bodySmall!.fontSize!;
+    final List<Widget> videoResolution = [
+      Text('Low', style: TextStyle(fontSize: fontSize)),
+      Text('Medium', style: TextStyle(fontSize: fontSize)),
+      Text('High', style: TextStyle(fontSize: fontSize)),
+      Text('Max', style: TextStyle(fontSize: fontSize))
+    ];
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(children: [
-        Row(
-          children: [
-            Text('Chunk duration (seconds)'),
-            Spacer(),
-            NumberPicker(
-              value: chunkDuration,
-              minValue: 40,
-              maxValue: 80,
-              itemHeight: 50,
-              itemWidth: 50,
-              step: 5,
-              textStyle: TextStyle(fontSize: fontSize),
-              selectedTextStyle:
-                  TextStyle(fontSize: fontSize * 2, color: Colors.blue),
-              onChanged: (value) {
-                setState(() {
-                  chunkDuration = value;
-                });
-              },
-              axis: Axis.horizontal,
-            )
-          ],
-        ),
-        Row(
-          children: [
-            Text('Grace period interval (seconds)'),
-            Spacer(),
-            NumberPicker(
-              value: gracePeriodInterval,
-              minValue: 10,
-              maxValue: 30,
-              itemHeight: 50,
-              itemWidth: 50,
-              step: 5,
-              textStyle: TextStyle(fontSize: fontSize),
-              selectedTextStyle:
-                  TextStyle(fontSize: fontSize * 2, color: Colors.blue),
-              onChanged: (value) {
-                setState(() {
-                  gracePeriodInterval = value;
-                });
-              },
-              axis: Axis.horizontal,
-            )
-          ],
-        ),
-        Row(
-          children: [
-            Text('Auto upload'),
-            Spacer(),
-            Switch(
-              value: autoUpload,
-              onChanged: (value) {
-                setState(() {
-                  autoUpload = value;
-                });
-              },
-            )
-          ],
-        ),
-        Row(
-          children: [
-            Text('Video resolution'),
-            Spacer(),
-            ToggleButtons(
-                children: videoResolution,
-                isSelected: _videoResolution,
-                borderRadius: BorderRadius.circular(25),
-                onPressed: (index) {
-                  setState(() {
-                    selectedResolution = index;
-                    buildVideoResolutionSelection();
-                  });
-                }),
-          ],
-        ),
+        _buildChunkDurationSection(fontSize),
+        _buildGracePeriodInterval(fontSize),
+        _buildAutoUpload(),
+        _buildVideoResolution(videoResolution),
       ]),
+    );
+  }
+
+  Row _buildVideoResolution(List<Widget> videoResolution) {
+    return Row(
+      children: [
+        Text('Video resolution'),
+        Spacer(),
+        ToggleButtons(
+            children: videoResolution,
+            isSelected: _videoResolution,
+            borderRadius: BorderRadius.circular(25),
+            onPressed: (index) {
+              setState(() {
+                selectedResolution = index;
+                buildVideoResolutionSelection();
+              });
+            }),
+      ],
+    );
+  }
+
+  Row _buildAutoUpload() {
+    return Row(
+      children: [
+        Text('Auto upload'),
+        Spacer(),
+        Switch(
+          value: autoUpload,
+          onChanged: (value) {
+            setState(() {
+              autoUpload = value;
+            });
+            _logger.i('Auto upload changed to $value');
+          },
+        )
+      ],
+    );
+  }
+
+  Row _buildGracePeriodInterval(double fontSize) {
+    return Row(
+      children: [
+        Text('Grace period interval (seconds)'),
+        Spacer(),
+        NumberPicker(
+          value: gracePeriodInterval,
+          minValue: 10,
+          maxValue: 30,
+          itemHeight: 50,
+          itemWidth: 50,
+          step: 5,
+          textStyle: TextStyle(fontSize: fontSize),
+          selectedTextStyle:
+              TextStyle(fontSize: fontSize * 2, color: Colors.blue),
+          onChanged: (value) {
+            setState(() {
+              gracePeriodInterval = value;
+            });
+            _logger.i('Grace period interval changed to $value');
+          },
+          axis: Axis.horizontal,
+        )
+      ],
+    );
+  }
+
+  Row _buildChunkDurationSection(double fontSize) {
+    return Row(
+      children: [
+        Text('Chunk duration (seconds)'),
+        Spacer(),
+        NumberPicker(
+          value: chunkDuration,
+          minValue: 40,
+          maxValue: 80,
+          itemHeight: 50,
+          itemWidth: 50,
+          step: 5,
+          textStyle: TextStyle(fontSize: fontSize),
+          selectedTextStyle:
+              TextStyle(fontSize: fontSize * 2, color: Colors.blue),
+          onChanged: (value) {
+            setState(() {
+              chunkDuration = value;
+            });
+            _logger.i('Chunk duration changed to $value');
+          },
+          axis: Axis.horizontal,
+        )
+      ],
     );
   }
 }
