@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:safety_eye_app/models/Settings.dart';
 import 'package:safety_eye_app/services/preferences_services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -26,8 +27,7 @@ void main() {
       // Given
       final prefService = PreferencesService();
       const key = PreferencesKeys.privateKey;
-      final String expectedValue =
-          defaultPreferences[PreferencesKeys.privateKey.value];
+      final String expectedValue = defaultPreferences[PreferencesKeys.privateKey];
       // Then
       expect(await prefService.getPrefOrDefault<String>(key), expectedValue);
     });
