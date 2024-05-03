@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:safety_eye_app/providers/auth_provider.dart';
+import 'package:safety_eye_app/providers/settings_provider.dart';
 import 'package:safety_eye_app/providers/permissions_provider.dart';
 import 'package:safety_eye_app/providers/sensors_provider.dart';
 import 'package:safety_eye_app/views/screens/auth_screen.dart';
@@ -22,7 +23,8 @@ void main() async {
   runApp(MultiProvider(providers: [
     ChangeNotifierProvider(create: (context) => AuthenticationProvider()),
     ChangeNotifierProvider(create: (context) => PermissionsProvider()),
-    ChangeNotifierProvider(create: (context) => SensorsProvider())
+    ChangeNotifierProvider(create: (context) => SensorsProvider()),
+    ChangeNotifierProvider(create: (context) => SettingsProvider())
   ], child: const MyApp()));
 }
 
@@ -41,12 +43,18 @@ class MyApp extends StatelessWidget {
             return MaterialApp(
                 title: 'SafetyEye',
                 theme: ThemeData(
-                  colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.deepPurple),
+                  colorScheme: ColorScheme.fromSeed(
+                      seedColor: Colors.blue, secondary: Colors.blue),
+                  textTheme: const TextTheme(
+                    bodySmall: TextStyle(fontSize: 12.0),
+                  ),
                 ),
-                home: authProvider.isSignedIn() ? const HomeScreen() : const AuthScreen(),
+                home: !authProvider.isSignedIn()
+                    ? AuthScreen()
+                    : HomeScreen(settingsProvider),
                 routes: {
-                  "/home": (context) => const HomeScreen(),
-                  "/auth": (context) => const AuthScreen(),
+                  "/home": (context) => HomeScreen(settingsProvider),
+                  "/auth": (context) => AuthScreen(),
                 });
           } else {
             return const CircularProgressIndicator();

@@ -22,6 +22,7 @@ class BackendService {
       options.headers['Authorization'] = 'Bearer ${await currentUser?.getIdToken() ?? ''}';
       return handler.next(options);
     }));
+    createdDio.interceptors.add(LogInterceptor(responseBody: true));
     dio = createdDio;
     api = BackendApi(dio);
   }

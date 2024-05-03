@@ -1,6 +1,7 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+import 'package:safety_eye_app/providers/settings_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:safety_eye_app/providers/permissions_provider.dart';
 import 'package:safety_eye_app/providers/sensors_provider.dart';
@@ -12,26 +13,26 @@ import '../../providers/video_recording_provider.dart';
 import '../components/settings/settings_content.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final SettingsProvider settingsProvider;
+  const HomeScreen(this.settingsProvider, {super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
-  final List<Widget> _pages = [
-    RecordingPage(),
-    const JourneysPage(),
-    const SettingsPage()
-  ];
-  final List<String> _pageTitles = const ['Recording', 'Journeys', 'Settings'];
+  final List<String> _pageTitles = const ['Journeys', 'Recording', 'Settings'];
   final Logger _logger = Logger();
 
+  late int _currentIndex;
+  late List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
+    _currentIndex = 0;
+    _pages = [const RecordingPage(), const JourneysPage(), SettingsPage(widget.settingsProvider)];
+
   }
 
   @override
