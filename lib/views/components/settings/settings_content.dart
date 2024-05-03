@@ -127,7 +127,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Row _buildGracePeriodInterval(double fontSize) {
     return Row(
       children: [
-        Text('Grace period interval (seconds)'),
+        Text('Grace period interval (sec)'),
         Spacer(),
         NumberPicker(
           value: gracePeriodInterval,
@@ -154,7 +154,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Row _buildChunkDurationSection(double fontSize) {
     return Row(
       children: [
-        Text('Chunk duration (seconds)'),
+        Text('Chunk duration (sec)'),
         Spacer(),
         NumberPicker(
           value: chunkDuration,
