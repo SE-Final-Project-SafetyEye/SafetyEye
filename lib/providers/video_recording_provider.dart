@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:logger/logger.dart';
@@ -15,7 +17,7 @@ class VideoRecordingProvider extends ChangeNotifier {
   late FileSystemRepository _fileSystemRepository;
   bool recording = false;
   int chunkNumber = 1;
-
+  double recordMin = 0.12;
 
   VideoRecordingProvider(
       {required this.permissions,
@@ -55,27 +57,44 @@ class VideoRecordingProvider extends ChangeNotifier {
         "start recording: status ${cameraController?.value.isRecordingVideo}");
     if (!(cameraController?.value.isRecordingVideo ?? false)) {
       recording = true;
-      await cameraController?.startVideoRecording();
+      chunkNumber = 1;
       _fileSystemRepository.startRecording();
       sensorsProvider.startCollectMetadata();
       _logger.d(
           "start recording: status ${cameraController?.value.isRecordingVideo}");
+      recordRecursively();
     }
   }
 
-  Future<void> stopRecording() async {
+  void recordRecursively() async {
+    _logger.i("recordRecursively, chunkNumber: $chunkNumber");
+    if (recordMin > 0) {
+      await cameraController?.startVideoRecording();
+
+      await Future.delayed(
+          Duration(milliseconds: (recordMin * 60 * 1000).toInt()));
+      if (cameraController!.value.isRecordingVideo) {
+        stopRecording(true);
+      }
+    }
+  }
+
+  void stopRecording(bool isRecordRecursively) {
     _logger.d(
         "stopped recording: status ${cameraController?.value.isRecordingVideo}");
     if (cameraController?.value.isRecordingVideo ?? false) {
-      recording = false;
-      cameraController?.stopVideoRecording().then((tempFile) async {
-        _logger.d(
-            "stopped recording: status ${cameraController?.value.isRecordingVideo}");
-        await _fileSystemRepository.stopRecording(
-            tempFile, 1); //TODO: chunks counter
-        await sensorsProvider
+      recording = isRecordRecursively;
+      if (!isRecordRecursively) {
+        sensorsProvider
             .stopCollectMetadata()
             .then((value) => _fileSystemRepository.saveDataToFile(value));
+      }
+      cameraController?.stopVideoRecording().then((tempFile) {
+        _logger.d(
+            "stopped recording: status ${cameraController?.value.isRecordingVideo}");
+        _fileSystemRepository.stopRecording(tempFile, chunkNumber);
+        chunkNumber++;
+        if(isRecordRecursively){ recordRecursively();}
       });
     }
   }
