@@ -1,7 +1,5 @@
-import 'package:cryptography/cryptography.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:safety_eye_app/providers/auth_provider.dart';
-import 'package:safety_eye_app/providers/settings_provider.dart';
 import 'package:safety_eye_app/services/signatures_service.dart';
 
 class SignaturesProvider extends ChangeNotifier {

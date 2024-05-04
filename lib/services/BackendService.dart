@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:safety_eye_app/models/payloads/request/requests.dart';
@@ -17,6 +18,7 @@ class BackendService {
   User? currentUser;
   late Dio dio;
   late BackendApi api;
+  bool isDev = kDebugMode;
 
   BackendService(this.currentUser) {
     var createdDio = Dio();
@@ -32,21 +34,25 @@ class BackendService {
   }
 
   Future<String> exchangeKey(String key) async {
+    if (isDev) return 'devKey';
     log.i('Exchanging key: $key');
     final requestKey = KeyExchangeRequest(key: key);
     return await api.exchangeKey(requestKey);
   }
 
   Future<JourneysResponse> getJourneys() async {
+    if (isDev) return JourneysResponse(journeys: []); // TODO - create a real mock
     return await api.getJourneys();
   }
 
   Future<List<String>> getJourneyChunks(String journeyId) async {
+    if (isDev) return List.generate(5, (index) => 'chunk$index'); // TODO - create a real mock
     final response = await api.getJourneyChunksById(journeyId);
     return response.chunks;
   }
 
   Future<File> downloadChunk(String journeyId, String chunkId) async {
+    if (isDev) return File('test'); // TODO - create a real mock
     final chunkBytes = await api.downloadChunk(journeyId, chunkId);
     final appDirectory = await getApplicationDocumentsDirectory();
     File chunkFile = File('${appDirectory.path}/$chunkId');
@@ -59,6 +65,7 @@ class BackendService {
       File metadata,
       UploadChunkSignaturesRequest signaturesRequest,
       ProgressCallback? progressCallback) async {
+    if (isDev) return;
     var exchangeKey = await _preferencesService
         .getPrefOrDefault<String>(PreferencesKeys.exchangeKey);
     var sigRequest = UploadChunkSignaturesRequest(

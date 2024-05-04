@@ -23,6 +23,14 @@ class SignaturesRepository {
     await File(_databasePath!).delete();
   }
 
+  SignaturesRepository() {
+    _init();
+  }
+
+  Future<void> _init() async {
+    _database = await database;
+  }
+
   static Future<Database> get database async {
     if (_database != null) {
       return _database!;

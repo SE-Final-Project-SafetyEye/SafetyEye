@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:logger/logger.dart';
+import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 
 import '../services/auth_service.dart';
 
@@ -10,7 +11,8 @@ class AuthenticationProvider extends ChangeNotifier{
   User? _currentUser;
 
   User? get currentUser{
-    return _currentUser;
+    // return _currentUser;
+    return MockUser();
   }
 
   AuthenticationProvider(){
@@ -21,7 +23,6 @@ class AuthenticationProvider extends ChangeNotifier{
   }
 
   Future<void> signInWithEmailAndPassword(String email, String password) async{
-
       try {
         _currentUser = await _auth.signInWithEmailAndPassword(email: email, password: password);
       } catch (error,stackTrace) {

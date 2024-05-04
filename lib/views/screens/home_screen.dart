@@ -1,10 +1,10 @@
-import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:safety_eye_app/providers/settings_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:safety_eye_app/providers/permissions_provider.dart';
 import 'package:safety_eye_app/providers/sensors_provider.dart';
+import 'package:safety_eye_app/providers/signatures_provider.dart';
 import 'package:safety_eye_app/views/components/journeys/journeys_content.dart';
 import 'package:safety_eye_app/views/components/recording/recording_content.dart';
 
@@ -40,6 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final auth = Provider.of<AuthenticationProvider>(context, listen: false);
     final sensors = Provider.of<SensorsProvider>(context, listen: false);
     final permissions = Provider.of<PermissionsProvider>(context, listen: false);
+    final signatures = Provider.of<SignaturesProvider>(context, listen: false);
     return MultiProvider(
         providers: [
           ChangeNotifierProxyProvider2(create: (context) => VideoRecordingProvider(permissions: permissions,
@@ -80,4 +81,5 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ));
   }
+
 }
