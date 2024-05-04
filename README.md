@@ -1,16 +1,15 @@
-# safrt_eye_app
+# safety_eye_app
 
-A new Flutter project.
+An app for hands free drive recorder with object detection and smart saving of empty drive.
+data collected is signed by using public-private key encryption.
 
-## Getting Started
+## Building App:
+before running the app, the following commands need to be ran:
+- `flutter pub get` - getting the missing dependencies
+- `flutter pub run build_runner build` - creating auto generated classes from definition.
+- `flutter pub run environment_config:generate --BACKEND_URL="<current_url_of_backend>"  <br/>
+--"<more configuration vars to set>"`
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Running The App:
+For running the app, connect a device or run an emulator.
+- run the command `flutter run`

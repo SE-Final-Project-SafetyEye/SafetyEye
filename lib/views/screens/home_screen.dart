@@ -1,9 +1,8 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+import 'package:safety_eye_app/providers/settings_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:safety_eye_app/providers/chunks_provider.dart';
-import 'package:safety_eye_app/providers/journeys_provider.dart';
 import 'package:safety_eye_app/providers/permissions_provider.dart';
 import 'package:safety_eye_app/providers/sensors_provider.dart';
 import 'package:safety_eye_app/views/components/journeys/journeys_content.dart';
@@ -14,39 +13,39 @@ import '../../providers/video_recording_provider.dart';
 import '../components/settings/settings_content.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final SettingsProvider settingsProvider;
+  const HomeScreen(this.settingsProvider, {super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
-  final List<Widget> _pages = [
-    RecordingPage(),
-    const JourneysPage(),
-    const SettingsPage()
-  ];
-  final List<String> _pageTitles = const ['Recording', 'Journeys', 'Settings'];
+  final List<String> _pageTitles = const ['Journeys', 'Recording', 'Settings'];
   final Logger _logger = Logger();
 
+  late int _currentIndex;
+  late List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
+    _currentIndex = 0;
+    _pages = [const RecordingPage(), const JourneysPage(), SettingsPage(widget.settingsProvider)];
+
   }
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<AuthenticationProvider>(context,listen: false);
+    final auth = Provider.of<AuthenticationProvider>(context, listen: false);
+    final sensors = Provider.of<SensorsProvider>(context, listen: false);
+    final permissions = Provider.of<PermissionsProvider>(context, listen: false);
     return MultiProvider(
         providers: [
-          ChangeNotifierProvider(create: (context) => SensorsProvider()),
-          ChangeNotifierProvider(create: (context)=>JourneysProvider(authenticationProvider: auth)),
-          ChangeNotifierProxyProvider3(create: (context) => VideoRecordingProvider(permissions: Provider.of<PermissionsProvider>(context,listen: false),
-              sensorsProvider: Provider.of<SensorsProvider>(context,listen: false),
+          ChangeNotifierProxyProvider2(create: (context) => VideoRecordingProvider(permissions: permissions,
+              sensorsProvider: sensors,
               authenticationProvider: auth),
-              update: (BuildContext context, PermissionsProvider permissions ,SensorsProvider sensors,AuthenticationProvider auth,
+              update: (BuildContext context ,SensorsProvider sensors,AuthenticationProvider auth,
                   VideoRecordingProvider? vProvider) =>
                  vProvider ?? VideoRecordingProvider(permissions: permissions, sensorsProvider: sensors,authenticationProvider: auth)),
         ],
