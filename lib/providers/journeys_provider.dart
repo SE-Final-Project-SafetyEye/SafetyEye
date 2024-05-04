@@ -15,7 +15,7 @@ class JourneysProvider extends ChangeNotifier {
 
   Future<void> initializeJourneys() async {
     _fileSystemRepository = FileSystemRepository(
-        userEmail: authenticationProvider.currentUser?.uid ?? "vanityV");
+        userEmail: authenticationProvider.currentUser?.uid ?? "nitayv");
     videoFolders = await _fileSystemRepository.getVideoList();
   }
 }

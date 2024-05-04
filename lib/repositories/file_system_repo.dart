@@ -17,19 +17,19 @@ class FileSystemRepository {
     _saveDirUpdate();
   }
 
-  Future<void> saveDataToFile(String directory, String jsonData) async {
-    String filePath = '${directory}_data.json';
+  Future<void> saveDataToFile(String jsonData) async {
+    String filePath = '${_saveDir?.path}/_data.json';
+    _logger.i('save metaDate into json... path: $filePath');
     File file = File(filePath);
     await file.writeAsString(jsonData);
-    _logger.i('save metaDate into json.');
   }
 
   Future<void> processVideoChunk(XFile videoChunk, String outputDir) async {
-    FlutterFFmpeg flutterFFmpeg = FlutterFFmpeg();
+    FlutterFFmpeg ffmpeg = FlutterFFmpeg();
 
     int intervalInSeconds = 5;
 
-    int rc = await flutterFFmpeg.execute(
+    int rc = await ffmpeg.execute(
         '-i $outputDir -vf fps=1/$intervalInSeconds ${outputDir}frame-%03d.jpg');
 
     if (rc == 0) {

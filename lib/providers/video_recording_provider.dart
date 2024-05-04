@@ -13,26 +13,30 @@ class VideoRecordingProvider extends ChangeNotifier {
   late PermissionsProvider permissions;
   late AuthenticationProvider authenticationProvider;
   late FileSystemRepository _fileSystemRepository;
+  bool recording = false;
+  int chunkNumber = 1;
+
 
   VideoRecordingProvider(
       {required this.permissions,
       required this.sensorsProvider,
       required this.authenticationProvider});
 
-  get camera  => cameraController;
+  get camera => cameraController;
 
-  get isRecording => cameraController?.value.isRecordingVideo ?? false;
+  get isRecording =>
+      recording; //cameraController?.value.isRecordingVideo ?? false;
 
   get isInitialized => cameraController?.value.isInitialized ?? false;
 
   Future<void> initializeCamera() async {
-    cameraController = CameraController(permissions.cameras[0], ResolutionPreset.max);
-    try{
+    cameraController =
+        CameraController(permissions.cameras[0], ResolutionPreset.max);
+    try {
       await cameraController?.initialize();
       _fileSystemRepository = FileSystemRepository(
           userEmail: authenticationProvider.currentUser?.uid ?? "nitayv");
-    }
-    catch (e){
+    } catch (e) {
       if (e is CameraException) {
         switch (e.code) {
           case 'CameraAccessDenied':
@@ -47,22 +51,32 @@ class VideoRecordingProvider extends ChangeNotifier {
   }
 
   Future<void> startRecording() async {
-    _logger.d("start recording: status ${cameraController?.value.isRecordingVideo}");
+    _logger.d(
+        "start recording: status ${cameraController?.value.isRecordingVideo}");
     if (!(cameraController?.value.isRecordingVideo ?? false)) {
+      recording = true;
       await cameraController?.startVideoRecording();
       _fileSystemRepository.startRecording();
-      _logger.d("start recording: status ${cameraController?.value.isRecordingVideo}");
+      sensorsProvider.startCollectMetadata();
+      _logger.d(
+          "start recording: status ${cameraController?.value.isRecordingVideo}");
     }
   }
 
   Future<void> stopRecording() async {
-    _logger.d("stopped recording: status ${cameraController?.value.isRecordingVideo}");
+    _logger.d(
+        "stopped recording: status ${cameraController?.value.isRecordingVideo}");
     if (cameraController?.value.isRecordingVideo ?? false) {
-       cameraController?.stopVideoRecording().then((tempFile) {
-        _logger.d("stopped recording: status ${cameraController?.value.isRecordingVideo}");
-        return _fileSystemRepository.stopRecording(tempFile, 1);
+      recording = false;
+      cameraController?.stopVideoRecording().then((tempFile) async {
+        _logger.d(
+            "stopped recording: status ${cameraController?.value.isRecordingVideo}");
+        await _fileSystemRepository.stopRecording(
+            tempFile, 1); //TODO: chunks counter
+        await sensorsProvider
+            .stopCollectMetadata()
+            .then((value) => _fileSystemRepository.saveDataToFile(value));
       });
-
     }
   }
 

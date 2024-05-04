@@ -18,16 +18,16 @@ class SensorsProvider extends ChangeNotifier {
   final _streamSubscriptions = <StreamSubscription<dynamic>>[];
   Duration sensorInterval = SensorInterval.normalInterval;
 
-  void startCollectMetadata() {
+  Future<void> startCollectMetadata() async {
     _restart();
     _run = true;
     _initState();
   }
 
-  void stopCollectMetadata() {
+  Future<String> stopCollectMetadata() async {
     _run = false;
     _dispose();
-    _exportToJson();
+    return _exportToJson();
   }
 
   void _initState() {
@@ -120,7 +120,7 @@ class SensorsProvider extends ChangeNotifier {
     }
   }
 
-  void _exportToJson() async {
+  Future<String> _exportToJson() async {
     Map<String, dynamic> dataMap = {
       'TimeStamp': DateTime.now().millisecondsSinceEpoch,
       'Accelerometer': [],
@@ -144,7 +144,7 @@ class SensorsProvider extends ChangeNotifier {
     // Similar code for other sensor events
 
     String jsonData = jsonEncode(dataMap);
-    await _writeToFile(jsonData);
+    return jsonData;
   }
 
   Future<void> _writeToFile(String data) async {
