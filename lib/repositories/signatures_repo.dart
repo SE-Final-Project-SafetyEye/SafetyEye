@@ -35,7 +35,7 @@ class SignaturesRepository {
     final db = await database;
     try {
       _logger
-          .i('Try to save signature message: $message, signature: $signature');
+          .d('Try to save signature message: $message, signature: $signature');
       var res = await db.insert(
         sigTableName,
         {
@@ -59,7 +59,7 @@ class SignaturesRepository {
   // Retrieve signature from the database
   Future<String?> getSignature(String message) async {
     final db = await database;
-    _logger.i('Try to get signature message: $message');
+    _logger.d('Try to get signature message: $message');
     final List<Map<String, dynamic>> maps = await db.query(
       sigTableName,
       where: '$messageColName = ?',
