@@ -7,6 +7,7 @@ import 'package:safety_eye_app/providers/auth_provider.dart';
 import 'package:safety_eye_app/providers/settings_provider.dart';
 import 'package:safety_eye_app/providers/permissions_provider.dart';
 import 'package:safety_eye_app/providers/sensors_provider.dart';
+import 'package:safety_eye_app/providers/signatures_provider.dart';
 import 'package:safety_eye_app/views/screens/auth_screen.dart';
 import 'package:safety_eye_app/views/screens/home_screen.dart';
 import 'poc/poc_selection_screen.dart';
@@ -24,7 +25,13 @@ void main() async {
     ChangeNotifierProvider(create: (context) => AuthenticationProvider()),
     ChangeNotifierProvider(create: (context) => PermissionsProvider()),
     ChangeNotifierProvider(create: (context) => SensorsProvider()),
-    ChangeNotifierProvider(create: (context) => SettingsProvider())
+    ChangeNotifierProvider(create: (context) => SettingsProvider()),
+    ChangeNotifierProxyProvider(
+        create: (context) =>
+            SignaturesProvider(Provider.of<AuthenticationProvider>(context)),
+        update: (BuildContext context, AuthenticationProvider auth,
+                SignaturesProvider? previous) =>
+            previous ?? SignaturesProvider(auth)),
   ], child: const MyApp()));
 }
 
@@ -33,8 +40,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthenticationProvider>(context, listen: true);
-    final permissionsProvider = Provider.of<PermissionsProvider>(context, listen: false);
+    final authProvider =
+        Provider.of<AuthenticationProvider>(context, listen: true);
+    final permissionsProvider =
+        Provider.of<PermissionsProvider>(context, listen: false);
     final settingsProvider = Provider.of<SettingsProvider>(context);
     return FutureBuilder(
         future: permissionsProvider.init(),

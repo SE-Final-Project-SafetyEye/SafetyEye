@@ -14,6 +14,11 @@ void main() {
     await SignaturesRepository.database;
   });
 
+  tearDownAll(() async {
+    // Close the database once all tests are done
+    await SignaturesRepository.deleteDatabase();
+  });
+
   group('SignaturesRepository', () {
     SignaturesRepository signaturesRepository = SignaturesRepository();
 
@@ -21,21 +26,23 @@ void main() {
       // Given
       const message = 'message';
       const signature = 'signature';
+      const publicKey = 'publicKey';
+      const expected = (signature, publicKey);
       // When
-      await signaturesRepository.saveSignature(message, signature);
+      await signaturesRepository.saveSignature(message, signature, publicKey);
       // Then
       final result = await signaturesRepository.getSignature(message);
-      expect(result, signature);
+      expect(result, expected);
     });
 
     test('should fail get signature', () async {
       // Given
       const message = 'other_message';
-
+      const expected = (null, null);
       // When
       final result = await signaturesRepository.getSignature(message);
       // Then
-      expect(result, null);
+      expect(result, expected);
     });
   });
 }

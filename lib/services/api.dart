@@ -2,12 +2,12 @@ import 'dart:io';
 
 import 'package:dio/dio.dart' hide Headers;
 import 'package:retrofit/retrofit.dart';
-import 'package:safety_eye_app/poc/payloads/request/requests.dart';
-import 'package:safety_eye_app/poc/payloads/response/responses.dart';
+import 'package:safety_eye_app/models/payloads/request/requests.dart';
+import 'package:safety_eye_app/models/payloads/response/responses.dart';
 
 import '../../environment_config.dart';
 
-part 'api_service.g.dart';
+part 'api.g.dart';
 
 @RestApi(baseUrl: EnvironmentConfig.BACKEND_URL)
 abstract class BackendApi {
@@ -21,11 +21,13 @@ abstract class BackendApi {
   Future<JourneysResponse> getJourneys();
 
   @GET('/video/journeys/{journeyId}/chunks')
-  Future<JourneyChunksResponse> getJourneyChunksById(@Path('journeyId') String journeyId);
+  Future<JourneyChunksResponse> getJourneyChunksById(
+      @Path('journeyId') String journeyId);
 
   @GET('/video/download/{journeyId}/{chunkId}')
   @DioResponseType(ResponseType.bytes)
-  Future<List<int>> downloadChunk(@Path('journeyId') String journeyId, @Path('chunkId') String chunkId);
+  Future<List<int>> downloadChunk(
+      @Path('journeyId') String journeyId, @Path('chunkId') String chunkId);
 
   @POST('/video/upload')
   @MultiPart()
