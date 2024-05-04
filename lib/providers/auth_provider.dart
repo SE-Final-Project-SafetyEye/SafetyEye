@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 
@@ -9,10 +10,10 @@ class AuthenticationProvider extends ChangeNotifier{
   final AuthService _auth = AuthService();
   final Logger _logger = Logger();
   User? _currentUser;
+  bool isDev = kDebugMode;
 
   User? get currentUser{
-    // return _currentUser;
-    return MockUser();
+    return isDev ? MockUser() : _currentUser;
   }
 
   AuthenticationProvider(){

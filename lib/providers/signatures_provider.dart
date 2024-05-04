@@ -6,6 +6,10 @@ class SignaturesProvider extends ChangeNotifier {
   final SignaturesService _signaturesService = SignaturesService();
 
   SignaturesProvider(AuthenticationProvider authProvider) {
+    final user = authProvider.currentUser;
+    if (user != null) {
+      _signaturesService.init(user);
+    }
     listenToAuth(authProvider);
   }
 
