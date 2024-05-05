@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:safety_eye_app/models/payloads/request/requests.dart';
+import 'package:safety_eye_app/providers/auth_provider.dart';
 import 'package:safety_eye_app/services/api.dart';
 import 'package:safety_eye_app/services/preferences_services.dart';
 
@@ -15,17 +16,17 @@ import '../models/payloads/response/responses.dart';
 class BackendService {
   Logger log = Logger();
   final PreferencesService _preferencesService = PreferencesService();
-  User? currentUser;
+  AuthenticationProvider authProvider;
   late Dio dio;
   late BackendApi api;
   bool isDev = kDebugMode;
 
-  BackendService(this.currentUser) {
+  BackendService(this.authProvider) {
     var createdDio = Dio();
     createdDio.interceptors
         .add(InterceptorsWrapper(onRequest: (options, handler) async {
       options.headers['Authorization'] =
-          'Bearer ${await currentUser?.getIdToken() ?? ''}';
+          'Bearer ${await authProvider.currentUser?.getIdToken() ?? ''}';
       return handler.next(options);
     }));
     createdDio.interceptors.add(LogInterceptor(responseBody: true));

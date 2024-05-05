@@ -3,12 +3,12 @@ import 'package:safety_eye_app/providers/auth_provider.dart';
 import 'package:safety_eye_app/services/signatures_service.dart';
 
 class SignaturesProvider extends ChangeNotifier {
-  final SignaturesService _signaturesService = SignaturesService();
+  final SignaturesService signaturesService;
 
-  SignaturesProvider(AuthenticationProvider authProvider) {
+  SignaturesProvider(AuthenticationProvider authProvider, this.signaturesService) {
     final user = authProvider.currentUser;
     if (user != null) {
-      _signaturesService.init(user);
+      signaturesService.init(authProvider);
     }
     listenToAuth(authProvider);
   }
@@ -17,7 +17,7 @@ class SignaturesProvider extends ChangeNotifier {
     authProvider.addListener(() {
       final user = authProvider.currentUser;
       if (user != null) {
-        _signaturesService.init(user);
+        signaturesService.init(authProvider);
       }
     });
   }

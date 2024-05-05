@@ -6,13 +6,18 @@ import 'package:camera/camera.dart';
 import 'package:flutter_ffmpeg/flutter_ffmpeg.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:safety_eye_app/providers/auth_provider.dart';
+import 'package:safety_eye_app/services/auth_service.dart';
 
 class FileSystemRepository{
   Directory? _saveDir;
-  String userEmail;
+  AuthenticationProvider authProvider;
   final Logger _logger = Logger();
+  late String userId;
 
-  FileSystemRepository({ required this.userEmail});
+  FileSystemRepository({ required this.authProvider}) {
+    userId = authProvider.currentUser?.uid ?? '';
+  }
 
   Future<void> startRecording() async {
     _saveDirUpdate();
@@ -42,7 +47,7 @@ class FileSystemRepository{
 
   Future<void> _saveDirUpdate() async {
     final dir = await getApplicationDocumentsDirectory();
-    final videosDirectory = Directory('${dir.path}/$userEmail');
+    final videosDirectory = Directory('${dir.path}/$userId');
     if (!videosDirectory.existsSync()) {
       videosDirectory.createSync(recursive: true);
     }

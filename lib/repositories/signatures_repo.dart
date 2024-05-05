@@ -24,11 +24,12 @@ class SignaturesRepository {
   }
 
   SignaturesRepository() {
-    _init();
+    init();
   }
 
-  Future<void> _init() async {
+  Future<SignaturesRepository> init() async {
     _database = await database;
+    return this;
   }
 
   static Future<Database> get database async {
