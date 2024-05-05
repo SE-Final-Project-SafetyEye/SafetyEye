@@ -3,6 +3,7 @@ import 'package:cryptography/cryptography.dart';
 import 'package:cryptography_flutter/cryptography_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:logger/logger.dart';
+import 'package:safety_eye_app/providers/auth_provider.dart';
 import 'package:safety_eye_app/repositories/signatures_repo.dart';
 import 'package:safety_eye_app/services/BackendService.dart';
 import 'package:safety_eye_app/services/preferences_services.dart';
@@ -17,7 +18,7 @@ class SignaturesService {
   late SimpleKeyPair _keyPair;
   bool areKeysGenerated = false;
 
-  Future<void> init(User current) async {
+  Future<void> init(AuthenticationProvider authProvider) async {
     if ((await areKeysStored())) {
       _logger.i('found keys on device');
       _keyPair = (await _loadKeys())!;
@@ -28,7 +29,7 @@ class SignaturesService {
 
     final keyBytes = (await _keyPair.extractPublicKey()).bytes;
     // This function throw if exchange key is not set
-    BackendService(current).exchangeKey(base64Encode(keyBytes))
+    BackendService(authProvider).exchangeKey(base64Encode(keyBytes))
         .then((exchangeKey) {
       _logger.d("received key from backend: $exchangeKey");
       _preferencesService.setPref(PreferencesKeys.exchangeKey, exchangeKey);

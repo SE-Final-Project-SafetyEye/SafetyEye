@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+import 'package:safety_eye_app/providers/ioc_provider.dart';
 import 'package:safety_eye_app/providers/settings_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:safety_eye_app/providers/permissions_provider.dart';
-import 'package:safety_eye_app/providers/sensors_provider.dart';
-import 'package:safety_eye_app/providers/signatures_provider.dart';
 import 'package:safety_eye_app/views/components/journeys/journeys_content.dart';
 import 'package:safety_eye_app/views/components/recording/recording_content.dart';
 
-import '../../providers/auth_provider.dart';
 import '../../providers/video_recording_provider.dart';
 import '../components/settings/settings_content.dart';
 
 class HomeScreen extends StatefulWidget {
   final SettingsProvider settingsProvider;
+
   const HomeScreen(this.settingsProvider, {super.key});
 
   @override
@@ -32,24 +30,13 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _currentIndex = 0;
     _pages = [const RecordingPage(), const JourneysPage(), SettingsPage(widget.settingsProvider)];
-
   }
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<AuthenticationProvider>(context, listen: false);
-    final sensors = Provider.of<SensorsProvider>(context, listen: false);
-    final permissions = Provider.of<PermissionsProvider>(context, listen: false);
-    final signatures = Provider.of<SignaturesProvider>(context, listen: false);
+    final iocProvider = Provider.of<IocContainerProvider>(context, listen: false);
     return MultiProvider(
-        providers: [
-          ChangeNotifierProxyProvider2(create: (context) => VideoRecordingProvider(permissions: permissions,
-              sensorsProvider: sensors,
-              authenticationProvider: auth),
-              update: (BuildContext context ,SensorsProvider sensors,AuthenticationProvider auth,
-                  VideoRecordingProvider? vProvider) =>
-                 vProvider ?? VideoRecordingProvider(permissions: permissions, sensorsProvider: sensors,authenticationProvider: auth)),
-        ],
+        providers: [ChangeNotifierProvider(create: (context) => iocProvider.container.get<VideoRecordingProvider>())],
         child: Scaffold(
           appBar: AppBar(
             title: Text(_pageTitles[_currentIndex]),
@@ -58,8 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
           bottomNavigationBar: BottomNavigationBar(
             currentIndex: _currentIndex,
             onTap: (int index) {
-              _logger
-                  .i('onTap: moving to page with index ${_pageTitles[index]}');
+              _logger.i('onTap: moving to page with index ${_pageTitles[index]}');
               setState(() {
                 _currentIndex = index;
               });
@@ -81,5 +67,4 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ));
   }
-
 }

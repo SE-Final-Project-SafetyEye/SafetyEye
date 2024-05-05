@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:logger/logger.dart';
+import 'package:safety_eye_app/ioc_container.dart';
 import 'package:safety_eye_app/providers/sensors_provider.dart';
 import 'package:safety_eye_app/providers/permissions_provider.dart';
 import '../repositories/file_system_repo.dart';
@@ -12,12 +13,13 @@ class VideoRecordingProvider extends ChangeNotifier {
   late SensorsProvider sensorsProvider;
   late PermissionsProvider permissions;
   late AuthenticationProvider authenticationProvider;
-  late FileSystemRepository _fileSystemRepository;
+  late FileSystemRepository fileSystemRepository;
 
   VideoRecordingProvider(
       {required this.permissions,
       required this.sensorsProvider,
-      required this.authenticationProvider});
+      required this.authenticationProvider,
+      required this.fileSystemRepository});
 
   get camera  => cameraController;
 
@@ -29,8 +31,6 @@ class VideoRecordingProvider extends ChangeNotifier {
     cameraController = CameraController(permissions.cameras[0], ResolutionPreset.max);
     try{
       await cameraController?.initialize();
-      _fileSystemRepository = FileSystemRepository(
-          userEmail: authenticationProvider.currentUser?.uid ?? "");
     }
     catch (e){
       if (e is CameraException) {
@@ -50,7 +50,7 @@ class VideoRecordingProvider extends ChangeNotifier {
     _logger.d("start recording: status ${cameraController?.value.isRecordingVideo}");
     if (!(cameraController?.value.isRecordingVideo ?? false)) {
       await cameraController?.startVideoRecording();
-      _fileSystemRepository.startRecording();
+      fileSystemRepository.startRecording();
       _logger.d("start recording: status ${cameraController?.value.isRecordingVideo}");
     }
   }
@@ -60,7 +60,7 @@ class VideoRecordingProvider extends ChangeNotifier {
     if (cameraController?.value.isRecordingVideo ?? false) {
        cameraController?.stopVideoRecording().then((tempFile) {
         _logger.d("stopped recording: status ${cameraController?.value.isRecordingVideo}");
-        return _fileSystemRepository.stopRecording(tempFile, 1);
+        return fileSystemRepository.stopRecording(tempFile, 1);
       });
 
     }
