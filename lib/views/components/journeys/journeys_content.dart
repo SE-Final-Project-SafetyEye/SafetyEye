@@ -67,24 +67,8 @@ class VideoCard extends StatelessWidget {
         Navigator.push(
             context,
             MaterialPageRoute(
-                builder: (context) => MultiProvider(
-                      providers: [
-                        ChangeNotifierProxyProvider<AuthenticationProvider,
-                            ChunksProvider>(
-                          create: (context) => ChunksProvider(
-                            authenticationProvider:
-                                Provider.of<AuthenticationProvider>(context,
-                                    listen: false),
-                          ),
-                          update: (BuildContext context,
-                                  AuthenticationProvider auth,
-                                  ChunksProvider? previous) =>
-                              previous ??
-                              ChunksProvider(authenticationProvider: auth),
-                        ),
-                      ],
-                      child: ChunksPage(path: fileSystemEntity.path),
-                    )));
+                builder: (context) => ChunksPage(path: fileSystemEntity.path),
+                    ));
       },
       child: Card(
         child: Column(

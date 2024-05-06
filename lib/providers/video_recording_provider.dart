@@ -5,6 +5,7 @@ import 'package:camera/camera.dart';
 import 'package:logger/logger.dart';
 import 'package:safety_eye_app/providers/sensors_provider.dart';
 import 'package:safety_eye_app/providers/permissions_provider.dart';
+import 'package:safety_eye_app/providers/settings_provider.dart';
 import '../repositories/file_system_repo.dart';
 import 'auth_provider.dart';
 
@@ -14,15 +15,16 @@ class VideoRecordingProvider extends ChangeNotifier {
   late SensorsProvider sensorsProvider;
   late PermissionsProvider permissions;
   late AuthenticationProvider authenticationProvider;
+  late SettingsProvider settingsProvider;
   late FileSystemRepository _fileSystemRepository;
   bool recording = false;
   int chunkNumber = 1;
-  double recordMin = 0.12;
+  late int recordMin;
 
   VideoRecordingProvider(
       {required this.permissions,
       required this.sensorsProvider,
-      required this.authenticationProvider});
+      required this.authenticationProvider,required this.settingsProvider});
 
   get camera => cameraController;
 
@@ -34,6 +36,7 @@ class VideoRecordingProvider extends ChangeNotifier {
   Future<void> initializeCamera() async {
     cameraController =
         CameraController(permissions.cameras[0], ResolutionPreset.max);
+    recordMin = settingsProvider.settingsState.chunkDuration;
     try {
       await cameraController?.initialize();
       _fileSystemRepository = FileSystemRepository(
@@ -94,7 +97,9 @@ class VideoRecordingProvider extends ChangeNotifier {
             "stopped recording: status ${cameraController?.value.isRecordingVideo}");
         _fileSystemRepository.stopRecording(tempFile, chunkNumber);
         chunkNumber++;
-        if(isRecordRecursively){ recordRecursively();}
+        if (isRecordRecursively) {
+          recordRecursively();
+        }
       });
     }
   }

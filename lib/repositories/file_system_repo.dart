@@ -18,7 +18,7 @@ class FileSystemRepository {
   }
 
   Future<void> saveDataToFile(String jsonData) async {
-    String filePath = '${_saveDir?.path}/_data.json';
+    String filePath = '${_saveDir?.path}/JourneyMetadata.json';
     _logger.i('save metaDate into json... path: $filePath');
     File file = File(filePath);
     await file.writeAsString(jsonData);

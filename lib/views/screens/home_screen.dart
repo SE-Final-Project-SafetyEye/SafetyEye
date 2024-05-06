@@ -10,11 +10,13 @@ import 'package:safety_eye_app/views/components/journeys/journeys_content.dart';
 import 'package:safety_eye_app/views/components/recording/recording_content.dart';
 
 import '../../providers/auth_provider.dart';
+import '../../providers/chunks_provider.dart';
 import '../../providers/video_recording_provider.dart';
 import '../components/settings/settings_content.dart';
 
 class HomeScreen extends StatefulWidget {
   final SettingsProvider settingsProvider;
+
   const HomeScreen(this.settingsProvider, {super.key});
 
   @override
@@ -32,24 +34,54 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _currentIndex = 0;
-    _pages = [const RecordingPage(), const JourneysPage(), SettingsPage(widget.settingsProvider)];
-
+    _pages = [
+      const RecordingPage(),
+      const JourneysPage(),
+      SettingsPage(widget.settingsProvider)
+    ];
   }
 
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthenticationProvider>(context, listen: false);
     final sensors = Provider.of<SensorsProvider>(context, listen: false);
-    final permissions = Provider.of<PermissionsProvider>(context, listen: false);
+    final permissions = Provider.of<PermissionsProvider>(
+        context, listen: false);
+    final setting = Provider.of<SettingsProvider>(context, listen: false);
     return MultiProvider(
         providers: [
-          ChangeNotifierProvider(create: (context) => JourneysProvider(authenticationProvider: auth)),
-          ChangeNotifierProxyProvider2(create: (context) => VideoRecordingProvider(permissions: permissions,
+          ChangeNotifierProxyProvider<AuthenticationProvider,
+              ChunksProvider>(
+            create: (context) => ChunksProvider(
+              authenticationProvider:
+              Provider.of<AuthenticationProvider>(context,
+                  listen: false),
+            ),
+            update: (BuildContext context,
+                AuthenticationProvider auth,
+                ChunksProvider? previous) =>
+            previous ??
+                ChunksProvider(authenticationProvider: auth),
+          ),
+          ChangeNotifierProvider(create: (context) =>
+              JourneysProvider(authenticationProvider: auth))
+          ,
+          ChangeNotifierProxyProvider4<PermissionsProvider, SensorsProvider, AuthenticationProvider, SettingsProvider, VideoRecordingProvider>(
+            create: (context) => VideoRecordingProvider(
+              permissions: permissions,
               sensorsProvider: sensors,
-              authenticationProvider: auth),
-              update: (BuildContext context ,SensorsProvider sensors,AuthenticationProvider auth,
-                  VideoRecordingProvider? vProvider) =>
-                 vProvider ?? VideoRecordingProvider(permissions: permissions, sensorsProvider: sensors,authenticationProvider: auth)),
+              authenticationProvider: auth,
+              settingsProvider: setting,
+            ),
+            update: (context, permissions, sensors, auth, setting, previous) {
+              return previous ?? VideoRecordingProvider(
+                permissions: permissions,
+                sensorsProvider: sensors,
+                authenticationProvider: auth,
+                settingsProvider: setting,
+              );
+            },
+          )
         ],
         child: Scaffold(
           appBar: AppBar(

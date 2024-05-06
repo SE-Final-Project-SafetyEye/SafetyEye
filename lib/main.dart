@@ -50,11 +50,12 @@ class MyApp extends StatelessWidget {
                   ),
                 ),
                 home: !authProvider.isSignedIn()
-                    ? AuthScreen()
+                    ? const AuthScreen()
                     : HomeScreen(settingsProvider),
                 routes: {
                   "/home": (context) => HomeScreen(settingsProvider),
-                  "/auth": (context) => AuthScreen(),
+                  "/auth": (context) => const AuthScreen(),
+
                 });
           } else {
             return const CircularProgressIndicator();
