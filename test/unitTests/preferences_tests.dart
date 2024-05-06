@@ -15,8 +15,8 @@ void main() {
 
     test('validate set preference', () async {
       // Given
-      const key = PreferencesKeys.privateKey;
-      const String expectedValue = 'new_private_key';
+      const key = PreferencesKeys.videoResolution;
+      const String expectedValue = 'Low';
       // When
       await prefService.setPref<String>(key, expectedValue);
       // Then
@@ -26,8 +26,8 @@ void main() {
     test('validate default preference', () async {
       // Given
       final prefService = PreferencesService();
-      const key = PreferencesKeys.privateKey;
-      final String expectedValue = defaultPreferences[PreferencesKeys.privateKey];
+      const key = PreferencesKeys.videoResolution;
+      final String expectedValue = defaultPreferences[PreferencesKeys.videoResolution];
       // Then
       expect(await prefService.getPrefOrDefault<String>(key), expectedValue);
     });
@@ -35,7 +35,7 @@ void main() {
     test('throw error on bad Type - setPrefs', () async {
       // Given
       final prefService = PreferencesService();
-      const key = PreferencesKeys.privateKey;
+      const key = PreferencesKeys.videoResolution;
       const List<String> expectedValue = [''];
       // Then
       try {
@@ -49,7 +49,7 @@ void main() {
     test('throw error on bad Type - getPrefs', () async {
       // Given
       final prefService = PreferencesService();
-      const key = PreferencesKeys.privateKey;
+      const key = PreferencesKeys.videoResolution;
       // Then
       try {
         await prefService.getPrefOrDefault<List<String>>(key);

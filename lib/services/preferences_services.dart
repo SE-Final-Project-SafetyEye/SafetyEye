@@ -7,6 +7,7 @@ enum PreferencesKeys {
   areKeysInitialize('are_keys_initialize'),
   publicKey('public_key'),
   privateKey('private_key'),
+  exchangeKey('exchange_key'),
   chunkDuration('chunk_duration'),
   autoUpload('auto_upload'),
   gracePeriodInterval('grace_period_interval'),
@@ -70,12 +71,6 @@ class PreferencesService {
 
   Future<Map<PreferencesKeys, dynamic>> createSettingsMap() async {
     return {
-      PreferencesKeys.privateKey:
-          await getPrefOrDefault<String>(PreferencesKeys.privateKey),
-      PreferencesKeys.publicKey:
-          await getPrefOrDefault<String>(PreferencesKeys.publicKey),
-      PreferencesKeys.areKeysInitialize:
-          await getPrefOrDefault<bool>(PreferencesKeys.areKeysInitialize),
       PreferencesKeys.chunkDuration:
           await getPrefOrDefault<int>(PreferencesKeys.chunkDuration),
       PreferencesKeys.autoUpload:
