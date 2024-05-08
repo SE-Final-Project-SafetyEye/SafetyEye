@@ -6,6 +6,7 @@ import 'package:safety_eye_app/providers/journeys_provider.dart';
 
 import '../../../providers/auth_provider.dart';
 import '../../../providers/chunks_provider.dart';
+import '../../../providers/ioc_provider.dart';
 import '../chunks/chunks_content.dart';
 
 class JourneysPage extends StatelessWidget {
@@ -13,7 +14,7 @@ class JourneysPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final journeys = Provider.of<JourneysProvider>(context, listen: true);
+    final journeys = Provider.of<IocContainerProvider>(context, listen: false).container.get<JourneysProvider>();
 
     return FutureBuilder(
         future: journeys.initializeJourneys(),

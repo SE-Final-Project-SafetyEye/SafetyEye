@@ -18,7 +18,7 @@ class ChunksProvider extends ChangeNotifier {
 
   Future<void> initChunks(String path) async {
     _fileSystemRepository = FileSystemRepository(
-        userEmail: authenticationProvider.currentUser?.uid ?? "unitaryV");
+        authProvider: authenticationProvider);
     chunksPaths = await _fileSystemRepository.getChunksList(path);
     _logger.i("chunksPaths: ${chunksPaths.length}");
 

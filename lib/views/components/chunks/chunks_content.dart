@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../providers/chunks_provider.dart';
+import '../../../providers/ioc_provider.dart';
 
 class ChunksPage extends StatelessWidget {
   final String path;
@@ -10,7 +11,7 @@ class ChunksPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final chunks = Provider.of<ChunksProvider>(context, listen: false);
+    final chunks = Provider.of<IocContainerProvider>(context, listen: false).container.get<ChunksProvider>();
     String videoName = path.split('/').last.split('.').first;
     return FutureBuilder(
         future: chunks.initChunks(path),

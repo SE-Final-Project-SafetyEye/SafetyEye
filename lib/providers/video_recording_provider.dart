@@ -8,6 +8,7 @@ import 'package:safety_eye_app/providers/sensors_provider.dart';
 import 'package:safety_eye_app/providers/permissions_provider.dart';
 import 'package:safety_eye_app/providers/settings_provider.dart';
 import '../repositories/file_system_repo.dart';
+import '../services/chunk_processor_service.dart';
 import 'auth_provider.dart';
 
 class VideoRecordingProvider extends ChangeNotifier {
@@ -18,16 +19,17 @@ class VideoRecordingProvider extends ChangeNotifier {
   late AuthenticationProvider authenticationProvider;
   late SettingsProvider settingsProvider;
   late FileSystemRepository fileSystemRepository;
+  late ChunkProcessorService chunkProcessorService;
   bool recording = false;
   int chunkNumber = 1;
-  late int recordMin;
-
+  late double recordMin;
 
   VideoRecordingProvider(
       {required this.permissions,
       required this.sensorsProvider,
-      required this.authenticationProvider,required this.settingsProvider, required FileSystemRepository fileSystemRepository});
-
+      required this.authenticationProvider,
+      required this.settingsProvider,
+      required FileSystemRepository fileSystemRepository});
 
   get camera => cameraController;
 
@@ -39,14 +41,13 @@ class VideoRecordingProvider extends ChangeNotifier {
   Future<void> initializeCamera() async {
     cameraController =
         CameraController(permissions.cameras[0], ResolutionPreset.max);
-    recordMin = settingsProvider.settingsState.chunkDuration;
+    recordMin = 0.15;//settingsProvider.settingsState.chunkDuration; //TODO: delete the integer
     try {
       await cameraController?.initialize();
-      fileSystemRepository = FileSystemRepository(
-          userEmail: authenticationProvider.currentUser?.uid ?? "nitayv");
-    }
-    catch (e){
-
+      fileSystemRepository =
+          FileSystemRepository(authProvider: authenticationProvider);
+      chunkProcessorService = ChunkProcessorService(fileSystemRepository: fileSystemRepository);
+    } catch (e) {
       if (e is CameraException) {
         switch (e.code) {
           case 'CameraAccessDenied':
@@ -67,7 +68,6 @@ class VideoRecordingProvider extends ChangeNotifier {
       recording = true;
       chunkNumber = 1;
       fileSystemRepository.startRecording();
-      sensorsProvider.startCollectMetadata();
       _logger.d(
           "start recording: status ${cameraController?.value.isRecordingVideo}");
       recordRecursively();
@@ -78,9 +78,14 @@ class VideoRecordingProvider extends ChangeNotifier {
     _logger.i("recordRecursively, chunkNumber: $chunkNumber");
     if (recordMin > 0) {
       await cameraController?.startVideoRecording();
-      await cameraController?.startVideoRecording();
-      fileSystemRepository.startRecording();
-      _logger.d("start recording: status ${cameraController?.value.isRecordingVideo}");
+      sensorsProvider.startCollectMetadata();
+      _logger.d(
+          "start recording: status ${cameraController?.value.isRecordingVideo}");
+      await Future.delayed(
+          Duration(milliseconds: (recordMin * 60 * 1000).toInt()));
+      if (cameraController!.value.isRecordingVideo) {
+        stopRecording(true);
+      }
     }
   }
 
@@ -89,15 +94,15 @@ class VideoRecordingProvider extends ChangeNotifier {
         "stopped recording: status ${cameraController?.value.isRecordingVideo}");
     if (cameraController?.value.isRecordingVideo ?? false) {
       recording = isRecordRecursively;
-      if (!isRecordRecursively) {
-        sensorsProvider
-            .stopCollectMetadata()
-            .then((value) => fileSystemRepository.saveDataToFile(value));
-      }
+
+      sensorsProvider
+          .stopCollectMetadata()
+          .then((value) => fileSystemRepository.saveDataToFile(value));
       cameraController?.stopVideoRecording().then((tempFile) {
         _logger.d(
             "stopped recording: status ${cameraController?.value.isRecordingVideo}");
-        fileSystemRepository.stopRecording(tempFile, chunkNumber);
+        //fileSystemRepository.stopRecording(tempFile, chunkNumber);
+        chunkProcessorService.processChunk(tempFile, chunkNumber);
         chunkNumber++;
         if (isRecordRecursively) {
           recordRecursively();
