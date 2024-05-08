@@ -79,6 +79,7 @@ dependencies:
   path: ^1.9.0
   sqflite_common_ffi: ^2.3.3
   ioc_container: ^1.0.12
+  chewie: ^1.8.1
 
 dev_dependencies:
   retrofit_generator: '>=7.0.0 <8.0.0'

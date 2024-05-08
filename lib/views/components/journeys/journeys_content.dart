@@ -36,13 +36,13 @@ Widget _buildVideoList(List<FileSystemEntity> paths, String title) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      Container(
-        padding: const EdgeInsets.all(8.0),
-        child: Text(
-          title,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-      ),
+      // Container(
+      //   padding: const EdgeInsets.all(8.0),
+      //   child: Text(
+      //     title,
+      //     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      //   ),
+      // ),
       ListView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
