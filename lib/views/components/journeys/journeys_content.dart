@@ -20,11 +20,11 @@ class JourneysPage extends StatelessWidget {
         future: journeys.initializeJourneys(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
-            return ListView(
+            return Scaffold(body: ListView(
               children: [
                 _buildVideoList(journeys.videoFolders, 'Video Folders'),
               ],
-            );
+            ),);
           } else {
             return const CircularProgressIndicator();
           }

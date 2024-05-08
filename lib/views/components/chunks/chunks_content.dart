@@ -13,12 +13,12 @@ class ChunksPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final chunks = Provider.of<IocContainerProvider>(context, listen: false).container.get<ChunksProvider>();
     String videoName = path.split('/').last.split('.').first;
-    return FutureBuilder(
+    return Scaffold(body: FutureBuilder(
         future: chunks.initChunks(path),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
             if (chunks.chunksPaths.isNotEmpty) {
-              return ListView(
+              return Scaffold(body: ListView(
                 children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -46,30 +46,30 @@ class ChunksPage extends StatelessWidget {
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(8.0),
                                     child: chunks
-                                            .generateThumbnailIsNotEmpty(index)
+                                        .generateThumbnailIsNotEmpty(index)
                                         ? Image.file(
-                                            chunks.getThumbnail(index),
-                                            width: 100,
-                                            height: 56.25,
-                                            fit: BoxFit.cover,
-                                          )
+                                      chunks.getThumbnail(index),
+                                      width: 100,
+                                      height: 56.25,
+                                      fit: BoxFit.cover,
+                                    )
                                         : Container(
-                                            width: 100,
-                                            height: 56.25,
-                                            color: Colors
-                                                .grey, // Placeholder color
-                                          ),
+                                      width: 100,
+                                      height: 56.25,
+                                      color: Colors
+                                          .grey, // Placeholder color
+                                    ),
                                   ),
                                   Column(
                                     crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    CrossAxisAlignment.start,
                                     children: [
                                       Padding(
                                         padding: const EdgeInsets.all(8.0),
                                         child: Text(
                                           chunks.getName(index),
                                           style:
-                                              const TextStyle(fontSize: 16.0),
+                                          const TextStyle(fontSize: 16.0),
                                         ),
                                       ),
                                       Row(
@@ -78,16 +78,16 @@ class ChunksPage extends StatelessWidget {
                                             icon: const Icon(Icons.highlight),
                                             onPressed: () => chunks
                                                 .handleHighlightsButtonPress(
-                                                    index),
+                                                index),
                                             tooltip: 'Add Highlights',
                                           ),
                                           const SizedBox(width: 8.0),
                                           IconButton(
                                             icon:
-                                                const Icon(Icons.cloud_upload),
+                                            const Icon(Icons.cloud_upload),
                                             onPressed: () => chunks
                                                 .handleCloudUploadButtonPress(
-                                                    index),
+                                                index),
                                             tooltip: 'Upload to Cloud',
                                           ),
                                         ],
@@ -110,13 +110,13 @@ class ChunksPage extends StatelessWidget {
                     ],
                   ),
                 ],
-              );
+              ),);
             } else {
               return const CircularProgressIndicator();
             }
           } else {
             return const CircularProgressIndicator();
           }
-        });
+        }),);
   }
 }
