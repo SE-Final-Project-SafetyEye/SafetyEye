@@ -26,7 +26,7 @@ extension IocContainerBuilderExtension on IocContainerBuilder {
       })
       // ..addSingleton<SpeechProvider>((container) => SpeechProvider())
       ..addSingleton<SignaturesProvider>((container) =>
-          SignaturesProvider(container.get<AuthenticationProvider>(), container.get<SpeechToTextProvider>(), container.get<SignaturesService>()));
+          SignaturesProvider(container.get<AuthenticationProvider>(), container.get<SignaturesService>()));
   }
 
   void addServices() {

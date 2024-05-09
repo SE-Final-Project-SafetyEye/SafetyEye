@@ -55,20 +55,6 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  void initSpeechProvider(SpeechToTextProvider speechProvider) async {
-    var available = await speechProvider.initialize();
-    StreamSubscription<SpeechRecognitionEvent> _subscription;
-    _subscription = speechProvider.stream.listen((recognitionEvent) {
-      if (recognitionEvent.eventType == SpeechRecognitionEventType.partialRecognitionEvent )  {
-        print("I heard partial: ${recognitionEvent.recognitionResult?.recognizedWords}");
-      }
-      if (recognitionEvent.eventType == SpeechRecognitionEventType.finalRecognitionEvent )  {
-        print("I heard: ${recognitionEvent.recognitionResult?.recognizedWords}");
-      }
-    });
-    if (available) speechProvider.listen();
-  }
-
   @override
   Widget build(BuildContext context) {
     final authProvider =
@@ -76,9 +62,7 @@ class MyApp extends StatelessWidget {
     final permissionsProvider =
         Provider.of<PermissionsProvider>(context, listen: false);
     final settingsProvider = Provider.of<SettingsProvider>(context);
-    final speechProvider =
-        Provider.of<SpeechToTextProvider>(context, listen: false);
-    initSpeechProvider(speechProvider);
+    final speechProvider = Provider.of<SpeechToTextProvider>(context);
 
     return FutureBuilder(
         future: permissionsProvider.init(),
@@ -95,9 +79,9 @@ class MyApp extends StatelessWidget {
                 ),
                 home: !authProvider.isSignedIn()
                     ? const AuthScreen()
-                    : HomeScreen(settingsProvider),
+                    : HomeScreen(settingsProvider, speechProvider),
                 routes: {
-                  "/home": (context) => HomeScreen(settingsProvider),
+                  "/home": (context) => HomeScreen(settingsProvider, speechProvider),
                   "/auth": (context) => const AuthScreen(),
                 });
           } else {
