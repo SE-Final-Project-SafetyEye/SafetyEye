@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:video_thumbnail/video_thumbnail.dart';
 
 import '../repositories/file_system_repo.dart';
+import '../views/components/videoPlayer/video_player.dart';
 import 'auth_provider.dart';
 
 class ChunksProvider extends ChangeNotifier {
@@ -63,5 +65,12 @@ class ChunksProvider extends ChangeNotifier {
 
   Future<void> handleCloudUploadButtonPress(int videoIndex) async {} //TODO:
 
-  handlePlayButtonPress(int videoIndex) {} //TODO:
+  handlePlayButtonPress(context,int videoIndex) {
+    String videoPath = chunksPaths[videoIndex]; // Assuming chunksPaths contains video paths
+    // Perform actions to play the video, such as opening a video player
+    _logger.i('Playing video: $videoPath');
+    // Example code to open a video player (you'll need to replace this with your actual video player implementation)
+    Navigator.push(context, MaterialPageRoute(builder: (context) => ChewieVideoPlayer(srcs: [videoPath],)));
+  }
+
 }
