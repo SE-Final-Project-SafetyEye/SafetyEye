@@ -401,9 +401,6 @@ class _CameraScreenState extends State<CameraScreen> {
     }
   }
 
-
-
-
   String latestFilePath() {
     final String latestFilePath = '${saveDir?.path ?? ''}/$chunkNumber';
     final _latestFilePath = Directory(latestFilePath);
