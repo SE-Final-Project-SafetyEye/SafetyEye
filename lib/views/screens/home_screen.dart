@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:safety_eye_app/views/components/journeys/journeys_content.dart';
 import 'package:safety_eye_app/views/components/recording/recording_content.dart';
 import 'package:speech_to_text/speech_recognition_event.dart';
+import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:speech_to_text/speech_to_text_provider.dart';
 
@@ -37,6 +38,38 @@ class _HomeScreenState extends State<HomeScreen> {
 
   late int _currentIndex;
   late List<Widget> _pages;
+
+  Future<void> _handleSpeechResult(SpeechRecognitionResult result) async {
+    if (result.recognizedWords
+        .toLowerCase()
+        .contains('start recording') /* && result.confidence > 0.85*/) {
+      _logger.i('Starting recording');
+      await Provider.of<VideoRecordingProvider>(context, listen: false)
+          .startRecording();
+    }
+    // else if(result.recognizedWords.toLowerCase().contains('start recording') && result.confidence > 0.75) {
+    //   // If the confidence is lower than 0.85, but higher then 0.75 ask for confirmation
+    // }
+    else if (result.recognizedWords
+        .toLowerCase()
+        .contains('stop recording') /*&& result.confidence > 0.85*/) {
+      _logger.i('Stopping recording');
+      Provider.of<VideoRecordingProvider>(context, listen: false).stopRecording(false);
+    }
+    // else if(result.recognizedWords.toLowerCase().contains('stop recording') && result.confidence > 0.75) {
+    //   // If the confidence is lower than 0.85, but higher then 0.75 ask for confirmation
+    // }
+    else if (result.recognizedWords
+        .toLowerCase()
+        .contains('highlight') /*&& result.confidence > 0.85*/) {
+      _logger.i('Asked to highlight');
+      await Provider.of<VideoRecordingProvider>(context, listen: false)
+          .highlight();
+    }
+    //   else if(result.recognizedWords.toLowerCase().contains('highlight') && result.confidence > 0.75){
+    //     // If the confidence is lower than 0.85, but higher then 0.75 ask for confirmation
+    // }
+  }
 
   @override
   void initState() {
@@ -79,10 +112,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
     speechProvider.stream.listen((event) async {
       if (event.eventType == SpeechRecognitionEventType.finalRecognitionEvent) {
-        _logger.i("Final result: ${event.recognitionResult?.recognizedWords}");
+        var result = event.recognitionResult!;
+        _logger.i("Final result: ${result.recognizedWords}");
+        await _handleSpeechResult(result);
         _startListening(speechProvider); // Restart listening
       } else if (event.eventType == SpeechRecognitionEventType.errorEvent) {
-        _logger.e("Error: ${event.error?.errorMsg}");
+        // _logger.e("Error: ${event.error?.errorMsg}");
         _startListening(speechProvider); // Restart listening on error
       }
     });
