@@ -14,6 +14,7 @@ class SensorsProvider extends ChangeNotifier {
   late List<_UserAccelerometerData> _userAccelerometerEvents;
   late List<_MagnetometerData> _magnetometerEvents;
   late List<_GyroscopeData> _gyroscopeEvents;
+  bool _isHighlighted = false;
 
   bool _run = false;
   final _streamSubscriptions = <StreamSubscription<dynamic>>[];
@@ -129,6 +130,7 @@ class SensorsProvider extends ChangeNotifier {
       'Magnetometer': [],
       'Gyroscope': [],
       'GPS': [],
+      'Highlighted': _isHighlighted ? true : false,
     };
 
     for (var data in _accelerometerEvents) {
@@ -192,6 +194,11 @@ class SensorsProvider extends ChangeNotifier {
     _userAccelerometerEvents = [];
     _magnetometerEvents = [];
     _gyroscopeEvents = [];
+    _isHighlighted = false;
+  }
+
+  Future<void> highlight() async {
+    _isHighlighted = true;
   }
 }
 

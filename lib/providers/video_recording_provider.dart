@@ -117,16 +117,11 @@ class VideoRecordingProvider extends ChangeNotifier {
     _logger.d("1 highlight - status recording ${cameraController?.value.isRecordingVideo}");
     if (!(cameraController?.value.isRecordingVideo ?? false)) {
       await startRecording();
-      // add highlight flag
-      _logger.d("2 start recording: status ${cameraController?.value.isRecordingVideo}");
-      _logger.d("3 start highlight: status true");
     }
-    else if (cameraController?.value.isRecordingVideo ?? false) {
-      // validate highlight flag
-      _logger.d("2 start highlight: status ?");
-      // start another highlight chunk if possible
-      _logger.d("3 start highlight: status true");
-    }
+    // add highlight flag
+    _logger.d("2 start recording: status ${cameraController?.value.isRecordingVideo}");
+    sensorsProvider.highlight();
+    _logger.d("3 start highlight: status true");
   }
 
   @override
