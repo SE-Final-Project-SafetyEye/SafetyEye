@@ -28,7 +28,7 @@ class VideoRecordingProvider extends ChangeNotifier {
   get isInitialized => cameraController?.value.isInitialized ?? false;
 
   Future<void> initializeCamera() async {
-    cameraController = CameraController(permissions.cameras[0], ResolutionPreset.max);
+    cameraController = CameraController(permissions.cameras[0], ResolutionPreset.max, enableAudio: false);
     try{
       await cameraController?.initialize();
     }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_volume_controller/flutter_volume_controller.dart';
 import 'package:logger/logger.dart';
 import 'package:safety_eye_app/providers/ioc_provider.dart';
 import 'package:safety_eye_app/providers/settings_provider.dart';
@@ -8,17 +9,16 @@ import 'package:provider/provider.dart';
 import 'package:safety_eye_app/views/components/journeys/journeys_content.dart';
 import 'package:safety_eye_app/views/components/recording/recording_content.dart';
 import 'package:speech_to_text/speech_recognition_event.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 import 'package:speech_to_text/speech_to_text_provider.dart';
-import 'package:background_fetch/background_fetch.dart';
 
 import '../../providers/video_recording_provider.dart';
 import '../components/settings/settings_content.dart';
 
 class HomeScreen extends StatefulWidget {
   final SettingsProvider settingsProvider;
-  final SpeechToTextProvider speechProvider;
 
-  const HomeScreen(this.settingsProvider, this.speechProvider, {super.key});
+  const HomeScreen(this.settingsProvider, {super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -27,81 +27,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final List<String> _pageTitles = const ['Journeys', 'Recording', 'Settings'];
   final Logger _logger = Logger();
-  bool _isListening = false;
   late int _currentIndex;
   late List<Widget> _pages;
-
-  void _startBackgroundFetch() {
-    BackgroundFetch.configure(
-      BackgroundFetchConfig(
-        minimumFetchInterval: 1,
-        // Minimum interval in minutes for background fetch events
-        stopOnTerminate: false,
-        // Set to true if you want to stop background execution when the app is terminated
-        enableHeadless: true,
-        // Set to true to enable headless execution
-        requiresBatteryNotLow: false,
-        requiresCharging: false,
-        requiresStorageNotLow: false,
-        requiresDeviceIdle: false,
-      ),
-      (String taskId) async {
-        await _startListening();
-        BackgroundFetch.finish(taskId); // Finish the background fetch task
-      },
-    ).then((int status) {
-      _logger.i('[BackgroundFetch] configure success: $status');
-    }).catchError((e) {
-      _logger.e('[BackgroundFetch] configure ERROR: $e');
-    });
-  }
-
-  Future<void> _startListening() async {
-    if (!_isListening) {
-      bool available = await widget.speechProvider.initialize();
-      if (available) {
-        StreamSubscription<SpeechRecognitionEvent> _subscription;
-        _subscription = widget.speechProvider.stream.listen((recognitionEvent) {
-          if (recognitionEvent.eventType ==
-              SpeechRecognitionEventType.finalRecognitionEvent) {
-            _logger.i(
-                "I heard: ${recognitionEvent.recognitionResult?.recognizedWords}");
-          }
-        });
-        widget.speechProvider.listen();
-        setState(() => _isListening = true);
-      }
-    }
-  }
-
-  // void initSpeechProvider(SpeechToTextProvider speechProvider) async {
-  //   if (!_speechEnabled) {
-  //     bool available = await speechProvider.initialize();
-  //     if (available) {
-  //       _speechEnabled = true;
-  //       StreamSubscription<SpeechRecognitionEvent> _subscription;
-  //       _subscription = speechProvider.stream.listen((recognitionEvent) {
-  //         if (recognitionEvent.eventType ==
-  //             SpeechRecognitionEventType.finalRecognitionEvent) {
-  //           _logger.i(
-  //               "I heard: ${recognitionEvent.recognitionResult?.recognizedWords}");
-  //         }
-  //         // currently disabled as it got INTO INFINITE LOOP
-  //         // if (recognitionEvent.eventType ==
-  //         //     SpeechRecognitionEventType.errorEvent) {
-  //         //   // DO NOTHING and trigger again
-  //         //   speechProvider.listen();
-  //         // }
-  //         // if (recognitionEvent.eventType ==
-  //         //     SpeechRecognitionEventType.doneEvent) {
-  //         //   _logger.i("Listening done, triggering again");
-  //         //   speechProvider.listen();
-  //         // }
-  //       });
-  //       speechProvider.listen();
-  //     }
-  //   }
-  // }
 
   @override
   void initState() {
@@ -112,16 +39,52 @@ class _HomeScreenState extends State<HomeScreen> {
       const JourneysPage(),
       SettingsPage(widget.settingsProvider)
     ];
-    _startBackgroundFetch();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeSpeechRecognition(context);
+    });
+  }
+
+  Future<void> _initializeSpeechRecognition(BuildContext context) async {
+    var speechProvider =
+        Provider.of<SpeechToTextProvider>(context, listen: false);
+    bool available = await speechProvider.initialize();
+    if (available) {
+      _startListening(speechProvider);
+    } else {
+      _logger.w("The user has denied the use of speech recognition.");
+    }
+  }
+
+  void _startListening(SpeechToTextProvider speechProvider) async {
+    await FlutterVolumeController.updateShowSystemUI(
+        false); // Hide system volume UI
+    await FlutterVolumeController.setMute(true,
+        stream: AudioStream.alarm); // Set volume to 0 to silence feedback
+
+    speechProvider.listen(
+      listenFor: const Duration(seconds: 30),
+      pauseFor: const Duration(seconds: 10),
+      partialResults: false,
+      onDevice: false,
+      listenMode: ListenMode.confirmation,
+    );
+
+    speechProvider.stream.listen((event) async {
+      if (event.eventType == SpeechRecognitionEventType.finalRecognitionEvent) {
+        _logger.i("Final result: ${event.recognitionResult?.recognizedWords}");
+        _startListening(speechProvider); // Restart listening
+      } else if (event.eventType == SpeechRecognitionEventType.errorEvent) {
+        _logger.e("Error: ${event.error?.errorMsg}");
+        _startListening(speechProvider); // Restart listening on error
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final iocProvider =
         Provider.of<IocContainerProvider>(context, listen: false);
-    // final speechProvider =
-    //     Provider.of<SpeechToTextProvider>(context, listen: false);
-    // initSpeechProvider(speechProvider);
 
     return MultiProvider(
         providers: [

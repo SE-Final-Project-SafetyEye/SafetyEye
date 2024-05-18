@@ -62,7 +62,7 @@ class MyApp extends StatelessWidget {
     final permissionsProvider =
         Provider.of<PermissionsProvider>(context, listen: false);
     final settingsProvider = Provider.of<SettingsProvider>(context);
-    final speechProvider = Provider.of<SpeechToTextProvider>(context);
+    // final speechProvider = Provider.of<SpeechToTextProvider>(context);
 
     return FutureBuilder(
         future: permissionsProvider.init(),
@@ -79,9 +79,9 @@ class MyApp extends StatelessWidget {
                 ),
                 home: !authProvider.isSignedIn()
                     ? const AuthScreen()
-                    : HomeScreen(settingsProvider, speechProvider),
+                    : HomeScreen(settingsProvider),
                 routes: {
-                  "/home": (context) => HomeScreen(settingsProvider, speechProvider),
+                  "/home": (context) => HomeScreen(settingsProvider),
                   "/auth": (context) => const AuthScreen(),
                 });
           } else {
