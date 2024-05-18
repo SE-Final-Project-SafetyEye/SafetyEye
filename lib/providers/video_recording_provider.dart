@@ -40,7 +40,7 @@ class VideoRecordingProvider extends ChangeNotifier {
 
   Future<void> initializeCamera() async {
     cameraController =
-        CameraController(permissions.cameras[0], ResolutionPreset.max);
+        CameraController(permissions.cameras[0], ResolutionPreset.max, enableAudio: false);
     recordMin = 0.15;//settingsProvider.settingsState.chunkDuration; //TODO: delete the integer
     try {
       await cameraController?.initialize();

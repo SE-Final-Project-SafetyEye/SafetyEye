@@ -3,6 +3,8 @@ import 'package:path/path.dart';
 import 'package:safety_eye_app/providers/providers.dart';
 import 'package:safety_eye_app/repositories/repositories.dart';
 import 'package:safety_eye_app/services/services.dart';
+import 'package:speech_to_text/speech_to_text.dart';
+import 'package:speech_to_text/speech_to_text_provider.dart';
 
 extension IocContainerBuilderExtension on IocContainerBuilder {
   void addProviders() {
@@ -11,6 +13,7 @@ extension IocContainerBuilderExtension on IocContainerBuilder {
       ..addSingleton<PermissionsProvider>((container) => PermissionsProvider())
       ..addSingleton<SensorsProvider>((container) => SensorsProvider())
       ..addSingleton<SettingsProvider>((container) => SettingsProvider(container.get<PreferencesService>()))
+      ..addSingleton<SpeechToTextProvider>((container) => SpeechToTextProvider(SpeechToText()))
       ..add<VideoRecordingProvider>((container) {
         final authProvider = container.get<AuthenticationProvider>();
         final fileSystemRepo = container.get<FileSystemRepository>();
