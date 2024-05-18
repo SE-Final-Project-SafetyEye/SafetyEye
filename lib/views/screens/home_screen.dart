@@ -1,26 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_volume_controller/flutter_volume_controller.dart';
 import 'package:logger/logger.dart';
 
-
-import 'package:safety_eye_app/providers/ioc_provider.dart';
-
 import 'package:safety_eye_app/providers/settings_provider.dart';
-import 'package:provider/provider.dart';
 import 'package:safety_eye_app/views/components/journeys/journeys_content.dart';
 import 'package:safety_eye_app/views/components/recording/recording_content.dart';
-import 'package:speech_to_text/speech_recognition_event.dart';
-import 'package:speech_to_text/speech_recognition_result.dart';
-import 'package:speech_to_text/speech_to_text.dart';
-import 'package:speech_to_text/speech_to_text_provider.dart';
-
-
-import '../../providers/auth_provider.dart';
-
-
-import '../../providers/permissions_provider.dart';
-import '../../providers/sensors_provider.dart';
-import '../../providers/video_recording_provider.dart';
 import '../components/settings/settings_content.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -39,37 +22,6 @@ class _HomeScreenState extends State<HomeScreen> {
   late int _currentIndex;
   late List<Widget> _pages;
 
-  Future<void> _handleSpeechResult(SpeechRecognitionResult result) async {
-    if (result.recognizedWords
-        .toLowerCase()
-        .contains('start recording') /* && result.confidence > 0.85*/) {
-      _logger.i('Starting recording');
-      await Provider.of<VideoRecordingProvider>(context, listen: false)
-          .startRecording();
-    }
-    // else if(result.recognizedWords.toLowerCase().contains('start recording') && result.confidence > 0.75) {
-    //   // If the confidence is lower than 0.85, but higher then 0.75 ask for confirmation
-    // }
-    else if (result.recognizedWords
-        .toLowerCase()
-        .contains('stop recording') /*&& result.confidence > 0.85*/) {
-      _logger.i('Stopping recording');
-      Provider.of<VideoRecordingProvider>(context, listen: false).stopRecording(false);
-    }
-    // else if(result.recognizedWords.toLowerCase().contains('stop recording') && result.confidence > 0.75) {
-    //   // If the confidence is lower than 0.85, but higher then 0.75 ask for confirmation
-    // }
-    else if (result.recognizedWords
-        .toLowerCase()
-        .contains('highlight') /*&& result.confidence > 0.85*/) {
-      _logger.i('Asked to highlight');
-      await Provider.of<VideoRecordingProvider>(context, listen: false)
-          .highlight();
-    }
-    //   else if(result.recognizedWords.toLowerCase().contains('highlight') && result.confidence > 0.75){
-    //     // If the confidence is lower than 0.85, but higher then 0.75 ask for confirmation
-    // }
-  }
 
   @override
   void initState() {
@@ -80,48 +32,8 @@ class _HomeScreenState extends State<HomeScreen> {
       const JourneysPage(),
       SettingsPage(widget.settingsProvider)
     ];
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeSpeechRecognition(context);
-    });
   }
 
-  Future<void> _initializeSpeechRecognition(BuildContext context) async {
-    var speechProvider =
-    Provider.of<SpeechToTextProvider>(context, listen: false);
-    bool available = await speechProvider.initialize();
-    if (available) {
-      _startListening(speechProvider);
-    } else {
-      _logger.w("The user has denied the use of speech recognition.");
-    }
-  }
-
-  void _startListening(SpeechToTextProvider speechProvider) async {
-    await FlutterVolumeController.updateShowSystemUI(
-        false); // Hide system volume UI
-    await FlutterVolumeController.setMute(true,
-        stream: AudioStream.alarm); // Set volume to 0 to silence feedback
-
-    speechProvider.listen(
-      listenFor: const Duration(seconds: 30),
-      pauseFor: const Duration(seconds: 10),
-      partialResults: false,
-      onDevice: false,
-      listenMode: ListenMode.confirmation,
-    );
-
-    speechProvider.stream.listen((event) async {
-      if (event.eventType == SpeechRecognitionEventType.finalRecognitionEvent) {
-        var result = event.recognitionResult!;
-        _logger.i("Final result: ${result.recognizedWords}");
-        await _handleSpeechResult(result);
-        _startListening(speechProvider); // Restart listening
-      } else if (event.eventType == SpeechRecognitionEventType.errorEvent) {
-        // _logger.e("Error: ${event.error?.errorMsg}");
-        _startListening(speechProvider); // Restart listening on error
-      }
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
