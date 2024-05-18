@@ -7,10 +7,12 @@ import 'package:safety_eye_app/services/services.dart';
 extension IocContainerBuilderExtension on IocContainerBuilder {
   void addProviders() {
     this
-      ..addSingleton<AuthenticationProvider>((container) => AuthenticationProvider(container.get<AuthService>()))
+      ..addSingleton<AuthenticationProvider>(
+          (container) => AuthenticationProvider(container.get<AuthService>()))
       ..addSingleton<PermissionsProvider>((container) => PermissionsProvider())
       ..addSingleton<SensorsProvider>((container) => SensorsProvider())
-      ..addSingleton<SettingsProvider>((container) => SettingsProvider(container.get<PreferencesService>()))
+      ..addSingleton<SettingsProvider>(
+          (container) => SettingsProvider(container.get<PreferencesService>()))
       ..add<VideoRecordingProvider>((container) {
         final authProvider = container.get<AuthenticationProvider>();
         final fileSystemRepo = container.get<FileSystemRepository>();
@@ -21,31 +23,48 @@ extension IocContainerBuilderExtension on IocContainerBuilder {
             authenticationProvider: authProvider,
             fileSystemRepository: fileSystemRepo,
             sensorsProvider: sensorsProvider,
-            permissions: permissionsProvider,settingsProvider: settingProvider);
-      })..add<JourneysProvider>((container) {final authProvider = container.get<AuthenticationProvider>();
-      return JourneysProvider(authenticationProvider: authProvider);})
+            permissions: permissionsProvider,
+            settingsProvider: settingProvider);
+      })
+      ..add<JourneysProvider>((container) {
+        final authProvider = container.get<AuthenticationProvider>();
+        final fileSystemRepo = container.get<FileSystemRepository>();
+        final backend = container.get<BackendService>();
+        return JourneysProvider(
+            authenticationProvider: authProvider,
+            fileSystemRepository: fileSystemRepo,
+            backendService: backend);
+      })
       ..addSingleton<SpeechProvider>((container) => SpeechProvider())
       ..add<ChunksProvider>((container) {
-        final authProvider = container.get<AuthenticationProvider>(); return ChunksProvider(authenticationProvider: authProvider);})
-      ..addSingleton<SignaturesProvider>((container) =>
-          SignaturesProvider(container.get<AuthenticationProvider>(), container.get<SignaturesService>()));
+        final fileSystemRepo = container.get<FileSystemRepository>();
+        final authProvider = container.get<AuthenticationProvider>();
+        final backend = container.get<BackendService>();
+        return ChunksProvider(
+            authenticationProvider: authProvider, backendService: backend,fileSystemRepository: fileSystemRepo);
+      })
+      ..addSingleton<SignaturesProvider>((container) => SignaturesProvider(
+          container.get<AuthenticationProvider>(),
+          container.get<SignaturesService>()));
   }
 
   void addServices() {
     this
       ..addSingleton<AuthService>((container) => AuthService())
       ..addSingleton<SignaturesService>((container) => SignaturesService())
-      ..addSingletonAsync<SettingsProvider>(
-          (container) async => await SettingsProvider(container.get<PreferencesService>()).init())
-      ..add<BackendService>((container) => BackendService(container.get<AuthenticationProvider>()))
+      ..addSingletonAsync<SettingsProvider>((container) async =>
+          await SettingsProvider(container.get<PreferencesService>()).init())
+      ..add<BackendService>((container) =>
+          BackendService(container.get<AuthenticationProvider>()))
       ..addSingleton<PreferencesService>((container) => PreferencesService());
   }
 
   void addRepositories() {
     this
-      ..addSingletonAsync<SignaturesRepository>((container) async => await SignaturesRepository().init())
-      ..addSingleton<FileSystemRepository>(
-          (container) => FileSystemRepository(authProvider: container.get<AuthenticationProvider>()));
+      ..addSingletonAsync<SignaturesRepository>(
+          (container) async => await SignaturesRepository().init())
+      ..addSingleton<FileSystemRepository>((container) => FileSystemRepository(
+          authProvider: container.get<AuthenticationProvider>()));
   }
 }
 
