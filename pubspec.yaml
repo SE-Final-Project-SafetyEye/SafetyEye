@@ -56,6 +56,7 @@ dependencies:
   highlight_text: ^1.7.0
   speech_to_text: ^6.5.1
   flutter_volume_controller: ^1.3.2
+  fluttertoast: ^8.0.8
   image_picker: ^0.8.4+4
   sensors_plus: ^4.0.2
   file_picker: ^6.1.1

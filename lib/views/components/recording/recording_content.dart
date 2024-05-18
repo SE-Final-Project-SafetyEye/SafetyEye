@@ -33,7 +33,7 @@ class _RecordingPageState extends State<RecordingPage> {
   @override
   Widget build(BuildContext context) {
     final cameraProvider = Provider.of<VideoRecordingProvider>(context, listen: false);
-
+    setIsRecording(cameraProvider.isRecording);
     if (cameraProvider.isInitialized) {
       return buildCamaraPreviewContent(cameraProvider);
     } else {
@@ -84,13 +84,13 @@ class _RecordingPageState extends State<RecordingPage> {
                 if (cameraProvider.isRecording) {
                   _logger.i("Stopping recording...");
                   await cameraProvider.stopRecording();
-                  setIsRecording(false);
+                  setIsRecording(cameraProvider.isRecording);
                   _logger.i("Recording stopped.");
                 } else {
                   _logger.i("Starting recording...");
                   await cameraProvider.startRecording();
                   _logger.i("Recording started.");
-                  setIsRecording(true);
+                  setIsRecording(cameraProvider.isRecording);
                 }
                 _logger.i(
                     "Recording button pressed. is recording: ${cameraProvider.isRecording}, isRecordingState: $isRecording");
