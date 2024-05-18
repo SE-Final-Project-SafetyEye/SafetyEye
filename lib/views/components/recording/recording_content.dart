@@ -83,7 +83,7 @@ class _RecordingPageState extends State<RecordingPage> {
                     "Recording button pressed. is recording: ${cameraProvider.isRecording}, isRecordingState: $isRecording");
                 if (cameraProvider.isRecording) {
                   _logger.i("Stopping recording...");
-                  await cameraProvider.stopRecording();
+                  cameraProvider.stopRecording(false);
                   setIsRecording(false);
                   _logger.i("Recording stopped.");
                 } else {

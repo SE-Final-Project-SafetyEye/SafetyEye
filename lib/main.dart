@@ -23,14 +23,14 @@ void main() async {
     builder: (context, child) {
       final iocProvider = Provider.of<IocContainerProvider>(context, listen: false);
       return MultiProvider(providers: [
-      ChangeNotifierProvider(create: (context) => iocProvider.container.get<AuthenticationProvider>()),
-      ChangeNotifierProvider(create: (context) => iocProvider.container.get<PermissionsProvider>()),
-      ChangeNotifierProvider(create: (context) => iocProvider.container.get<SensorsProvider>()),
-      ChangeNotifierProvider(create: (context) {
-        return iocProvider.container.get<SettingsProvider>();
-      }),
-      ChangeNotifierProvider(create: (context) => iocProvider.container.get<SignaturesProvider>()),
-    ], child: const MyApp());
+        ChangeNotifierProvider(create: (context) => iocProvider.container.get<AuthenticationProvider>()),
+        ChangeNotifierProvider(create: (context) => iocProvider.container.get<PermissionsProvider>()),
+        ChangeNotifierProvider(create: (context) => iocProvider.container.get<SensorsProvider>()),
+        ChangeNotifierProvider(create: (context) {
+          return iocProvider.container.get<SettingsProvider>();
+        }),
+        ChangeNotifierProvider(create: (context) => iocProvider.container.get<SignaturesProvider>()),
+      ], child: const MyApp());
     },
   ));
 }

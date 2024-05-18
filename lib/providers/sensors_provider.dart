@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+
 
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:logger/logger.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
 class SensorsProvider extends ChangeNotifier {
+  final Logger _logger = Logger();
   late List<_PositionData> _currentPosition;
   late List<_AccelerometerData> _accelerometerEvents;
   late List<_UserAccelerometerData> _userAccelerometerEvents;
@@ -18,16 +19,16 @@ class SensorsProvider extends ChangeNotifier {
   final _streamSubscriptions = <StreamSubscription<dynamic>>[];
   Duration sensorInterval = SensorInterval.normalInterval;
 
-  void startCollectMetadata() {
+  Future<void> startCollectMetadata() async {
     _restart();
     _run = true;
     _initState();
   }
 
-  void stopCollectMetadata() {
+  Future<String> stopCollectMetadata() async {
     _run = false;
     _dispose();
-    _exportToJson();
+    return _exportToJson();
   }
 
   void _initState() {
@@ -40,7 +41,7 @@ class SensorsProvider extends ChangeNotifier {
           _userAccelerometerEvents.add(userAccelerometerData);
         },
         onError: (e) {
-          print('Error receiving UserAccelerometerEvent: $e');
+          _logger.e('Error receiving UserAccelerometerEvent: $e');
         },
         cancelOnError: true,
       ),
@@ -54,7 +55,7 @@ class SensorsProvider extends ChangeNotifier {
           _accelerometerEvents.add(accelerometerData);
         },
         onError: (e) {
-          print('Error receiving AccelerometerEvent: $e');
+          _logger.e('Error receiving AccelerometerEvent: $e');
         },
         cancelOnError: true,
       ),
@@ -68,7 +69,7 @@ class SensorsProvider extends ChangeNotifier {
           _gyroscopeEvents.add(gyroscopeData);
         },
         onError: (e) {
-          print('Error receiving GyroscopeEvent: $e');
+          _logger.e('Error receiving GyroscopeEvent: $e');
         },
         cancelOnError: true,
       ),
@@ -82,7 +83,7 @@ class SensorsProvider extends ChangeNotifier {
           _magnetometerEvents.add(magnetometerData);
         },
         onError: (e) {
-          print('Error receiving MagnetometerEvent: $e');
+          _logger.e('Error receiving MagnetometerEvent: $e');
         },
         cancelOnError: true,
       ),
@@ -116,11 +117,11 @@ class SensorsProvider extends ChangeNotifier {
       _PositionData positionData = _PositionData(position, DateTime.now());
       _currentPosition.add(positionData);
     } catch (e) {
-      print('Error getting current location: $e');
+      _logger.e('Error getting current location: $e');
     }
   }
 
-  void _exportToJson() async {
+  Future<String> _exportToJson() async {
     Map<String, dynamic> dataMap = {
       'TimeStamp': DateTime.now().millisecondsSinceEpoch,
       'Accelerometer': [],
@@ -140,17 +141,49 @@ class SensorsProvider extends ChangeNotifier {
         },
       });
     }
+    for (var data in _userAccelerometerEvents){
+      dataMap['UserAccelerometer'].add({
+        'timestamp' : data.timeStamp.toIso8601String(),
+        'event': {
+          'x': data.userAccelerometerEvent.x.toStringAsFixed(1),
+          'y': data.userAccelerometerEvent.y.toStringAsFixed(1),
+          'z': data.userAccelerometerEvent.z.toStringAsFixed(1),
+        }
+      });
+    }
+    for (var data in _magnetometerEvents){
+      dataMap['Magnetometer'].add({
+        'timestamp' : data.timestamp.toIso8601String(),
+        'event':{
+          'x': data.magnetometerEvent.x.toStringAsFixed(1),
+          'y': data.magnetometerEvent.y.toStringAsFixed(1),
+          'z': data.magnetometerEvent.z.toStringAsFixed(1),
+        }
+      });
+    }
+    for (var data in _gyroscopeEvents){
+      dataMap['Gyroscope'].add({
+      'timestamp' : data.timestamp.toIso8601String(),
+      'event':{
+        'x': data.gyroscopeEvent.x.toStringAsFixed(1),
+        'y': data.gyroscopeEvent.y.toStringAsFixed(1),
+        'z': data.gyroscopeEvent.z.toStringAsFixed(1),
+      }
+      });
+    }
 
-    // Similar code for other sensor events
+    for (var data in _currentPosition){
+      dataMap['GPS'].add({
+        'timestamp': data.timestamp.toIso8601String(),
+        'event':{
+          'latitude': data.position.latitude,
+          'longitude': data.position.longitude,
+        }
+      });
+    }
 
     String jsonData = jsonEncode(dataMap);
-    await _writeToFile(jsonData);
-  }
-
-  Future<void> _writeToFile(String data) async {
-    final Directory directory = await getApplicationDocumentsDirectory();
-    final File file = File('${directory.path}/sensor_data.json');
-    await file.writeAsString(data);
+    return jsonData;
   }
 
   void _restart() {
