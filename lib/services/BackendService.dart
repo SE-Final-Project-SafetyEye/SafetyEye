@@ -2,12 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:safety_eye_app/models/payloads/request/requests.dart';
 import 'package:safety_eye_app/providers/auth_provider.dart';
+import 'package:safety_eye_app/repositories/file_system_repo.dart';
 import 'package:safety_eye_app/services/api.dart';
 import 'package:safety_eye_app/services/preferences_services.dart';
 
@@ -16,12 +16,13 @@ import '../models/payloads/response/responses.dart';
 class BackendService {
   Logger log = Logger();
   final PreferencesService _preferencesService = PreferencesService();
+  final FileSystemRepository fileSystemEntity;
   AuthenticationProvider authProvider;
   late Dio dio;
   late BackendApi api;
   bool isDev = kDebugMode;
 
-  BackendService(this.authProvider) {
+  BackendService(this.authProvider,this.fileSystemEntity) {
     var createdDio = Dio();
     createdDio.interceptors
         .add(InterceptorsWrapper(onRequest: (options, handler) async {

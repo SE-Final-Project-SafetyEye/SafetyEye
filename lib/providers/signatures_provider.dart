@@ -10,7 +10,7 @@ class SignaturesProvider extends ChangeNotifier {
       AuthenticationProvider authProvider, this.signaturesService) {
     final user = authProvider.currentUser;
     if (user != null) {
-      signaturesService.init(authProvider);
+      signaturesService.init();
     }
     listenToAuth(authProvider);
   }
@@ -19,7 +19,7 @@ class SignaturesProvider extends ChangeNotifier {
     authProvider.addListener(() {
       final user = authProvider.currentUser;
       if (user != null) {
-        signaturesService.init(authProvider);
+        signaturesService.init();
       }
     });
   }

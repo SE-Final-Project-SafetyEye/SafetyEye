@@ -1,5 +1,4 @@
 import 'package:ioc_container/ioc_container.dart';
-import 'package:path/path.dart';
 import 'package:safety_eye_app/providers/providers.dart';
 import 'package:safety_eye_app/repositories/repositories.dart';
 import 'package:safety_eye_app/services/services.dart';
@@ -41,7 +40,9 @@ extension IocContainerBuilderExtension on IocContainerBuilder {
         final authProvider = container.get<AuthenticationProvider>();
         final backend = container.get<BackendService>();
         return ChunksProvider(
-            authenticationProvider: authProvider, backendService: backend,fileSystemRepository: fileSystemRepo);
+            authenticationProvider: authProvider,
+            backendService: backend,
+            fileSystemRepository: fileSystemRepo);
       })
       ..addSingleton<SignaturesProvider>((container) => SignaturesProvider(
           container.get<AuthenticationProvider>(),
@@ -51,11 +52,16 @@ extension IocContainerBuilderExtension on IocContainerBuilder {
   void addServices() {
     this
       ..addSingleton<AuthService>((container) => AuthService())
-      ..addSingleton<SignaturesService>((container) => SignaturesService())
+      ..addSingleton<SignaturesService>((container){
+        final backend = container.get<BackendService>();
+        return SignaturesService(backendService: backend);})
       ..addSingletonAsync<SettingsProvider>((container) async =>
           await SettingsProvider(container.get<PreferencesService>()).init())
-      ..add<BackendService>((container) =>
-          BackendService(container.get<AuthenticationProvider>()))
+      ..add<BackendService>((container) {
+        final fileSystemRepo = container.get<FileSystemRepository>();
+        final authProvider = container.get<AuthenticationProvider>();
+        return BackendService(authProvider, fileSystemRepo);
+      })
       ..addSingleton<PreferencesService>((container) => PreferencesService());
   }
 
