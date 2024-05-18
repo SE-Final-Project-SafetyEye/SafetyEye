@@ -1,4 +1,5 @@
 import 'package:ioc_container/ioc_container.dart';
+import 'package:path/path.dart';
 import 'package:safety_eye_app/providers/providers.dart';
 import 'package:safety_eye_app/repositories/repositories.dart';
 import 'package:safety_eye_app/services/services.dart';
@@ -15,13 +16,17 @@ extension IocContainerBuilderExtension on IocContainerBuilder {
         final fileSystemRepo = container.get<FileSystemRepository>();
         final sensorsProvider = container.get<SensorsProvider>();
         final permissionsProvider = container.get<PermissionsProvider>();
+        final settingProvider = container.get<SettingsProvider>();
         return VideoRecordingProvider(
             authenticationProvider: authProvider,
             fileSystemRepository: fileSystemRepo,
             sensorsProvider: sensorsProvider,
-            permissions: permissionsProvider);
-      })
+            permissions: permissionsProvider,settingsProvider: settingProvider);
+      })..add<JourneysProvider>((container) {final authProvider = container.get<AuthenticationProvider>();
+      return JourneysProvider(authenticationProvider: authProvider);})
       ..addSingleton<SpeechProvider>((container) => SpeechProvider())
+      ..add<ChunksProvider>((container) {
+        final authProvider = container.get<AuthenticationProvider>(); return ChunksProvider(authenticationProvider: authProvider);})
       ..addSingleton<SignaturesProvider>((container) =>
           SignaturesProvider(container.get<AuthenticationProvider>(), container.get<SignaturesService>()));
   }

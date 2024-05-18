@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+
+
 import 'package:safety_eye_app/providers/ioc_provider.dart';
+
 import 'package:safety_eye_app/providers/settings_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:safety_eye_app/views/components/journeys/journeys_content.dart';
 import 'package:safety_eye_app/views/components/recording/recording_content.dart';
 
+
+import '../../providers/auth_provider.dart';
+
+
+import '../../providers/permissions_provider.dart';
+import '../../providers/sensors_provider.dart';
 import '../../providers/video_recording_provider.dart';
 import '../components/settings/settings_content.dart';
 
@@ -29,7 +38,11 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _currentIndex = 0;
-    _pages = [const RecordingPage(), const JourneysPage(), SettingsPage(widget.settingsProvider)];
+    _pages = [
+      const RecordingPage(),
+      const JourneysPage(),
+      SettingsPage(widget.settingsProvider)
+    ];
   }
 
   @override
