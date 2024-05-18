@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:logger/logger.dart';
-import 'package:safety_eye_app/ioc_container.dart';
 import 'package:safety_eye_app/providers/sensors_provider.dart';
 import 'package:safety_eye_app/providers/permissions_provider.dart';
 import '../repositories/file_system_repo.dart';

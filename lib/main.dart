@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -12,7 +10,6 @@ import 'package:safety_eye_app/providers/sensors_provider.dart';
 import 'package:safety_eye_app/providers/signatures_provider.dart';
 import 'package:safety_eye_app/views/screens/auth_screen.dart';
 import 'package:safety_eye_app/views/screens/home_screen.dart';
-import 'package:speech_to_text/speech_recognition_event.dart';
 import 'package:speech_to_text/speech_to_text_provider.dart';
 import 'firebase_options.dart';
 
@@ -21,7 +18,6 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  List<CameraDescription> cameras = await availableCameras();
   runApp(MultiProvider(
     providers: [
       ChangeNotifierProvider(create: (context) => IocContainerProvider())
