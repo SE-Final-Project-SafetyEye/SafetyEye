@@ -18,12 +18,13 @@ extension IocContainerBuilderExtension on IocContainerBuilder {
         final sensorsProvider = container.get<SensorsProvider>();
         final permissionsProvider = container.get<PermissionsProvider>();
         final settingProvider = container.get<SettingsProvider>();
+        final chunkProcessorService = container.get<ChunkProcessorService>();
         return VideoRecordingProvider(
             authenticationProvider: authProvider,
             fileSystemRepository: fileSystemRepo,
             sensorsProvider: sensorsProvider,
             permissions: permissionsProvider,
-            settingsProvider: settingProvider);
+            settingsProvider: settingProvider,chunkProcessorService:chunkProcessorService);
       })
       ..add<JourneysProvider>((container) {
         final authProvider = container.get<AuthenticationProvider>();
@@ -52,6 +53,10 @@ extension IocContainerBuilderExtension on IocContainerBuilder {
   void addServices() {
     this
       ..addSingleton<AuthService>((container) => AuthService())
+      ..addSingleton<ChunkProcessorService>((container) {
+        final fileSystemRepo = container.get<FileSystemRepository>();
+        final signaturesProvider = container.get<SignaturesProvider>();
+        return ChunkProcessorService(fileSystemRepository: fileSystemRepo, signaturesProvider: signaturesProvider );})
       ..addSingleton<SignaturesService>((container){
         final backend = container.get<BackendService>();
         return SignaturesService(backendService: backend);})

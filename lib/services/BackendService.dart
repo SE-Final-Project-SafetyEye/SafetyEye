@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:safety_eye_app/models/payloads/request/requests.dart';
 import 'package:safety_eye_app/providers/auth_provider.dart';
 import 'package:safety_eye_app/repositories/file_system_repo.dart';
@@ -16,13 +15,13 @@ import '../models/payloads/response/responses.dart';
 class BackendService {
   Logger log = Logger();
   final PreferencesService _preferencesService = PreferencesService();
-  final FileSystemRepository fileSystemEntity;
+  final FileSystemRepository fileSystemRepository;
   AuthenticationProvider authProvider;
   late Dio dio;
   late BackendApi api;
   bool isDev = kDebugMode;
 
-  BackendService(this.authProvider,this.fileSystemEntity) {
+  BackendService(this.authProvider, this.fileSystemRepository) {
     var createdDio = Dio();
     createdDio.interceptors
         .add(InterceptorsWrapper(onRequest: (options, handler) async {
@@ -43,12 +42,17 @@ class BackendService {
   }
 
   Future<JourneysResponse> getJourneys() async {
-    if (isDev) return JourneysResponse(journeys: []); // TODO - create a real mock
+    if (isDev) {
+      return JourneysResponse(journeys: []); // TODO - create a real mock
+    }
     return await api.getJourneys();
   }
 
   Future<List<String>> getJourneyChunks(String journeyId) async {
-    if (isDev) return List.generate(5, (index) => 'chunk$index'); // TODO - create a real mock
+    if (isDev) {
+      return List.generate(
+          5, (index) => 'chunk$index'); // TODO - create a real mock
+    }
     final response = await api.getJourneyChunksById(journeyId);
     return response.chunks;
   }
@@ -56,9 +60,7 @@ class BackendService {
   Future<File> downloadChunk(String journeyId, String chunkId) async {
     if (isDev) return File('test'); // TODO - create a real mock
     final chunkBytes = await api.downloadChunk(journeyId, chunkId);
-    final appDirectory = await getApplicationDocumentsDirectory();
-    File chunkFile = File('${appDirectory.path}/$chunkId');
-    return await chunkFile.writeAsBytes(chunkBytes);
+    return fileSystemRepository.downLoadChunk(chunkBytes, journeyId, chunkId);
   }
 
   Future<void> uploadChunk(

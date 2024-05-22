@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:logger/logger.dart';
-import 'package:safety_eye_app/ioc_container.dart';
 import 'package:safety_eye_app/providers/sensors_provider.dart';
 import 'package:safety_eye_app/providers/permissions_provider.dart';
 import 'package:safety_eye_app/providers/settings_provider.dart';
@@ -29,7 +28,7 @@ class VideoRecordingProvider extends ChangeNotifier {
       required this.sensorsProvider,
       required this.authenticationProvider,
       required this.settingsProvider,
-      required FileSystemRepository fileSystemRepository});
+      required this.fileSystemRepository,required this.chunkProcessorService});
 
   get camera => cameraController;
 
@@ -44,9 +43,6 @@ class VideoRecordingProvider extends ChangeNotifier {
     recordMin = 0.15;//settingsProvider.settingsState.chunkDuration; //TODO: delete the integer
     try {
       await cameraController?.initialize();
-      fileSystemRepository =
-          FileSystemRepository(authProvider: authenticationProvider);
-      chunkProcessorService = ChunkProcessorService(fileSystemRepository: fileSystemRepository);
     } catch (e) {
       if (e is CameraException) {
         switch (e.code) {
@@ -101,8 +97,9 @@ class VideoRecordingProvider extends ChangeNotifier {
       cameraController?.stopVideoRecording().then((tempFile) {
         _logger.d(
             "stopped recording: status ${cameraController?.value.isRecordingVideo}");
-        //fileSystemRepository.stopRecording(tempFile, chunkNumber);
+        _logger.i("Start chunkProcessorService");
         chunkProcessorService.processChunk(tempFile, chunkNumber);
+        _logger.i("stop chunkProcessorService");
         chunkNumber++;
         if (isRecordRecursively) {
           recordRecursively();
