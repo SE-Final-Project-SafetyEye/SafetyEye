@@ -12,8 +12,12 @@ class AuthService {
     _auth = FirebaseAuth.instance;
   }
 
+
+
   @visibleForTesting
   AuthService.dependentOn(this._auth, this._googleSignIn);
+
+  get currentUser => _auth.currentUser;
 
   void listenUserStream(void Function(User? user) callback) {
     _auth.authStateChanges().listen(callback);
