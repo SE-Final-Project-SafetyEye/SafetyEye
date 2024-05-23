@@ -8,8 +8,10 @@ import 'package:safety_eye_app/providers/settings_provider.dart';
 import 'package:safety_eye_app/providers/permissions_provider.dart';
 import 'package:safety_eye_app/providers/sensors_provider.dart';
 import 'package:safety_eye_app/providers/signatures_provider.dart';
+import 'package:safety_eye_app/providers/video_recording_provider.dart';
 import 'package:safety_eye_app/views/screens/auth_screen.dart';
 import 'package:safety_eye_app/views/screens/home_screen.dart';
+import 'package:speech_to_text/speech_to_text_provider.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -30,6 +32,12 @@ void main() async {
           return iocProvider.container.get<SettingsProvider>();
         }),
         ChangeNotifierProvider(create: (context) => iocProvider.container.get<SignaturesProvider>()),
+        ChangeNotifierProvider(
+            create: (context) =>
+                iocProvider.container.get<SpeechToTextProvider>()),
+        ChangeNotifierProvider(
+            create: (context) =>
+                iocProvider.container.get<VideoRecordingProvider>())
       ], child: const MyApp());
     },
   ));

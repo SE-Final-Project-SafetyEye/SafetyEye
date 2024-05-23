@@ -39,7 +39,7 @@ class VideoRecordingProvider extends ChangeNotifier {
 
   Future<void> initializeCamera() async {
     cameraController =
-        CameraController(permissions.cameras[0], ResolutionPreset.max);
+        CameraController(permissions.cameras[0], ResolutionPreset.high, enableAudio: false);
     recordMin = 0.15;//settingsProvider.settingsState.chunkDuration; //TODO: delete the integer
     try {
       await cameraController?.initialize();
@@ -59,24 +59,25 @@ class VideoRecordingProvider extends ChangeNotifier {
 
   Future<void> startRecording() async {
     _logger.d(
-        "start recording: status ${cameraController?.value.isRecordingVideo}");
+        "1 start recording: status ${cameraController?.value.isRecordingVideo}");
     if (!(cameraController?.value.isRecordingVideo ?? false)) {
       recording = true;
+      notifyListeners();
       chunkNumber = 1;
       fileSystemRepository.startRecording();
       _logger.d(
-          "start recording: status ${cameraController?.value.isRecordingVideo}");
-      recordRecursively();
+          "2 start recording: status ${cameraController?.value.isRecordingVideo}");
+      await recordRecursively();
     }
   }
 
-  void recordRecursively() async {
-    _logger.i("recordRecursively, chunkNumber: $chunkNumber");
+  Future<void> recordRecursively() async {
+    _logger.i("1 recordRecursively, chunkNumber: $chunkNumber");
     if (recordMin > 0) {
       await cameraController?.startVideoRecording();
-      sensorsProvider.startCollectMetadata();
+      await sensorsProvider.startCollectMetadata();
       _logger.d(
-          "start recording: status ${cameraController?.value.isRecordingVideo}");
+          "2 start recording: status ${cameraController?.value.isRecordingVideo}");
       await Future.delayed(
           Duration(milliseconds: (recordMin * 60 * 1000).toInt()));
       if (cameraController!.value.isRecordingVideo) {
@@ -85,26 +86,45 @@ class VideoRecordingProvider extends ChangeNotifier {
     }
   }
 
-  void stopRecording(bool isRecordRecursively) {
+  Future<void> stopRecording(bool isRecordRecursively) async {
     _logger.d(
-        "stopped recording: status ${cameraController?.value.isRecordingVideo}");
+        "1 stopped recording: status ${cameraController?.value.isRecordingVideo}");
     if (cameraController?.value.isRecordingVideo ?? false) {
       recording = isRecordRecursively;
-
+      notifyListeners();
       sensorsProvider
           .stopCollectMetadata()
           .then((value) => fileSystemRepository.saveDataToFile(value));
-      cameraController?.stopVideoRecording().then((tempFile) {
+      cameraController?.stopVideoRecording().then((tempFile) async {
         _logger.d(
             "stopped recording: status ${cameraController?.value.isRecordingVideo}");
         _logger.i("Start chunkProcessorService");
+
+        _logger.i("2 stopped recording: status ${cameraController?.value.isRecordingVideo}");
         chunkProcessorService.processChunk(tempFile, chunkNumber);
         _logger.i("stop chunkProcessorService");
         chunkNumber++;
         if (isRecordRecursively) {
-          recordRecursively();
+          await recordRecursively();
         }
       });
+    }
+  }
+
+  // TODO fill this method
+  Future<void> highlight() async {
+    _logger.d("1 highlight - status recording ${cameraController?.value.isRecordingVideo}");
+    if (!(cameraController?.value.isRecordingVideo ?? false)) {
+      await startRecording();
+      // add highlight flag
+      _logger.d("2 start recording: status ${cameraController?.value.isRecordingVideo}");
+      _logger.d("3 start highlight: status true");
+    }
+    else if (cameraController?.value.isRecordingVideo ?? false) {
+      // validate highlight flag
+      _logger.d("2 start highlight: status ?");
+      // start another highlight chunk if possible
+      _logger.d("3 start highlight: status true");
     }
   }
 

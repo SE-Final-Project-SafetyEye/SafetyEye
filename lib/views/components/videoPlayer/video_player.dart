@@ -58,7 +58,6 @@ class _ChewieDemoState extends State<ChewieVideoPlayer> {
       looping: true,
       progressIndicatorDelay:
           bufferDelay != null ? Duration(milliseconds: bufferDelay!) : null,
-
       additionalOptions: (context) {
         return <OptionItem>[
           OptionItem(
