@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:numberpicker/numberpicker.dart';
+import 'package:provider/provider.dart';
+import 'package:safety_eye_app/providers/auth_provider.dart';
 import 'package:safety_eye_app/providers/settings_provider.dart';
 
 import '../../../services/preferences_services.dart';
@@ -33,11 +35,9 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   void initState() {
     chunkDuration = widget.settingsProvider.settingsState.chunkDuration;
-    gracePeriodInterval =
-        widget.settingsProvider.settingsState.gracePeriodInterval;
+    gracePeriodInterval = widget.settingsProvider.settingsState.gracePeriodInterval;
     autoUpload = widget.settingsProvider.settingsState.autoUpload;
-    selectedResolution = switch (
-        widget.settingsProvider.settingsState.videoResolution) {
+    selectedResolution = switch (widget.settingsProvider.settingsState.videoResolution) {
       "low" => 0,
       'medium' => 1,
       'high' => 2,
@@ -83,6 +83,7 @@ class _SettingsPageState extends State<SettingsPage> {
         _buildGracePeriodInterval(fontSize),
         _buildAutoUpload(),
         _buildVideoResolution(videoResolution),
+        _buildSignOutButton(context)
       ]),
     );
   }
@@ -137,8 +138,7 @@ class _SettingsPageState extends State<SettingsPage> {
           itemWidth: 50,
           step: 5,
           textStyle: TextStyle(fontSize: fontSize),
-          selectedTextStyle:
-              TextStyle(fontSize: fontSize * 2, color: Colors.blue),
+          selectedTextStyle: TextStyle(fontSize: fontSize * 2, color: Colors.blue),
           onChanged: (value) {
             setState(() {
               gracePeriodInterval = value;
@@ -164,8 +164,7 @@ class _SettingsPageState extends State<SettingsPage> {
           itemWidth: 50,
           step: 5,
           textStyle: TextStyle(fontSize: fontSize),
-          selectedTextStyle:
-              TextStyle(fontSize: fontSize * 2, color: Colors.blue),
+          selectedTextStyle: TextStyle(fontSize: fontSize * 2, color: Colors.blue),
           onChanged: (value) {
             setState(() {
               chunkDuration = value;
@@ -176,5 +175,15 @@ class _SettingsPageState extends State<SettingsPage> {
         )
       ],
     );
+  }
+
+  _buildSignOutButton(BuildContext context) {
+    final authProvider = Provider.of<AuthenticationProvider>(context);
+    return ElevatedButton(
+        onPressed: () {
+          authProvider.signOut();
+          Navigator.of(context).popAndPushNamed("/auth");
+        },
+        child: const Text('Sign out'));
   }
 }
