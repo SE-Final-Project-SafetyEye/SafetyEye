@@ -23,7 +23,7 @@ if (flutterVersionName == null) {
 }
 
 android {
-    namespace "com.example.safrt_eye_app"
+    namespace "com.example.safety_eye_app"
     compileSdkVersion 34
     ndkVersion flutter.ndkVersion
 
