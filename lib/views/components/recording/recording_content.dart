@@ -37,29 +37,22 @@ class _RecordingPageState extends State<RecordingPage> {
   }
 
   Future<void> _handleSpeechResult(SpeechRecognitionResult result) async {
-    cameraProvider =
-        Provider.of<VideoRecordingProvider>(context, listen: false);
-    if (result.recognizedWords
-        .toLowerCase()
-        .contains('start recording') /* && result.confidence > 0.85*/) {
+    cameraProvider = Provider.of<VideoRecordingProvider>(context, listen: false);
+    if (result.recognizedWords.toLowerCase().contains('start recording') /* && result.confidence > 0.85*/) {
       _logger.i('Starting recording');
       if (!cameraProvider.isRecording) await cameraProvider.startRecording();
     }
     // else if(result.recognizedWords.toLowerCase().contains('start recording') && result.confidence > 0.75) {
     //   // If the confidence is lower than 0.85, but higher then 0.75 ask for confirmation
     // }
-    else if (result.recognizedWords
-        .toLowerCase()
-        .contains('stop recording') /*&& result.confidence > 0.85*/) {
+    else if (result.recognizedWords.toLowerCase().contains('stop recording') /*&& result.confidence > 0.85*/) {
       _logger.i('Stopping recording');
       if (cameraProvider.isRecording) cameraProvider.stopRecording(false);
     }
     // else if(result.recognizedWords.toLowerCase().contains('stop recording') && result.confidence > 0.75) {
     //   // If the confidence is lower than 0.85, but higher then 0.75 ask for confirmation
     // }
-    else if (result.recognizedWords
-        .toLowerCase()
-        .contains('highlight') /*&& result.confidence > 0.85*/) {
+    else if (result.recognizedWords.toLowerCase().contains('highlight') /*&& result.confidence > 0.85*/) {
       _logger.i('Asked to highlight');
       await cameraProvider.highlight();
     }
@@ -79,12 +72,9 @@ class _RecordingPageState extends State<RecordingPage> {
     }
   }
 
-  Future<void> _subscribeToVoiceRecognition(
-      SpeechToTextProvider speechProvider) async {
-    await FlutterVolumeController.updateShowSystemUI(
-        false); // Hide system volume UI
-    await FlutterVolumeController.setMute(true,
-        stream: AudioStream.alarm); // Set volume to 0 to silence feedback
+  Future<void> _subscribeToVoiceRecognition(SpeechToTextProvider speechProvider) async {
+    await FlutterVolumeController.updateShowSystemUI(false); // Hide system volume UI
+    await FlutterVolumeController.setMute(true, stream: AudioStream.alarm); // Set volume to 0 to silence feedback
 
     _logger.d("Subscribing to voice recognition...");
 
@@ -116,15 +106,13 @@ class _RecordingPageState extends State<RecordingPage> {
     KeepScreenOn.turnOff();
     speechProvider.stop(); // Stop listening if the widget is disposed
     _subscription?.cancel();
-    FlutterVolumeController.setMute(false,
-        stream: AudioStream.alarm); // Restore volume
+    FlutterVolumeController.setMute(false, stream: AudioStream.alarm); // Restore volume
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final cameraProvider =
-        Provider.of<VideoRecordingProvider>(context, listen: true);
+    final cameraProvider = Provider.of<VideoRecordingProvider>(context, listen: true);
     if (cameraProvider.isInitialized) {
       return buildCamaraPreviewContent(cameraProvider);
     } else {
@@ -142,8 +130,8 @@ class _RecordingPageState extends State<RecordingPage> {
     }
   }
 
-  Column buildCamaraPreviewContent(VideoRecordingProvider cameraProvider) {
-    return Column(children: [
+  Widget buildCamaraPreviewContent(VideoRecordingProvider cameraProvider) {
+    return Stack(alignment: AlignmentDirectional.bottomEnd, children: [
       Expanded(
         child: Center(child: CameraPreview(cameraProvider.cameraController!)),
       ),
@@ -157,48 +145,44 @@ class _RecordingPageState extends State<RecordingPage> {
           ],
         ),
       ),
-      Padding(
-        padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const SizedBox(
-              width: 15,
-            ),
-            ElevatedButton.icon(
-              label: Text(
-                cameraProvider.isRecording ? 'Stop' : 'Record',
-              ),
-              onPressed: () async {
-                _logger.i(
-                    "Recording button pressed. is recording: ${cameraProvider.isRecording}, isRecordingState: $isRecording");
-                if (cameraProvider.isRecording) {
-                  _logger.i("Stopping recording...");
-                  cameraProvider.stopRecording(false);
-                  setIsRecording(false);
-                  _logger.i("Recording stopped.");
-                } else {
-                  _logger.i("Starting recording...");
-                  await cameraProvider.startRecording();
-                  _logger.i("Recording started.");
-                  setIsRecording(true);
-                }
-                _logger.i(
-                    "Recording button pressed. is recording: ${cameraProvider.isRecording}, isRecordingState: $isRecording");
-              },
-              icon: Icon(
-                cameraProvider.isRecording ? Icons.stop : Icons.circle,
-              ),
-            ),
-          ],
-        ),
-      )
+      buildRecordButton(cameraProvider)
     ]);
   }
 
-  void setIsRecording(bool isRecording) {
-    setState(() {
-      this.isRecording = isRecording;
-    });
+  Widget buildRecordButton(VideoRecordingProvider cameraProvider) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const SizedBox(
+            width: 15,
+          ),
+          ElevatedButton.icon(
+            label: Text(
+              cameraProvider.isRecording ? 'Stop' : 'Record',
+            ),
+            onPressed: () async {
+              _logger.i(
+                  "Recording button pressed. is recording: ${cameraProvider.isRecording}, isRecordingState: $isRecording");
+              if (cameraProvider.isRecording) {
+                _logger.i("Stopping recording...");
+                cameraProvider.stopRecording(false);
+                _logger.i("Recording stopped.");
+              } else {
+                _logger.i("Starting recording...");
+                await cameraProvider.startRecording();
+                _logger.i("Recording started.");
+              }
+              _logger.i(
+                  "Recording button pressed. is recording: ${cameraProvider.isRecording}, isRecordingState: $isRecording");
+            },
+            icon: Icon(
+              cameraProvider.isRecording ? Icons.stop : Icons.circle,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

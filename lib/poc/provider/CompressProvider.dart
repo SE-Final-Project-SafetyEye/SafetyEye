@@ -12,13 +12,13 @@ class CompressProvider extends ChangeNotifier {
   String? compressedPath;
 
   Future<void> pickVideo() async {
-    final pickedFile = await ImagePicker().getVideo(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      videoPath = pickedFile.path ?? '';
-      notifyListeners();
-    } else {
-      print('No video selected.');
-    }
+    // final pickedFile = await ImagePicker().getVideo(source: ImageSource.gallery);
+    // if (pickedFile != null) {
+    //   videoPath = pickedFile.path ?? '';
+    //   notifyListeners();
+    // } else {
+    //   print('No video selected.');
+    // }
   }
 
   Future<void> compressAndSaveVideo() async {
