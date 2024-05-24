@@ -43,54 +43,8 @@ class _JourneysPageState extends State<JourneysPage> {
                 children: [
                   _buildLocalVideoList(journeys.localVideoFolders),
                   if (journeys.backendVideoFolders.isNotEmpty)
-                    Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const Text("Backend Journeys"),
-                          ListView.builder(
-                            itemCount: journeys.backendVideoFolders.length,
-                            itemBuilder: (context, index) {
-                              return ListTile(
-                                title:
-                                    Text(journeys.backendVideoFolders[index]),
-                                onTap: () {
-                                  setState(() {
-                                    if (selectedBackendJourneys.contains(
-                                        journeys.backendVideoFolders[index])) {
-                                      selectedBackendJourneys.remove(
-                                          journeys.backendVideoFolders[index]);
-                                    } else {
-                                      selectedBackendJourneys.add(
-                                          journeys.backendVideoFolders[index]);
-                                    }
-                                  });
-                                },
-                                leading: Checkbox(
-                                  value: selectedBackendJourneys.contains(
-                                      journeys.backendVideoFolders[index]),
-                                  onChanged: (value) {
-                                    setState(() {
-                                      if (value != null && value) {
-                                        selectedBackendJourneys.add(journeys
-                                            .backendVideoFolders[index]);
-                                      } else {
-                                        selectedBackendJourneys.remove(journeys
-                                            .backendVideoFolders[index]);
-                                      }
-                                    });
-                                  },
-                                ),
-                              );
-                            },
-                          ),
-                        ]),
+                    _buildBackEndVideoList(journeys.backendVideoFolders),
                 ],
-              ),
-              floatingActionButton: FloatingActionButton(
-                onPressed: () {
-                  //journeys.setSelectedBackendJourneys(selectedBackendJourneys); //TODO: implement journeys Download
-                },
-                child: const Icon(Icons.cloud_download),
               ),
             );
           } else {
@@ -117,6 +71,23 @@ Widget _buildLocalVideoList(List<FileSystemEntity> paths) {
   );
 }
 
+Widget _buildBackEndVideoList(List<String> journeys) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      const Text("BackEnd Journeys"),
+      ListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: journeys.length,
+        itemBuilder: (context, index) {
+          return BackEndVideoCard(journeyName: journeys[index]);
+        },
+      ),
+    ],
+  );
+}
+
 class LocalVideoCard extends StatelessWidget {
   final FileSystemEntity fileSystemEntity;
 
@@ -130,13 +101,39 @@ class LocalVideoCard extends StatelessWidget {
         Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ChunksPage(path: fileSystemEntity.path),
+              builder: (context) => ChunksPage(path: fileSystemEntity.path,local: true,),
             ));
       },
       child: Card(
         child: Column(
           children: [
             ListTile(title: Text(videoFolderName)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class BackEndVideoCard extends StatelessWidget {
+  final String journeyName;
+
+   const BackEndVideoCard({super.key, required this.journeyName});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ChunksPage(path: journeyName,local:false),
+            ));
+      },
+      child: Card(
+        child: Column(
+          children: [
+            ListTile(title: Text(journeyName)),
           ],
         ),
       ),

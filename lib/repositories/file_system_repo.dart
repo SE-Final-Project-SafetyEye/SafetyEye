@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:camera/camera.dart';
-import 'package:flutter_ffmpeg/flutter_ffmpeg.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:safety_eye_app/providers/auth_provider.dart';
@@ -110,5 +109,12 @@ class FileSystemRepository {
 
   getThumbnailFile(String thumbnail) {
     return File(thumbnail);
+  }
+
+  Future<File> downLoadChunk(List<int> chunkBytes, String journeyId, String chunkId) async {
+    final dir = await getApplicationDocumentsDirectory();
+    final videosDirectory = Directory('${dir.path}/videos/$userId');
+    File chunkFile = File('${videosDirectory.path}/$journeyId/$chunkId');
+    return await chunkFile.writeAsBytes(chunkBytes);
   }
 }
