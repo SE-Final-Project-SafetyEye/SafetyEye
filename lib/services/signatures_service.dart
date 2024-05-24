@@ -121,4 +121,20 @@ class SignaturesService {
     return await _signingAlgorithm.verify(utf8.encode(message),
         signature: signature);
   }
+
+  Future<Signature?> getSignature(String message) async {
+    (String?, String?) signatureParams = await _signaturesRepository
+        .getSignature(message);
+    if (signatureParams.$1 != null && signatureParams.$2 != null) {
+      List<int> byteList = utf8.encode(signatureParams.$1!);
+      final String publicKey = await _preferencesService
+          .getPrefOrDefault<String>(PreferencesKeys.publicKey);
+      Signature signature = Signature(byteList, publicKey: SimplePublicKey(base64Decode(publicKey), type: _keyPairType));
+      return signature;
+    }
+    else {
+      return null;
+    }
+  }
+
 }

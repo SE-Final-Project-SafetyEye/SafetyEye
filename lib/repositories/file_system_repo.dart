@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
 import 'package:logger/logger.dart';
@@ -116,5 +118,11 @@ class FileSystemRepository {
     final videosDirectory = Directory('${dir.path}/videos/$userId');
     File chunkFile = File('${videosDirectory.path}/$journeyId/$chunkId');
     return await chunkFile.writeAsBytes(chunkBytes);
+  }
+
+  Future<String> getFileMassage(String chunksPath) async {
+    final file = File(chunksPath);
+    Uint8List videoBytes = await file.readAsBytes();
+    return base64Encode(videoBytes);
   }
 }

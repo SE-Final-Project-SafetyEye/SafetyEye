@@ -64,7 +64,7 @@ class MyApp extends StatelessWidget {
                     bodySmall: TextStyle(fontSize: 12.0),
                   ),
                 ),
-                home: !authProvider.isSignedIn() ? const AuthScreen() : HomeScreen(settingsProvider),
+                home: authProvider.isSignedIn() ? const AuthScreen() : HomeScreen(settingsProvider),
                 routes: {
                   "/home": (context) => HomeScreen(settingsProvider),
                   "/auth": (context) => const AuthScreen(),

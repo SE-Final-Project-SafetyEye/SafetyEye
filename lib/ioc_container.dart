@@ -12,8 +12,6 @@ extension IocContainerBuilderExtension on IocContainerBuilder {
           (container) => AuthenticationProvider(container.get<AuthService>()))
       ..addSingleton<PermissionsProvider>((container) => PermissionsProvider())
       ..addSingleton<SensorsProvider>((container) => SensorsProvider())
-      ..addSingleton<SettingsProvider>(
-          (container) => SettingsProvider(container.get<PreferencesService>()))
       ..addSingleton<SettingsProvider>((container) => SettingsProvider(container.get<PreferencesService>()))
       ..addSingleton<SpeechToTextProvider>((container) => SpeechToTextProvider(SpeechToText()))
 
@@ -45,10 +43,11 @@ extension IocContainerBuilderExtension on IocContainerBuilder {
         final fileSystemRepo = container.get<FileSystemRepository>();
         final authProvider = container.get<AuthenticationProvider>();
         final backend = container.get<BackendService>();
+        final signaturesProvider = container.get<SignaturesProvider>();
         return ChunksProvider(
             authenticationProvider: authProvider,
             backendService: backend,
-            fileSystemRepository: fileSystemRepo);
+            fileSystemRepository: fileSystemRepo,signaturesProvider: signaturesProvider);
       })
       ..addSingleton<SignaturesProvider>((container) => SignaturesProvider(
           container.get<AuthenticationProvider>(),

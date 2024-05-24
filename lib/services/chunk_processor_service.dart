@@ -19,7 +19,6 @@ class ChunkProcessorService {
 
   Future<void> processChunk(XFile videoChunk, int chunkNumber) async {
     try {
-      // Read the video chunk as bytes
       Uint8List videoBytes = await videoChunk.readAsBytes();
 
       Directory dir =
@@ -37,7 +36,6 @@ class ChunkProcessorService {
 
       int intervalInSeconds = 5;
 
-      _logger.i("outputDir:  $outputDir");
       int rc = await ffmpeg.execute(
           '-i $outputDir -vf fps=1/$intervalInSeconds ${outputDir}frame-%03d.jpg');
 
@@ -66,8 +64,7 @@ class ChunkProcessorService {
         }
       }
     }
-    _logger.i("outputDirectory");
-    // Sign and save each frame
+
     for (var entity in frames) {
       File frameFile = File(entity.path);
       Uint8List frameBytes = await frameFile.readAsBytes();

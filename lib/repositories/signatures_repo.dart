@@ -81,7 +81,6 @@ class SignaturesRepository {
     }
   }
 
-  // Retrieve signature from the database
   Future<(String?, String?)> getSignature(String message) async {
     final db = await database;
     _logger.d('Try to get signature message: ');

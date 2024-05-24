@@ -1,12 +1,13 @@
+import 'package:cryptography/cryptography.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:safety_eye_app/providers/signatures_provider.dart';
 
 import 'package:video_thumbnail/video_thumbnail.dart';
 
 import '../services/BackendService.dart';
 import '../repositories/file_system_repo.dart';
-import '../views/components/videoPlayer/video_player.dart';
 import 'auth_provider.dart';
 
 class ChunksProvider extends ChangeNotifier {
@@ -16,8 +17,13 @@ class ChunksProvider extends ChangeNotifier {
   final AuthenticationProvider authenticationProvider;
   final FileSystemRepository fileSystemRepository;
   final BackendService backendService;
+  final SignaturesProvider signaturesProvider;
 
-  ChunksProvider({required this.authenticationProvider,required this.backendService,required this.fileSystemRepository});
+  ChunksProvider(
+      {required this.authenticationProvider,
+      required this.backendService,
+      required this.fileSystemRepository,
+      required this.signaturesProvider});
 
   Future<void> initChunks(String path) async {
     chunksPaths = await fileSystemRepository.getChunksList(path);
@@ -64,21 +70,27 @@ class ChunksProvider extends ChangeNotifier {
 
   Future<void> handleCloudUploadButtonPress(int videoIndex) async {} //TODO:
 
-  handlePlayButtonPress(context,int videoIndex) {
-    String videoPath = chunksPaths[videoIndex]; // Assuming chunksPaths contains video paths
-    // Perform actions to play the video, such as opening a video player
-    _logger.i('Playing video: $videoPath');
-    // Example code to open a video player (you'll need to replace this with your actual video player implementation)
-    Navigator.push(context, MaterialPageRoute(builder: (context) => ChewieVideoPlayer(srcs: [videoPath],)));
+  handlePlayButtonPress(int videoIndex) {
+    return chunksPaths[videoIndex];
   }
 
-  Future<void> getChunk(String journeyId) async{
+  Future<void> getChunk(String journeyId) async {
     final chunks = await backendService.getJourneyChunks(journeyId);
     chunksPaths = chunks;
   }
 
-  Future<void> download(String journeyId ,int chunkId) async {
-    backendService.downloadChunk(journeyId, chunkId.toString()); //TODO: check if works
+  Future<void> download(String journeyId, int chunkId) async {
+    backendService.downloadChunk(
+        journeyId, chunkId.toString()); //TODO: check if works
   }
 
+  Future<bool> handleVerifiedSignatureButtonPress(int index) async {
+    String message =
+        await fileSystemRepository.getFileMassage(chunksPaths[index]);
+    Signature? signature = await signaturesProvider.getSignature(message);
+    if (signature != null) {
+      return await signaturesProvider.verifySignature(message, signature);
+    }
+    return false;
+  }
 }
