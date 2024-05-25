@@ -48,6 +48,50 @@
           ]
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:448213785394:android:0cd5e47faef7ad9f2e552b",
+        "android_client_info": {
+          "package_name": "com.saftyeyeapp.safety_eye_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "448213785394-78ko5657ottk9u44h48bsnbdiroi5nga.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.saftyeyeapp.safety_eye_app",
+            "certificate_hash": "5a7d4f138f77ac12232a9a0dcef3ee5b6c8f2977"
+          }
+        },
+        {
+          "client_id": "448213785394-v1paf3fmksjtgrtbkbnijjkji9bmkmj9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAIiZLT1a5ZhWqbPfjx_vUiN1czPgVVrUA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "448213785394-v1paf3fmksjtgrtbkbnijjkji9bmkmj9.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "448213785394-03hl271enpultmho97a89mc06h5p7nfi.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.safrtEyeApp"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "configuration_version": "1"
