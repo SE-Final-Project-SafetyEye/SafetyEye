@@ -14,7 +14,6 @@ extension IocContainerBuilderExtension on IocContainerBuilder {
       ..addSingleton<SensorsProvider>((container) => SensorsProvider())
       ..addSingleton<SettingsProvider>(
           (container) => SettingsProvider(container.get<PreferencesService>()))
-      ..addSingleton<SettingsProvider>((container) => SettingsProvider(container.get<PreferencesService>()))
       ..addSingleton<SpeechToTextProvider>((container) => SpeechToTextProvider(SpeechToText()))
 
       ..add<VideoRecordingProvider>((container) {
@@ -40,7 +39,6 @@ extension IocContainerBuilderExtension on IocContainerBuilder {
             fileSystemRepository: fileSystemRepo,
             backendService: backend);
       })
-      ..addSingleton<SpeechProvider>((container) => SpeechProvider())
       ..add<ChunksProvider>((container) {
         final fileSystemRepo = container.get<FileSystemRepository>();
         final authProvider = container.get<AuthenticationProvider>();
