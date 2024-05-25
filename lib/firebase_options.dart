@@ -26,7 +26,10 @@ class DefaultFirebaseOptions {
       case TargetPlatform.android:
         return android;
       case TargetPlatform.iOS:
-        return ios;
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for ios - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
       case TargetPlatform.macOS:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for macos - '
@@ -51,20 +54,9 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyAIiZLT1a5ZhWqbPfjx_vUiN1czPgVVrUA',
-    appId: '1:448213785394:android:0cd5e47faef7ad9f2e552b',
+    appId: '1:448213785394:android:89ded95c604e0aae2e552b',
     messagingSenderId: '448213785394',
     projectId: 'safetyeye-e9274',
     storageBucket: 'safetyeye-e9274.appspot.com',
-  );
-
-  static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBKRLWSMj27IChGXF5bCfeFfeeLc8kATdI',
-    appId: '1:448213785394:ios:b32ac2a5ed95abae2e552b',
-    messagingSenderId: '448213785394',
-    projectId: 'safetyeye-e9274',
-    storageBucket: 'safetyeye-e9274.appspot.com',
-    androidClientId: '448213785394-4msae9ullhkqaiauou8c7btukfh0ejqm.apps.googleusercontent.com',
-    iosClientId: '448213785394-03hl271enpultmho97a89mc06h5p7nfi.apps.googleusercontent.com',
-    iosBundleId: 'com.example.safrtEyeApp',
   );
 }

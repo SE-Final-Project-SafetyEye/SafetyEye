@@ -69,7 +69,6 @@ class AuthenticationProvider extends ChangeNotifier {
   bool isSignedIn() {
     _logger.i('Checking if user is signed in');
     _currentUser = _auth.currentUser;
-    notifyListeners();
     _logger.i('Checking if user is signed in: $_currentUser');
     return currentUser != null;
   }

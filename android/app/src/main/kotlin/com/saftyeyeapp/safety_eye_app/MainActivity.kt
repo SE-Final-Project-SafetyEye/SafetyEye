@@ -1,4 +1,4 @@
-package com.saftyeyeapp.safety_eye_app
+package com.safetyeyeapp.safety_eye_app
 
 import io.flutter.embedding.android.FlutterActivity
 
