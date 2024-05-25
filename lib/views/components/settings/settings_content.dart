@@ -184,6 +184,6 @@ class _SettingsPageState extends State<SettingsPage> {
           authProvider.signOut();
           Navigator.of(context).popAndPushNamed("/auth");
         },
-        child: const Text('Sign out'));
+        child: Text('Sign out from ${authProvider.currentUser?.email ?? 'could not get name'}'));
   }
 }

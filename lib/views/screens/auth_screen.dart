@@ -91,11 +91,13 @@ class _AuthScreenState extends State<AuthScreen> {
                     await authProvider.signUpWithEmailAndPassword(
                       _emailController.value.text,
                       _passwordController.value.text);
+                    Navigator.of(context).popAndPushNamed('/home');
                   }, child: Text(buttonText)),
                   SignInButton(Buttons.google,
                       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
-                      onPressed: () {
-                    authProvider.signInWithGoogle();
+                      onPressed: () async {
+                    await authProvider.signInWithGoogle();
+                    Navigator.of(context).popAndPushNamed('/home');
 
                   }),
                 ],
@@ -123,11 +125,13 @@ class _AuthScreenState extends State<AuthScreen> {
               await authProvider.signInWithEmailAndPassword(
                   _emailController.value.text,
                   _passwordController.value.text);
+              Navigator.of(context).popAndPushNamed('/home');
             }, child: Text(buttonText)),
             SignInButton(Buttons.google,
                 shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
-                onPressed: () {
-                  authProvider.signInWithGoogle();
+                onPressed: () async {
+                  await authProvider.signInWithGoogle();
+                  Navigator.of(context).popAndPushNamed('/home');
 
                 }),
           ],

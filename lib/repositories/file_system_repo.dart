@@ -14,8 +14,8 @@ class FileSystemRepository {
   String latestFilePath = '';
 
   FileSystemRepository({required this.authProvider}) {
-    //userId = authProvider.currentUser?.uid ?? 'userId'; //TODO:
-    userId = "exampleEmail.com";
+    userId = authProvider.currentUser?.uid ?? 'userId'; //TODO:
+    // userId = "exampleEmail.com";
   }
 
   Future<void> startRecording() async {
