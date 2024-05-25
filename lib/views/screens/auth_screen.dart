@@ -4,6 +4,7 @@ import 'package:email_validator/email_validator.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
+import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 import 'package:safety_eye_app/providers/auth_provider.dart';
 import 'package:sign_in_button/sign_in_button.dart';
@@ -16,9 +17,8 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  final _formKeySignUp = GlobalKey<FormState>();
-  final _formKeySignIn = GlobalKey<FormState>();
-  bool _obscurePassword = true;
+  final Logger _logger = Logger();
+  bool _obscurePassword = false;
   late TextEditingController _emailController;
   late TextEditingController _passwordController;
 
@@ -88,6 +88,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         labelText: "password",)
                   ),
                   ElevatedButton(onPressed: () async {
+                    _logger.i("sign up with email: ${_emailController.value.text} and password: ${_passwordController.value}");
                     await authProvider.signUpWithEmailAndPassword(
                       _emailController.value.text,
                       _passwordController.value.text);
@@ -136,71 +137,4 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  Widget _buildAuthenticationForm(GlobalKey<FormState> formKey, String buttonText,
-      void Function(String email, String password) signUpFunction, void Function() signInGoogle) {
-    return Center(
-      child: Form(
-        key: formKey,
-        child: Column(
-          children: [
-            TextFormField(
-              controller: _emailController,
-              decoration: const InputDecoration(labelText: "email"),
-              validator: (String? value) {
-                if (EmailValidator.validate(value ?? "")) {
-                  return null;
-                }
-                return "Please enter a valid email";
-              },
-            ),
-            TextFormField(
-              controller: _passwordController,
-              obscureText: _obscurePassword,
-              validator: (String? value) {
-                if (value!.isEmpty) {
-                  return "Please enter a password";
-                }
-                return null;
-              },
-              decoration: InputDecoration(
-                  labelText: "password",
-                  suffixIcon: InkWell(
-                    onTapDown: (tapDownDetails) {
-                      setState(() {
-                        _obscurePassword = false;
-                      });
-                    },
-                    onTapUp: (tapUpDetails) {
-                      setState(() {
-                        _obscurePassword = true;
-                      });
-                    },
-                  )),
-            ),
-            ElevatedButton(
-                onPressed: () {
-                  if (formKey.currentState!.validate()) {
-                    formKey.currentState!.save();
-                    signUpFunction(_emailController.value.text, _passwordController.value.text);
-                  }
-                },
-                child: Text(buttonText)),
-            SignInButton(Buttons.google,
-                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
-                onPressed: () async {
-              signInGoogle();
-            }),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _signUpForm() {
-    return Container();
-  }
-
-  Widget _signInForm() {
-    return Container();
-  }
 }
