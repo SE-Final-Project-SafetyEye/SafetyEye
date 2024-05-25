@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyAIiZLT1a5ZhWqbPfjx_vUiN1czPgVVrUA',
-    appId: '1:448213785394:android:58c912167a648b652e552b',
+    appId: '1:448213785394:android:0cd5e47faef7ad9f2e552b',
     messagingSenderId: '448213785394',
     projectId: 'safetyeye-e9274',
     storageBucket: 'safetyeye-e9274.appspot.com',
