@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:gallery_saver/gallery_saver.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_compress/video_compress.dart';
 import 'dart:io';
@@ -33,16 +32,16 @@ class _VideoCompressorWidgetState extends State<VideoCompressorWidget> {
   }
 
   Future<void> pickVideo(VoidCallback voidCallback) async {
-    final pickedFile = await ImagePicker().getVideo(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        videoPath = pickedFile.path ?? '';
-      });
-      voidCallback();
-    } else {
-      // Handle case where the user canceled video selection
-      print('No video selected.');
-    }
+    // final pickedFile = await ImagePicker().getVideo(source: ImageSource.gallery);
+    // if (pickedFile != null) {
+    //   setState(() {
+    //     videoPath = pickedFile.path ?? '';
+    //   });
+    //   voidCallback();
+    // } else {
+    //   // Handle case where the user canceled video selection
+    //   print('No video selected.');
+    // }
   }
 
   Future<void> compressAndShowDialog() async {
@@ -110,7 +109,7 @@ class _VideoCompressorWidgetState extends State<VideoCompressorWidget> {
     if (compressedFile != null) {
       try {
         // Save the compressed video to the gallery
-        await GallerySaver.saveVideo(compressedFile.path);
+
       } catch (e) {
         print('Error saving compressed video: $e');
         // Handle errors or show a message if necessary

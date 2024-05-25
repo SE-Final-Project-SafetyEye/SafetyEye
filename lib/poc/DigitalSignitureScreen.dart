@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:cryptography/cryptography.dart';
-import 'package:cryptography_flutter/cryptography_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
@@ -96,7 +95,7 @@ interface class KeysService {
   final logger = Logger(printer: PrettyPrinter(colors: true));
   final _keyPairType = KeyPairType.x25519;
 
-  final FlutterEd25519 _generationAlgorithm = FlutterEd25519(Ed25519());
+  final _generationAlgorithm = Ed25519();
   late SimpleKeyPair _keyPair;
   bool _keysGenerated = false;
 
