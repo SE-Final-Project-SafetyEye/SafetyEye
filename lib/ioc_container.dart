@@ -14,7 +14,6 @@ extension IocContainerBuilderExtension on IocContainerBuilder {
       ..addSingleton<SensorsProvider>((container) => SensorsProvider())
       ..addSingleton<SettingsProvider>(
           (container) => SettingsProvider(container.get<PreferencesService>()))
-      ..addSingleton<SettingsProvider>((container) => SettingsProvider(container.get<PreferencesService>()))
       ..addSingleton<SpeechToTextProvider>((container) => SpeechToTextProvider(SpeechToText()))
 
       ..add<VideoRecordingProvider>((container) {
