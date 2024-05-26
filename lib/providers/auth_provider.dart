@@ -16,12 +16,10 @@ class AuthenticationProvider extends ChangeNotifier {
     return isDev ? MockUser() : _currentUser;
   }
 
-  AuthenticationProvider(this._auth) {
-    _auth.listenUserStream((user) {
-      _logger.i('user changed: $user');
-      _currentUser = user;
-      notifyListeners();
-    });
+  AuthenticationProvider(this._auth);
+
+  Stream<User?> get currentUserStream {
+    return _auth.currentUser;
   }
 
   Future<void> signInWithEmailAndPassword(String email, String password) async {

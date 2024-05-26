@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:cryptography/cryptography.dart';
-import 'package:cryptography_flutter/cryptography_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:logger/logger.dart';
 import 'package:safety_eye_app/providers/auth_provider.dart';
@@ -13,7 +12,7 @@ class SignaturesService {
   final _keyPairType = KeyPairType.x25519;
   final SignaturesRepository _signaturesRepository = SignaturesRepository();
   final PreferencesService _preferencesService = PreferencesService();
-  final FlutterEd25519 _signingAlgorithm = FlutterEd25519(Ed25519());
+  final Ed25519 _signingAlgorithm = Ed25519();
 
   late SimpleKeyPair _keyPair;
   bool areKeysGenerated = false;

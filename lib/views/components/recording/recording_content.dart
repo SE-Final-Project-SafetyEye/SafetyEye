@@ -86,6 +86,7 @@ class _RecordingPageState extends State<RecordingPage> {
         await _startListening(speechProvider); // Restart listening
       } else if (event.eventType == SpeechRecognitionEventType.errorEvent) {
         _logger.e("Error: ${event.error?.errorMsg}");
+        Future.delayed(const Duration(seconds: 1));
         await _startListening(speechProvider); // Restart listening on error
       }
     });
@@ -94,7 +95,7 @@ class _RecordingPageState extends State<RecordingPage> {
   Future<void> _startListening(SpeechToTextProvider speechProvider) async {
     speechProvider.listen(
       listenFor: const Duration(seconds: 30),
-      pauseFor: const Duration(seconds: 10),
+      pauseFor: const Duration(seconds: 0),
       partialResults: false,
       onDevice: false,
       listenMode: ListenMode.confirmation,

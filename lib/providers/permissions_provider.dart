@@ -10,7 +10,7 @@ class PermissionsProvider extends ChangeNotifier {
 
   List<CameraDescription> get cameras => _cameras;
 
-  Future<void> init() async {
+  Future<PermissionsProvider> init() async {
     try {
       _cameras = await availableCameras();
       LocationPermission permission = await Geolocator.checkPermission();
@@ -31,5 +31,6 @@ class PermissionsProvider extends ChangeNotifier {
     } catch (error,stackTrace) {
       _logger.e(error.toString(), stackTrace: stackTrace);
     }
+    return this;
   }
 }

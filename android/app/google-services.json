@@ -7,17 +7,17 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:448213785394:android:58c912167a648b652e552b",
+        "mobilesdk_app_id": "1:448213785394:android:89ded95c604e0aae2e552b",
         "android_client_info": {
-          "package_name": "com.example.safety_eye_app"
+          "package_name": "com.safetyeyeapp.safety_eye_app"
         }
       },
       "oauth_client": [
         {
-          "client_id": "448213785394-4msae9ullhkqaiauou8c7btukfh0ejqm.apps.googleusercontent.com",
+          "client_id": "448213785394-s6t8aqgcgsdccd3eu45ca8hv8cq4p901.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.example.safety_eye_app",
+            "package_name": "com.safetyeyeapp.safety_eye_app",
             "certificate_hash": "5a7d4f138f77ac12232a9a0dcef3ee5b6c8f2977"
           }
         },

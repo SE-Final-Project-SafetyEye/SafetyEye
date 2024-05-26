@@ -1,0 +1,21 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "safetyeye-e9274",
+          "appId": "1:448213785394:android:fd5e677b3435c9652e552b",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "safetyeye-e9274",
+          "configurations": {
+            "android": "1:448213785394:android:fd5e677b3435c9652e552b"
+          }
+        }
+      }
+    }
+  }
+}

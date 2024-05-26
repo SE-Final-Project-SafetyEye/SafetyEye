@@ -1,4 +1,5 @@
 import 'package:camera/camera.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
@@ -32,12 +33,8 @@ void main() async {
           return iocProvider.container.get<SettingsProvider>();
         }),
         ChangeNotifierProvider(create: (context) => iocProvider.container.get<SignaturesProvider>()),
-        ChangeNotifierProvider(
-            create: (context) =>
-                iocProvider.container.get<SpeechToTextProvider>()),
-        ChangeNotifierProvider(
-            create: (context) =>
-                iocProvider.container.get<VideoRecordingProvider>())
+        ChangeNotifierProvider(create: (context) => iocProvider.container.get<SpeechToTextProvider>()),
+        ChangeNotifierProvider(create: (context) => iocProvider.container.get<VideoRecordingProvider>())
       ], child: const MyApp());
     },
   ));
@@ -49,29 +46,34 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthenticationProvider>(context, listen: true);
-    final permissionsProvider = Provider.of<PermissionsProvider>(context, listen: false);
+    final permissionsProvider = Provider.of<PermissionsProvider>(context);
     final settingsProvider = Provider.of<SettingsProvider>(context);
 
     return FutureBuilder(
-        future: permissionsProvider.init(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            return MaterialApp(
-                title: 'SafetyEye',
-                theme: ThemeData(
-                  colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, secondary: Colors.blue),
-                  textTheme: const TextTheme(
-                    bodySmall: TextStyle(fontSize: 12.0),
+      future: permissionsProvider.init(),
+      builder: (context, snapshot) {
+        return StreamBuilder(
+            stream: authProvider.currentUserStream,
+            builder: (context, AsyncSnapshot<User?> snapshot) {
+              if (snapshot.connectionState != ConnectionState.active) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final widgetToStart = snapshot.data == null ? const AuthScreen() : HomeScreen(settingsProvider);
+              return MaterialApp(
+                  title: 'SafetyEye',
+                  theme: ThemeData(
+                    colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, secondary: Colors.blue),
+                    textTheme: const TextTheme(
+                      bodySmall: TextStyle(fontSize: 12.0),
+                    ),
                   ),
-                ),
-                home: !authProvider.isSignedIn() ? const AuthScreen() : HomeScreen(settingsProvider),
-                routes: {
-                  "/home": (context) => HomeScreen(settingsProvider),
-                  "/auth": (context) => const AuthScreen(),
-                });
-          } else {
-            return const CircularProgressIndicator();
-          }
-        });
+                  home: widgetToStart,
+                  routes: {
+                    "/home": (context) => HomeScreen(settingsProvider),
+                    "/auth": (context) => const AuthScreen(),
+                  });
+            });
+      },
+    );
   }
 }
