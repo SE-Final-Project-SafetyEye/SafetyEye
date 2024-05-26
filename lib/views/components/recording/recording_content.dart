@@ -37,28 +37,26 @@ class _RecordingPageState extends State<RecordingPage> {
   }
 
   Future<void> _handleSpeechResult(SpeechRecognitionResult result) async {
-    cameraProvider = Provider.of<VideoRecordingProvider>(context, listen: false);
-    if (result.recognizedWords.toLowerCase().contains('start recording') /* && result.confidence > 0.85*/) {
+    cameraProvider =
+        Provider.of<VideoRecordingProvider>(context, listen: false);
+    var recognizedWords = result.recognizedWords.toLowerCase();
+    var isStartEvent = recognizedWords.contains('start recording') ||
+        recognizedWords.contains('start') ||
+        recognizedWords.contains('record');
+    var isStopEvent = recognizedWords.contains('stop recording') ||
+        recognizedWords.contains('stop');
+    var isHighlightEvent = recognizedWords.contains('highlight');
+
+    if (isStartEvent) {
       _logger.i('Starting recording');
       if (!cameraProvider.isRecording) await cameraProvider.startRecording();
-    }
-    // else if(result.recognizedWords.toLowerCase().contains('start recording') && result.confidence > 0.75) {
-    //   // If the confidence is lower than 0.85, but higher then 0.75 ask for confirmation
-    // }
-    else if (result.recognizedWords.toLowerCase().contains('stop recording') /*&& result.confidence > 0.85*/) {
+    } else if (isStopEvent) {
       _logger.i('Stopping recording');
       if (cameraProvider.isRecording) cameraProvider.stopRecording(false);
-    }
-    // else if(result.recognizedWords.toLowerCase().contains('stop recording') && result.confidence > 0.75) {
-    //   // If the confidence is lower than 0.85, but higher then 0.75 ask for confirmation
-    // }
-    else if (result.recognizedWords.toLowerCase().contains('highlight') /*&& result.confidence > 0.85*/) {
+    } else if (isHighlightEvent) {
       _logger.i('Asked to highlight');
       await cameraProvider.highlight();
     }
-    //   else if(result.recognizedWords.toLowerCase().contains('highlight') && result.confidence > 0.75){
-    //     // If the confidence is lower than 0.85, but higher then 0.75 ask for confirmation
-    // }
   }
 
   Future<void> _initializeSpeechRecognition(BuildContext context) async {
@@ -72,9 +70,12 @@ class _RecordingPageState extends State<RecordingPage> {
     }
   }
 
-  Future<void> _subscribeToVoiceRecognition(SpeechToTextProvider speechProvider) async {
-    await FlutterVolumeController.updateShowSystemUI(false); // Hide system volume UI
-    await FlutterVolumeController.setMute(true, stream: AudioStream.alarm); // Set volume to 0 to silence feedback
+  Future<void> _subscribeToVoiceRecognition(
+      SpeechToTextProvider speechProvider) async {
+    await FlutterVolumeController.updateShowSystemUI(
+        false); // Hide system volume UI
+    await FlutterVolumeController.setMute(true,
+        stream: AudioStream.alarm); // Set volume to 0 to silence feedback
 
     _logger.d("Subscribing to voice recognition...");
 
@@ -85,8 +86,8 @@ class _RecordingPageState extends State<RecordingPage> {
         await _handleSpeechResult(result);
         await _startListening(speechProvider); // Restart listening
       } else if (event.eventType == SpeechRecognitionEventType.errorEvent) {
-        _logger.e("Error: ${event.error?.errorMsg}");
-        Future.delayed(const Duration(seconds: 1));
+        // _logger.e("Error: ${event.error?.errorMsg}");
+        // Future.delayed(const Duration(seconds: 1));
         await _startListening(speechProvider); // Restart listening on error
       }
     });
@@ -95,7 +96,7 @@ class _RecordingPageState extends State<RecordingPage> {
   Future<void> _startListening(SpeechToTextProvider speechProvider) async {
     speechProvider.listen(
       listenFor: const Duration(seconds: 30),
-      pauseFor: const Duration(seconds: 0),
+      pauseFor: const Duration(seconds: 10),
       partialResults: false,
       onDevice: false,
       listenMode: ListenMode.confirmation,
@@ -107,13 +108,15 @@ class _RecordingPageState extends State<RecordingPage> {
     KeepScreenOn.turnOff();
     speechProvider.stop(); // Stop listening if the widget is disposed
     _subscription?.cancel();
-    FlutterVolumeController.setMute(false, stream: AudioStream.alarm); // Restore volume
+    FlutterVolumeController.setMute(false,
+        stream: AudioStream.alarm); // Restore volume
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final cameraProvider = Provider.of<VideoRecordingProvider>(context, listen: true);
+    final cameraProvider =
+        Provider.of<VideoRecordingProvider>(context, listen: true);
     if (cameraProvider.isInitialized) {
       return buildCamaraPreviewContent(cameraProvider);
     } else {
