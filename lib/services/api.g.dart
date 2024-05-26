@@ -13,7 +13,7 @@ class _BackendApi implements BackendApi {
     this._dio, {
     this.baseUrl,
   }) {
-    baseUrl ??= 'http://localhost:8080/';
+    baseUrl ??= 'http://localhost:5000/';
   }
 
   final Dio _dio;
@@ -22,7 +22,7 @@ class _BackendApi implements BackendApi {
 
   @override
   Future<String> exchangeKey(KeyExchangeRequest keyRequest) async {
-    const _extra = <String, dynamic>{};
+    final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{r'Content-Type': 'application/json'};
     _headers.removeWhere((k, v) => v == null);
@@ -51,10 +51,10 @@ class _BackendApi implements BackendApi {
 
   @override
   Future<JourneysResponse> getJourneys() async {
-    const _extra = <String, dynamic>{};
+    final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    final Map<String, dynamic>? _data = null;
+    const Map<String, dynamic>? _data = null;
     final _result = await _dio
         .fetch<Map<String, dynamic>>(_setStreamType<JourneysResponse>(Options(
       method: 'GET',
@@ -78,10 +78,10 @@ class _BackendApi implements BackendApi {
 
   @override
   Future<JourneyChunksResponse> getJourneyChunksById(String journeyId) async {
-    const _extra = <String, dynamic>{};
+    final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    final Map<String, dynamic>? _data = null;
+    const Map<String, dynamic>? _data = null;
     final _result = await _dio.fetch<Map<String, dynamic>>(
         _setStreamType<JourneyChunksResponse>(Options(
       method: 'GET',
@@ -108,10 +108,10 @@ class _BackendApi implements BackendApi {
     String journeyId,
     String chunkId,
   ) async {
-    const _extra = <String, dynamic>{};
+    final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    final Map<String, dynamic>? _data = null;
+    const Map<String, dynamic>? _data = null;
     final _result =
         await _dio.fetch<List<dynamic>>(_setStreamType<List<int>>(Options(
       method: 'GET',
@@ -142,7 +142,7 @@ class _BackendApi implements BackendApi {
     File metadata,
     void Function(int, int)? onSendProgress,
   ) async {
-    const _extra = <String, dynamic>{};
+    final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
