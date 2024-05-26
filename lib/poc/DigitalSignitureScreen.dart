@@ -110,7 +110,7 @@ interface class KeysService {
     }
     final keyBytes =(await _keyPair.extractPublicKey()).bytes;
     BackendService(current).exchangeKey(base64Encode(keyBytes)).then((value) {
-      logger.d("received key from backend: $value");
+      logger.d("received key from backend: ");
     }).catchError((error) {
       logger.e("failed to receive key from backend: $error");
     });

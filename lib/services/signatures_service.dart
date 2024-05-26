@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:cryptography/cryptography.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cryptography_flutter/cryptography_flutter.dart';
 import 'package:logger/logger.dart';
-import 'package:safety_eye_app/providers/auth_provider.dart';
+import 'package:safety_eye_app/repositories/repositories.dart';
 import 'package:safety_eye_app/repositories/signatures_repo.dart';
 import 'package:safety_eye_app/services/BackendService.dart';
 import 'package:safety_eye_app/services/preferences_services.dart';
@@ -12,12 +13,15 @@ class SignaturesService {
   final _keyPairType = KeyPairType.x25519;
   final SignaturesRepository _signaturesRepository = SignaturesRepository();
   final PreferencesService _preferencesService = PreferencesService();
+  late BackendService backendService;
   final Ed25519 _signingAlgorithm = Ed25519();
 
   late SimpleKeyPair _keyPair;
   bool areKeysGenerated = false;
 
-  Future<void> init(AuthenticationProvider authProvider) async {
+  SignaturesService({required this.backendService});
+
+  Future<void> init() async {
     if ((await areKeysStored())) {
       _logger.i('found keys on device');
       _keyPair = (await _loadKeys())!;
@@ -28,9 +32,9 @@ class SignaturesService {
 
     final keyBytes = (await _keyPair.extractPublicKey()).bytes;
     // This function throw if exchange key is not set
-    BackendService(authProvider).exchangeKey(base64Encode(keyBytes))
+    backendService.exchangeKey(base64Encode(keyBytes))
         .then((exchangeKey) {
-      _logger.d("received key from backend: $exchangeKey");
+      _logger.d("received key from backend:");
       _preferencesService.setPref(PreferencesKeys.exchangeKey, exchangeKey);
     });
   }
@@ -108,8 +112,7 @@ class SignaturesService {
     _logger.i('signature: ${base64.encode(signature.bytes)}');
     await _signaturesRepository.saveSignature(message, signature.toString(),
         base64Encode((await _keyPair.extractPublicKey()).bytes));
-    var (String? sigVerify, String? publicKeyVerifiy) =
-        await _signaturesRepository.getSignature(message);
+    //var (String? sigVerify, String? publicKeyVerifiy) = await _signaturesRepository.getSignature(message);
     // TODO verify
     return signature;
   }

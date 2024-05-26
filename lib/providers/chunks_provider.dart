@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
-import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:video_thumbnail/video_thumbnail.dart';
 
+import '../services/BackendService.dart';
 import '../repositories/file_system_repo.dart';
 import '../views/components/videoPlayer/video_player.dart';
 import 'auth_provider.dart';
@@ -13,15 +13,14 @@ class ChunksProvider extends ChangeNotifier {
   final Logger _logger = Logger();
   List<String> chunksPaths = [];
   final List<String?> _thumbnails = [];
-  late AuthenticationProvider authenticationProvider;
-  late FileSystemRepository _fileSystemRepository;
+  final AuthenticationProvider authenticationProvider;
+  final FileSystemRepository fileSystemRepository;
+  final BackendService backendService;
 
-  ChunksProvider({required this.authenticationProvider});
+  ChunksProvider({required this.authenticationProvider,required this.backendService,required this.fileSystemRepository});
 
   Future<void> initChunks(String path) async {
-    _fileSystemRepository = FileSystemRepository(
-        authProvider: authenticationProvider);
-    chunksPaths = await _fileSystemRepository.getChunksList(path);
+    chunksPaths = await fileSystemRepository.getChunksList(path);
     _logger.i("chunksPaths: ${chunksPaths.length}");
 
     for (String chunkPath in chunksPaths) {
@@ -54,7 +53,7 @@ class ChunksProvider extends ChangeNotifier {
   }
 
   getThumbnail(int videoIndex) {
-    return _fileSystemRepository.getThumbnailFile(_thumbnails[videoIndex]!);
+    return fileSystemRepository.getThumbnailFile(_thumbnails[videoIndex]!);
   }
 
   String getName(int videoIndex) {
@@ -71,6 +70,15 @@ class ChunksProvider extends ChangeNotifier {
     _logger.i('Playing video: $videoPath');
     // Example code to open a video player (you'll need to replace this with your actual video player implementation)
     Navigator.push(context, MaterialPageRoute(builder: (context) => ChewieVideoPlayer(srcs: [videoPath],)));
+  }
+
+  Future<void> getChunk(String journeyId) async{
+    final chunks = await backendService.getJourneyChunks(journeyId);
+    chunksPaths = chunks;
+  }
+
+  Future<void> download(String journeyId ,int chunkId) async {
+    backendService.downloadChunk(journeyId, chunkId.toString()); //TODO: check if works
   }
 
 }

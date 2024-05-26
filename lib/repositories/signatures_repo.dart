@@ -56,8 +56,9 @@ class SignaturesRepository {
       String message, String signature, String publicKey) async {
     final db = await database;
     try {
-      _logger.d(
-          'Try to save signature message: $message, signature: $signature, publicKey: $publicKey');
+      _logger.d("try to save sig in db");
+      // _logger.d(
+      //     'Try to save signature message: $message, signature: $signature, publicKey: $publicKey');
       var res = await db.insert(
         sigTableName,
         {
@@ -68,8 +69,9 @@ class SignaturesRepository {
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
       if (res > 0) {
-        _logger.i(
-            'Signature message: $message, signature: $signature, publicKey: $publicKey saved successfully');
+        _logger.i("successfully saved sig");
+        // _logger.i(
+        //     'Signature message: $message, signature: $signature, publicKey: $publicKey saved successfully');
       } else {
         _logger.w(
             'Failed to save signature, errorCode: $res, message: $message, signature: $signature, publicKey: $publicKey');
@@ -82,7 +84,7 @@ class SignaturesRepository {
   // Retrieve signature from the database
   Future<(String?, String?)> getSignature(String message) async {
     final db = await database;
-    _logger.d('Try to get signature message: $message');
+    _logger.d('Try to get signature message: ');
     final List<Map<String, dynamic>> maps = await db.query(
       sigTableName,
       where: '$messageColName = ?',
