@@ -80,9 +80,10 @@ class _SettingsPageState extends State<SettingsPage> {
       padding: const EdgeInsets.all(8.0),
       child: Column(children: [
         _buildChunkDurationSection(fontSize),
-        _buildGracePeriodInterval(fontSize),
-        _buildAutoUpload(),
-        _buildVideoResolution(videoResolution),
+        // TODO: not relevant for Beta
+        // _buildGracePeriodInterval(fontSize),
+        // _buildAutoUpload(),
+        // _buildVideoResolution(videoResolution),
         _buildSignOutButton(context)
       ]),
     );
@@ -184,6 +185,6 @@ class _SettingsPageState extends State<SettingsPage> {
           authProvider.signOut();
           Navigator.of(context).popAndPushNamed("/auth");
         },
-        child: const Text('Sign out'));
+        child: Text('Sign out ${authProvider.currentUser!.email}'));
   }
 }

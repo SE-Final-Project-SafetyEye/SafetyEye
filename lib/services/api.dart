@@ -37,4 +37,12 @@ abstract class BackendApi {
       @Part(name: "pictures") List<File> pictures,
       @Part(name: "metadata") File metadata,
       @SendProgress() ProgressCallback? onSendProgress);
+
+  @POST('/video/journeys/{journeyId}/chunks/{chunkId}/highlight')
+  Future<void> highlightChunk(
+      @Path('journeyId') String journeyId, @Path('chunkId') String chunkId);
+
+  @POST('/video/journeys/{journeyId}/chunks/{chunkId}/unhighlight')
+  Future<void> unhighlightChunk(
+      @Path('journeyId') String journeyId, @Path('chunkId') String chunkId);
 }
