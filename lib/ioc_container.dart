@@ -39,7 +39,6 @@ extension IocContainerBuilderExtension on IocContainerBuilder {
             fileSystemRepository: fileSystemRepo,
             backendService: backend);
       })
-      ..addSingleton<SpeechProvider>((container) => SpeechProvider())
       ..add<ChunksProvider>((container) {
         final fileSystemRepo = container.get<FileSystemRepository>();
         final authProvider = container.get<AuthenticationProvider>();

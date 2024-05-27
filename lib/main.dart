@@ -46,7 +46,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthenticationProvider>(context, listen: true);
-    final permissionsProvider = Provider.of<PermissionsProvider>(context);
+    final permissionsProvider = Provider.of<PermissionsProvider>(context, listen: false);
     final settingsProvider = Provider.of<SettingsProvider>(context);
 
     return FutureBuilder(

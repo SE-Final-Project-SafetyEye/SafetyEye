@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:cryptography/cryptography.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cryptography_flutter/cryptography_flutter.dart';
+
 import 'package:logger/logger.dart';
 import 'package:safety_eye_app/repositories/repositories.dart';
 import 'package:safety_eye_app/repositories/signatures_repo.dart';

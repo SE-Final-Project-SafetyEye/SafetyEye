@@ -75,7 +75,7 @@ class VideoRecordingProvider extends ChangeNotifier {
     _logger.i("1 recordRecursively, chunkNumber: $chunkNumber");
     if (recordMin > 0) {
       await cameraController?.startVideoRecording();
-      await sensorsProvider.startCollectMetadata();
+      sensorsProvider.startCollectMetadata();
       _logger.d(
           "2 start recording: status ${cameraController?.value.isRecordingVideo}");
       await Future.delayed(

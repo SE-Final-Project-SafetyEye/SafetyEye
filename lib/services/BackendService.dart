@@ -19,7 +19,7 @@ class BackendService {
   AuthenticationProvider authProvider;
   late Dio dio;
   late BackendApi api;
-  bool isDev = kDebugMode;
+  bool isDev = false;
 
   BackendService(this.authProvider, this.fileSystemRepository) {
     var createdDio = Dio();

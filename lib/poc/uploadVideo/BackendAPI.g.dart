@@ -13,7 +13,7 @@ class _BackendApi implements BackendApi {
     this._dio, {
     this.baseUrl,
   }) {
-    baseUrl ??= 'http://localhost:5000/';
+    baseUrl ??= 'https://40cd-85-250-219-134.ngrok-free.app';
   }
 
   final Dio _dio;
