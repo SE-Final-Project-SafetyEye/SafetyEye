@@ -121,4 +121,14 @@ class SignaturesService {
     return await _signingAlgorithm.verify(utf8.encode(message),
         signature: signature);
   }
+
+  Future<String> getSignature(String message) async {
+    final (signature, _) = await _signaturesRepository.getSignature(message);
+    if (signature != null) {
+      return signature;
+    }
+    else {
+      throw Exception("Signature not found");
+    }
+  }
 }

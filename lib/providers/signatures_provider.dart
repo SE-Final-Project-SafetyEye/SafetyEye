@@ -31,4 +31,8 @@ class SignaturesProvider extends ChangeNotifier {
 
   Future<bool> verifySignature(String message, Signature signature) async =>
       signaturesService.verifySignature(message, signature);
+
+  Future<String> getSignature(String message) async {
+    return signaturesService.getSignature(message);
+  }
 }

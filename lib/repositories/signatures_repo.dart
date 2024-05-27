@@ -1,16 +1,18 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:cryptography/cryptography.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:logger/logger.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:sqflite/sqlite_api.dart';
 import 'package:path/path.dart' as path;
 
 const sigDbName = 'your_database.db';
 const sigTableName = 'signatures';
-const messageColName = 'message';
+// const messageColName = 'message';
 const signatureColName = 'signature';
 const publicKeyColName = 'publicKey';
+const hashedMessageColName = 'hashedMessage';
 
 class SignaturesRepository {
   static Database? _database;
@@ -43,7 +45,7 @@ class SignaturesRepository {
       _databasePath!,
       onCreate: (db, version) {
         return db.execute(
-          'CREATE TABLE $sigTableName(id INTEGER PRIMARY KEY, $messageColName TEXT, $signatureColName TEXT, $publicKeyColName TEXT)',
+          'CREATE TABLE $sigTableName(id INTEGER PRIMARY KEY, $signatureColName TEXT, $publicKeyColName TEXT, $hashedMessageColName TEXT)',
         );
       },
       version: 1,
@@ -51,9 +53,13 @@ class SignaturesRepository {
     return _database!;
   }
 
+  Future<Hash> getHashedMessage(String message) async {
+    return await Sha256().hash(utf8.encode(message));
+  }
   // Save signature into the database
   Future<void> saveSignature(
       String message, String signature, String publicKey) async {
+    final hashedMessage = await getHashedMessage(message);
     final db = await database;
     try {
       _logger.d("try to save sig in db");
@@ -62,9 +68,9 @@ class SignaturesRepository {
       var res = await db.insert(
         sigTableName,
         {
-          messageColName: message,
           signatureColName: signature,
           publicKeyColName: publicKey,
+          hashedMessageColName: hashedMessage.toString(),
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -84,17 +90,18 @@ class SignaturesRepository {
   // Retrieve signature from the database
   Future<(String?, String?)> getSignature(String message) async {
     final db = await database;
+    final hashedMessage = await getHashedMessage(message);
     _logger.d('Try to get signature message: ');
     final List<Map<String, dynamic>> maps = await db.query(
       sigTableName,
-      where: '$messageColName = ?',
-      whereArgs: [message],
+      where: '$hashedMessageColName = ?',
+      whereArgs: [hashedMessage],
     );
     if (maps.isNotEmpty) {
       var signature = maps.first[signatureColName] as String;
       var publicKey = maps.first[publicKeyColName] as String;
       _logger.i(
-          'Signature message: $message found, signature: $signature, publicKey: $publicKey');
+          'Signature found');
       return (signature, publicKey);
     }
     _logger.w('Signature message: $message not found');
