@@ -1,23 +1,31 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:safety_eye_app/providers/providers.dart';
 
 import 'package:video_thumbnail/video_thumbnail.dart';
 
+import '../models/payloads/request/requests.dart';
 import '../services/BackendService.dart';
 import '../repositories/file_system_repo.dart';
-import '../views/components/videoPlayer/video_player.dart';
-import 'auth_provider.dart';
 
 class ChunksProvider extends ChangeNotifier {
   final Logger _logger = Logger();
   List<String> chunksPaths = [];
   final List<String?> _thumbnails = [];
   final AuthenticationProvider authenticationProvider;
+  final SignaturesProvider signaturesProvider;
   final FileSystemRepository fileSystemRepository;
   final BackendService backendService;
 
-  ChunksProvider({required this.authenticationProvider,required this.backendService,required this.fileSystemRepository});
+  ChunksProvider(
+      {required this.authenticationProvider,
+      required this.backendService,
+      required this.fileSystemRepository,
+      required this.signaturesProvider});
 
   Future<void> initChunks(String path) async {
     chunksPaths = await fileSystemRepository.getChunksList(path);
@@ -56,29 +64,58 @@ class ChunksProvider extends ChangeNotifier {
     return fileSystemRepository.getThumbnailFile(_thumbnails[videoIndex]!);
   }
 
-  String getName(int videoIndex) {
-    return "";
-  } //TODO: chunk's name
-
   Future<void> handleHighlightsButtonPress(int videoIndex) async {} //TODO:
 
-  Future<void> handleCloudUploadButtonPress(int videoIndex) async {} //TODO:
+  Future<void> handleCloudUploadButtonPress(int videoIndex) async {
+    File video = fileSystemRepository.getChunkVideo(chunksPaths[videoIndex]);
+    List<File> pics =
+        fileSystemRepository.getChunkPics(chunksPaths[videoIndex]);
+    File metaData =
+        fileSystemRepository.getChunkMetadata(chunksPaths[videoIndex]);
 
-  handlePlayButtonPress(context,int videoIndex) {
-    String videoPath = chunksPaths[videoIndex]; // Assuming chunksPaths contains video paths
-    // Perform actions to play the video, such as opening a video player
-    _logger.i('Playing video: $videoPath');
-    // Example code to open a video player (you'll need to replace this with your actual video player implementation)
-    Navigator.push(context, MaterialPageRoute(builder: (context) => ChewieVideoPlayer(srcs: [videoPath],)));
+    String videoSign =
+        await signaturesProvider.getSignature(await _convert(video));
+    String metaDataSign =
+        await signaturesProvider.getSignature(await _convert(metaData));
+
+    List<Future<String>> picSignFutures = pics
+        .map(
+            (pic) async => signaturesProvider.getSignature(await _convert(pic)))
+        .toList();
+    List<String> picsSign = await Future.wait(picSignFutures);
+
+    UploadChunkSignaturesRequest uploadChunkSignaturesRequest =
+        UploadChunkSignaturesRequest(
+      videoSig: videoSign,
+      picturesSig: picsSign,
+      metadataSig: metaDataSign,
+    );
+
+    backendService.uploadChunk(
+        video, pics, metaData, uploadChunkSignaturesRequest, null);
   }
 
-  Future<void> getChunk(String journeyId) async{
+  Future<String> _convert(File file) async {
+    try {
+      List<int> bytes = await file.readAsBytes();
+      String base64String = base64Encode(bytes);
+      return base64String;
+    } catch (e) {
+      return '';
+    }
+  }
+
+  handlePlayButtonPress(context, int videoIndex) {
+    return chunksPaths[videoIndex]; // Assuming chunksPaths contains video paths
+  }
+
+  Future<void> getChunk(String journeyId) async {
     final chunks = await backendService.getJourneyChunks(journeyId);
     chunksPaths = chunks;
   }
 
-  Future<void> download(String journeyId ,int chunkId) async {
-    backendService.downloadChunk(journeyId, chunkId.toString()); //TODO: check if works
+  Future<void> download(String journeyId, int chunkId) async {
+    backendService.downloadChunk(
+        journeyId, chunkId.toString()); //TODO: check if works
   }
-
 }
