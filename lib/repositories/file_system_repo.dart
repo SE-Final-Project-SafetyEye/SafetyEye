@@ -34,7 +34,6 @@ class FileSystemRepository {
     await file.writeAsString(jsonData);
   }
 
-
   Future<void> _saveDirUpdate() async {
     final dir = await getApplicationDocumentsDirectory();
 
@@ -120,10 +119,42 @@ class FileSystemRepository {
     return File(thumbnail);
   }
 
-  Future<File> downLoadChunk(List<int> chunkBytes, String journeyId, String chunkId) async {
+  Future<File> downLoadChunk(
+      List<int> chunkBytes, String journeyId, String chunkId) async {
     final dir = await getApplicationDocumentsDirectory();
     final videosDirectory = Directory('${dir.path}/videos/$userId');
     File chunkFile = File('${videosDirectory.path}/$journeyId/$chunkId');
     return await chunkFile.writeAsBytes(chunkBytes);
+  }
+
+  File getChunkVideo(String chunksPath) {
+    return File(chunksPath);
+  }
+
+  List<File> getChunkPics(String chunksPath) {
+    File file = File(chunksPath);
+    String directoryPath = file.parent.path;
+    Directory picsDir = Directory(directoryPath);
+    List<File> pics = [];
+    List<FileSystemEntity> files = picsDir.listSync();
+    for (FileSystemEntity entity in files) {
+      if (entity is File && entity.path.endsWith('.jpg')) {
+        pics.add(entity);
+      }
+    }
+    return pics;
+  }
+
+  File getChunkMetadata(String chunksPath) {
+    File file = File(chunksPath);
+    String directoryPath = file.parent.path;
+    Directory metaDataDir = Directory(directoryPath);
+    List<FileSystemEntity> files = metaDataDir.listSync();
+    for (FileSystemEntity entity in files) {
+      if (entity is File && entity.path.endsWith('.json')) {
+        return entity;
+      }
+    }
+    return File('');
   }
 }

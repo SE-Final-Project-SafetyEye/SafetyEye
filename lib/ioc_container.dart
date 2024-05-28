@@ -14,8 +14,8 @@ extension IocContainerBuilderExtension on IocContainerBuilder {
       ..addSingleton<SensorsProvider>((container) => SensorsProvider())
       ..addSingleton<SettingsProvider>(
           (container) => SettingsProvider(container.get<PreferencesService>()))
-      ..addSingleton<SpeechToTextProvider>((container) => SpeechToTextProvider(SpeechToText()))
-
+      ..addSingleton<SpeechToTextProvider>(
+          (container) => SpeechToTextProvider(SpeechToText()))
       ..add<VideoRecordingProvider>((container) {
         final authProvider = container.get<AuthenticationProvider>();
         final fileSystemRepo = container.get<FileSystemRepository>();
@@ -28,7 +28,8 @@ extension IocContainerBuilderExtension on IocContainerBuilder {
             fileSystemRepository: fileSystemRepo,
             sensorsProvider: sensorsProvider,
             permissions: permissionsProvider,
-            settingsProvider: settingProvider,chunkProcessorService:chunkProcessorService);
+            settingsProvider: settingProvider,
+            chunkProcessorService: chunkProcessorService);
       })
       ..add<JourneysProvider>((container) {
         final authProvider = container.get<AuthenticationProvider>();
@@ -43,10 +44,12 @@ extension IocContainerBuilderExtension on IocContainerBuilder {
         final fileSystemRepo = container.get<FileSystemRepository>();
         final authProvider = container.get<AuthenticationProvider>();
         final backend = container.get<BackendService>();
+        final signature = container.get<SignaturesProvider>();
         return ChunksProvider(
             authenticationProvider: authProvider,
             backendService: backend,
-            fileSystemRepository: fileSystemRepo);
+            fileSystemRepository: fileSystemRepo,
+            signaturesProvider: signature);
       })
       ..addSingleton<SignaturesProvider>((container) => SignaturesProvider(
           container.get<AuthenticationProvider>(),
@@ -59,10 +62,14 @@ extension IocContainerBuilderExtension on IocContainerBuilder {
       ..addSingleton<ChunkProcessorService>((container) {
         final fileSystemRepo = container.get<FileSystemRepository>();
         final signaturesProvider = container.get<SignaturesProvider>();
-        return ChunkProcessorService(fileSystemRepository: fileSystemRepo, signaturesProvider: signaturesProvider );})
-      ..addSingleton<SignaturesService>((container){
+        return ChunkProcessorService(
+            fileSystemRepository: fileSystemRepo,
+            signaturesProvider: signaturesProvider);
+      })
+      ..addSingleton<SignaturesService>((container) {
         final backend = container.get<BackendService>();
-        return SignaturesService(backendService: backend);})
+        return SignaturesService(backendService: backend);
+      })
       ..addSingletonAsync<SettingsProvider>((container) async =>
           await SettingsProvider(container.get<PreferencesService>()).init())
       ..add<BackendService>((container) {
