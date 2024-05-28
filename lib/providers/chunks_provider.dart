@@ -27,7 +27,7 @@ class ChunksProvider extends ChangeNotifier {
       required this.fileSystemRepository,
       required this.signaturesProvider});
 
-  Future<void> initChunks(String path) async {
+  Future<List<String>> initChunks(String path) async {
     chunksPaths = await fileSystemRepository.getChunksList(path);
     _logger.i("chunksPaths: ${chunksPaths.length}");
 
@@ -35,6 +35,7 @@ class ChunksProvider extends ChangeNotifier {
       String? thumbnail = await _generateThumbnail(chunkPath);
       _thumbnails.add(thumbnail);
     }
+    return chunksPaths;
   }
 
   Future<String?> _generateThumbnail(String videoPath) async {

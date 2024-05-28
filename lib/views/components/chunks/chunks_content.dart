@@ -30,14 +30,10 @@ class _ChunksPageState extends State<ChunksPage> {
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return const Center(child: Text('Error loading chunks'));
+            } else if (snapshot.connectionState == ConnectionState.done) {
+              return _buildLocalChunksListView(videoName, chunks);
             } else {
-              if (chunks.chunksPaths.isNotEmpty) {
-                return _buildLocalChunksListView(videoName, chunks);
-              } else {
-                return const Center(child: CircularProgressIndicator());
-              }
+              return const Center(child: Text('Error loading chunks'));
             }
           },
         ),
@@ -111,7 +107,7 @@ class _ChunksPageState extends State<ChunksPage> {
                             Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: Text(
-                                (index+1).toString(),
+                                (index + 1).toString(),
                                 style: const TextStyle(fontSize: 16.0),
                               ),
                             ),
