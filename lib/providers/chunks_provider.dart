@@ -15,7 +15,7 @@ import '../repositories/file_system_repo.dart';
 class ChunksProvider extends ChangeNotifier {
   final Logger _logger = Logger();
   List<String> chunksPaths = [];
-  final List<String?> _thumbnails = [];
+  final List<String?> thumbnails = [];
   final AuthenticationProvider authenticationProvider;
   final SignaturesProvider signaturesProvider;
   final FileSystemRepository fileSystemRepository;
@@ -33,7 +33,7 @@ class ChunksProvider extends ChangeNotifier {
 
     for (String chunkPath in chunksPaths) {
       String? thumbnail = await _generateThumbnail(chunkPath);
-      _thumbnails.add(thumbnail);
+      thumbnails.add(thumbnail);
     }
     return chunksPaths;
   }
@@ -57,12 +57,12 @@ class ChunksProvider extends ChangeNotifier {
   }
 
   generateThumbnailIsNotEmpty(int videoIndex) {
-    _logger.i("generateThumbnailIsNotEmptyLEN: ${_thumbnails.length}");
-    return _thumbnails[videoIndex]?.isNotEmpty;
+    _logger.i("generateThumbnailIsNotEmptyLEN: ${thumbnails.length}");
+    return thumbnails[videoIndex]?.isNotEmpty;
   }
 
   getThumbnail(int videoIndex) {
-    return fileSystemRepository.getThumbnailFile(_thumbnails[videoIndex]!);
+    return fileSystemRepository.getThumbnailFile(thumbnails[videoIndex]!);
   }
 
   Future<void> handleHighlightsButtonPress(int videoIndex) async {} //TODO:

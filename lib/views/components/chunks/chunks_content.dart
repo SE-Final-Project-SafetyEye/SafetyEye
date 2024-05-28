@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../../../providers/chunks_provider.dart';
-import '../../../providers/ioc_provider.dart';
 import '../videoPlayer/video_player.dart';
 
 class ChunksPage extends StatefulWidget {
@@ -18,12 +16,10 @@ class ChunksPage extends StatefulWidget {
 class _ChunksPageState extends State<ChunksPage> {
   @override
   Widget build(BuildContext context) {
-    final chunks = Provider.of<IocContainerProvider>(context, listen: false)
-        .container
-        .get<ChunksProvider>();
-
+    final chunks = Provider.of<ChunksProvider>(context);
+    String videoName = widget.path.split('/').last.split('.').first;
     if (widget.local) {
-      String videoName = widget.path.split('/').last.split('.').first;
+
       return Scaffold(
         body: FutureBuilder(
           future: chunks.initChunks(widget.path),
@@ -48,7 +44,8 @@ class _ChunksPageState extends State<ChunksPage> {
             } else if (snapshot.hasError) {
               return const Center(child: Text('Error loading chunks'));
             } else {
-              if (chunks.chunksPaths.isNotEmpty) {
+
+              if (chunks.chunksPaths.isNotEmpty && snapshot.hasData) {
                 return _buildBackendChunksListView(chunks);
               } else {
                 return const Center(child: CircularProgressIndicator());

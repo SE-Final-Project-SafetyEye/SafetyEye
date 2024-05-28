@@ -38,6 +38,10 @@ class VideoRecordingProvider extends ChangeNotifier {
   get isInitialized => cameraController?.value.isInitialized ?? false;
 
   Future<void> initializeCamera() async {
+    bool hasPermission = await permissions.checkAndRequestCameraPermissions();
+    if (!hasPermission) {
+        throw Future.error("this is an error");
+    }
     cameraController =
         CameraController(permissions.cameras[0], ResolutionPreset.high, enableAudio: false);
     recordMin = 0.15;//settingsProvider.settingsState.chunkDuration; //TODO: delete the integer

@@ -17,7 +17,7 @@ class AuthService {
   @visibleForTesting
   AuthService.dependentOn(this._auth, this._googleSignIn);
 
-  get currentUser => _auth.authStateChanges();
+  Stream<User?> get currentUser => _auth.authStateChanges();
 
   void listenUserStream(void Function(User? user) callback) {
     _auth.authStateChanges().listen(callback);

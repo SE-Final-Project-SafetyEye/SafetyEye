@@ -6,7 +6,9 @@ import '../../../providers/ioc_provider.dart';
 import '../chunks/chunks_content.dart';
 
 class JourneysPage extends StatefulWidget {
-  const JourneysPage({super.key});
+  JourneysProvider journeysProvider;
+
+  JourneysPage(this.journeysProvider,{super.key});
 
   @override
   State<JourneysPage> createState() => _JourneysPageState();
@@ -15,6 +17,8 @@ class JourneysPage extends StatefulWidget {
 class _JourneysPageState extends State<JourneysPage> {
   late List<String> selectedBackendJourneys;
   bool isSelectItem = false;
+  late Future<void> localJourneysFuture = widget.journeysProvider.getLocalJourneys();
+  late Future<void> backendJourneysFuture = widget.journeysProvider.getBackendJourneys();
 
   @override
   void initState() {
@@ -30,60 +34,69 @@ class _JourneysPageState extends State<JourneysPage> {
 
   @override
   Widget build(BuildContext context) {
-    final journeys = Provider.of<IocContainerProvider>(context, listen: false)
-        .container
-        .get<JourneysProvider>();
-
-    return FutureBuilder(
-        future: journeys.initializeJourneys(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            return Scaffold(
-              body: ListView(
-                children: [
-                  _buildLocalVideoList(journeys.localVideoFolders),
-                  if (journeys.backendVideoFolders.isNotEmpty)
-                    _buildBackEndVideoList(journeys.backendVideoFolders),
-                ],
-              ),
-            );
-          } else {
-            return const CircularProgressIndicator();
-          }
-        });
+    return Scaffold(
+      body: ListView(
+        children: [
+          _buildLocalVideoList(context,localJourneysFuture),
+          _buildBackEndVideoList(context, backendJourneysFuture),
+        ],
+      ),
+    );
   }
 }
 
-Widget _buildLocalVideoList(List<FileSystemEntity> paths) {
+Widget _buildLocalVideoList(BuildContext context,Future<void> localJourneysFuture) {
+  final journeys = Provider.of<JourneysProvider>(context, listen: false);
   return Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       const Text("Local Journeys"),
-      ListView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: paths.length,
-        itemBuilder: (context, index) {
-          return LocalVideoCard(fileSystemEntity: paths[index]);
-        },
-      ),
+      FutureBuilder(
+          future: localJourneysFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.done) {
+              return ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: journeys.localVideoFolders.length,
+                itemBuilder: (context, index) {
+                  return LocalVideoCard(fileSystemEntity: journeys.localVideoFolders[index]);
+                },
+              );
+            } else {
+              return const Center(child: CircularProgressIndicator());
+            }
+          })
     ],
   );
 }
 
-Widget _buildBackEndVideoList(List<String> journeys) {
+Widget _buildBackEndVideoList(BuildContext context, Future<void> backendJourneysFuture) {
+  final journeys = Provider.of<JourneysProvider>(context, listen: false);
   return Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       const Text("BackEnd Journeys"),
-      ListView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: journeys.length,
-        itemBuilder: (context, index) {
-          return BackEndVideoCard(journeyName: journeys[index]);
-        },
-      ),
+      FutureBuilder(
+          future: backendJourneysFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.done) {
+              if (journeys.backendVideoFolders.isEmpty) {
+                return const Center(child: Text("No Cloud Journeys found"));
+              } else {
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: journeys.backendVideoFolders.length,
+                  itemBuilder: (context, index) {
+                    return BackEndVideoCard(journeyName: journeys.backendVideoFolders[index]);
+                  },
+                );
+              }
+            } else {
+              return const Center(child: CircularProgressIndicator());
+            }
+          })
     ],
   );
 }
@@ -101,7 +114,10 @@ class LocalVideoCard extends StatelessWidget {
         Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ChunksPage(path: fileSystemEntity.path,local: true,),
+              builder: (context) => ChunksPage(
+                path: fileSystemEntity.path,
+                local: true,
+              ),
             ));
       },
       child: Card(
@@ -118,7 +134,7 @@ class LocalVideoCard extends StatelessWidget {
 class BackEndVideoCard extends StatelessWidget {
   final String journeyName;
 
-   const BackEndVideoCard({super.key, required this.journeyName});
+  const BackEndVideoCard({super.key, required this.journeyName});
 
   @override
   Widget build(BuildContext context) {
@@ -127,7 +143,7 @@ class BackEndVideoCard extends StatelessWidget {
         Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ChunksPage(path: journeyName,local:false),
+              builder: (context) => ChunksPage(path: journeyName, local: false),
             ));
       },
       child: Card(

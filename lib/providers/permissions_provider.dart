@@ -18,7 +18,7 @@ class PermissionsProvider extends ChangeNotifier {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
           _logger.w('User denied location permission.');
-        }else{
+        } else {
           _logger.i('Location permission granted');
         }
       }
@@ -28,8 +28,19 @@ class PermissionsProvider extends ChangeNotifier {
       } else {
         _logger.w('User denied microphone permission.');
       }
-    } catch (error,stackTrace) {
+    } catch (error, stackTrace) {
       _logger.e(error.toString(), stackTrace: stackTrace);
+    }
+  }
+
+  Future<bool> checkAndRequestCameraPermissions() async {
+    final status = await Permission.camera.status;
+    if (status.isGranted) {
+      return true;
+    } else {
+      // You can request permission if it hasn't been permanently denied (restricted)
+      final result = await Permission.camera.request();
+      return result.isGranted;
     }
   }
 }
