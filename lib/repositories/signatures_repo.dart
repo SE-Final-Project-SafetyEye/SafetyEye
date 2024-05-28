@@ -12,7 +12,7 @@ const sigTableName = 'signatures';
 // const messageColName = 'message';
 const signatureColName = 'signature';
 const publicKeyColName = 'publicKey';
-const hashedMessageColName = 'hashedMessage';
+const fileNameId = 'fileNameId';
 
 class SignaturesRepository {
   static Database? _database;
@@ -45,7 +45,7 @@ class SignaturesRepository {
       _databasePath!,
       onCreate: (db, version) {
         return db.execute(
-          'CREATE TABLE $sigTableName(id INTEGER PRIMARY KEY, $signatureColName TEXT, $publicKeyColName TEXT, $hashedMessageColName TEXT)',
+          'CREATE TABLE $sigTableName(id INTEGER PRIMARY KEY, $signatureColName TEXT, $publicKeyColName TEXT, $fileNameId TEXT)',
         );
       },
       version: 1,
@@ -58,8 +58,7 @@ class SignaturesRepository {
   }
   // Save signature into the database
   Future<void> saveSignature(
-      String message, String signature, String publicKey) async {
-    final hashedMessage = await getHashedMessage(message);
+      String id, String signature, String publicKey) async {
     final db = await database;
     try {
       _logger.d("try to save sig in db");
@@ -70,7 +69,7 @@ class SignaturesRepository {
         {
           signatureColName: signature,
           publicKeyColName: publicKey,
-          hashedMessageColName: hashedMessage.toString(),
+          fileNameId: id,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -80,7 +79,7 @@ class SignaturesRepository {
         //     'Signature message: $message, signature: $signature, publicKey: $publicKey saved successfully');
       } else {
         _logger.w(
-            'Failed to save signature, errorCode: $res, message: $message, signature: $signature, publicKey: $publicKey');
+            'Failed to save signature, errorCode: $res, id: $id, signature: $signature, publicKey: $publicKey');
       }
     } catch (error, stackTrace) {
       _logger.e(error.toString(), stackTrace: stackTrace);
@@ -88,14 +87,13 @@ class SignaturesRepository {
   }
 
   // Retrieve signature from the database
-  Future<(String?, String?)> getSignature(String message) async {
+  Future<(String?, String?)> getSignature(String id) async {
     final db = await database;
-    final hashedMessage = await getHashedMessage(message);
     _logger.d('Try to get signature message: ');
     final List<Map<String, dynamic>> maps = await db.query(
       sigTableName,
-      where: '$hashedMessageColName = ?',
-      whereArgs: [hashedMessage],
+      where: '$fileNameId = ?',
+      whereArgs: [id],
     );
     if (maps.isNotEmpty) {
       var signature = maps.first[signatureColName] as String;
@@ -104,7 +102,7 @@ class SignaturesRepository {
           'Signature found');
       return (signature, publicKey);
     }
-    _logger.w('Signature message: $message not found');
+    _logger.w('Signature message: $id not found');
     return (null, null);
   }
 }

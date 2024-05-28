@@ -99,7 +99,7 @@ class SignaturesService {
     return (base64Encode(publicKeyBytes), base64Encode(privateKeyBytes));
   }
 
-  Future<Signature> signMessage(String message) async {
+  Future<Signature> signMessage(String id,String message) async {
     final signature = await _signingAlgorithm.sign(utf8.encode(message), keyPair: _keyPair);
     _logger.i('signature: ${base64.encode(signature.bytes)}');
     await _signaturesRepository.saveSignature(
@@ -113,8 +113,8 @@ class SignaturesService {
     return await _signingAlgorithm.verify(utf8.encode(message), signature: signature);
   }
 
-  Future<String> getSignature(String message) async {
-    final (signature, _) = await _signaturesRepository.getSignature(message);
+  Future<String> getSignature(String id) async {
+    final (signature, _) = await _signaturesRepository.getSignature(id);
     if (signature != null) {
       return signature;
     } else {

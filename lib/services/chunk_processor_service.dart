@@ -25,7 +25,8 @@ class ChunkProcessorService {
       Directory dir =
           await fileSystemRepository.stopRecording(videoChunk, chunkNumber);
       await extractFrames(dir.path);
-      await signaturesProvider.sign(base64Encode(videoBytes));
+      //todo: replace this with the actual file name
+      await signaturesProvider.sign("ID in here",base64Encode(videoBytes));
     } catch (e) {
       _logger.e('Error processing chunk: $e');
     }
@@ -71,7 +72,8 @@ class ChunkProcessorService {
     for (var entity in frames) {
       File frameFile = File(entity.path);
       Uint8List frameBytes = await frameFile.readAsBytes();
-      await signaturesProvider.sign(base64Encode(frameBytes));
+      //todo: replace with the actual id
+      await signaturesProvider.sign("Add If Here",base64Encode(frameBytes));
     }
   }
 }
