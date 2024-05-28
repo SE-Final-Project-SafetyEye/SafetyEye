@@ -10,11 +10,17 @@ class FileSystemRepository {
   Directory? _saveDir;
   AuthenticationProvider authProvider;
   final Logger _logger = Logger();
-  late String userId;
+  String userId = "";
   String latestFilePath = '';
 
   FileSystemRepository({required this.authProvider}) {
-    userId = authProvider.currentUser!.uid;
+    authProvider.currentUserStream.listen((user) {
+      if(user!= null) {
+        userId = user.uid;
+      } else {
+        userId = '';
+      }
+    });
   }
 
   Future<void> startRecording() async {
@@ -31,6 +37,10 @@ class FileSystemRepository {
 
   Future<void> _saveDirUpdate() async {
     final dir = await getApplicationDocumentsDirectory();
+
+    if(userId.isEmpty) {
+      return Future.error(new Exception());
+    }
 
     final videosDirectory = Directory('${dir.path}/videos/$userId');
 
