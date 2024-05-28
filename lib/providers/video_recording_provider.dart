@@ -42,6 +42,9 @@ class VideoRecordingProvider extends ChangeNotifier {
     if (!hasPermission) {
         throw Future.error("this is an error");
     }
+    if (isInitialized) {
+      return;
+    }
     cameraController =
         CameraController(permissions.cameras[0], ResolutionPreset.high, enableAudio: false);
     recordMin = 0.15;//settingsProvider.settingsState.chunkDuration; //TODO: delete the integer
