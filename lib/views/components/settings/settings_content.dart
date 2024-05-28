@@ -76,16 +76,20 @@ class _SettingsPageState extends State<SettingsPage> {
       Text('High', style: TextStyle(fontSize: fontSize)),
       Text('Max', style: TextStyle(fontSize: fontSize))
     ];
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Column(children: [
-        _buildChunkDurationSection(fontSize),
-        // TODO: not relevant for Beta
-        // _buildGracePeriodInterval(fontSize),
-        // _buildAutoUpload(),
-        // _buildVideoResolution(videoResolution),
-        _buildSignOutButton(context)
-      ]),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+          _buildChunkDurationSection(fontSize),
+          // TODO: not relevant for Beta
+          // _buildGracePeriodInterval(fontSize),
+          // _buildAutoUpload(),
+          // _buildVideoResolution(videoResolution),
+          _buildSignOutButton(context)
+        ]),
+      ),
     );
   }
 
@@ -185,6 +189,6 @@ class _SettingsPageState extends State<SettingsPage> {
           authProvider.signOut();
           Navigator.of(context).popAndPushNamed("/auth");
         },
-        child: Text('Sign out ${authProvider.currentUser!.email}'));
+        child: Text('Sign out ${authProvider.currentUser?.email ?? ''}'));
   }
 }

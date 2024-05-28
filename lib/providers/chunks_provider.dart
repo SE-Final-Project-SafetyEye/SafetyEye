@@ -12,21 +12,23 @@ import 'auth_provider.dart';
 class ChunksProvider extends ChangeNotifier {
   final Logger _logger = Logger();
   List<String> chunksPaths = [];
-  final List<String?> _thumbnails = [];
+  final List<String?> thumbnails = [];
   final AuthenticationProvider authenticationProvider;
   final FileSystemRepository fileSystemRepository;
   final BackendService backendService;
 
   ChunksProvider({required this.authenticationProvider,required this.backendService,required this.fileSystemRepository});
 
-  Future<void> initChunks(String path) async {
+  Future<List<String>> initChunks(String path) async {
     chunksPaths = await fileSystemRepository.getChunksList(path);
     _logger.i("chunksPaths: ${chunksPaths.length}");
 
     for (String chunkPath in chunksPaths) {
       String? thumbnail = await _generateThumbnail(chunkPath);
-      _thumbnails.add(thumbnail);
+      thumbnails.add(thumbnail);
     }
+
+    return chunksPaths;
   }
 
   Future<String?> _generateThumbnail(String videoPath) async {
@@ -48,12 +50,12 @@ class ChunksProvider extends ChangeNotifier {
   }
 
   generateThumbnailIsNotEmpty(int videoIndex) {
-    _logger.i("generateThumbnailIsNotEmptyLEN: ${_thumbnails.length}");
-    return _thumbnails[videoIndex]?.isNotEmpty;
+    _logger.i("generateThumbnailIsNotEmptyLEN: ${thumbnails.length}");
+    return thumbnails[videoIndex]?.isNotEmpty;
   }
 
   getThumbnail(int videoIndex) {
-    return fileSystemRepository.getThumbnailFile(_thumbnails[videoIndex]!);
+    return fileSystemRepository.getThumbnailFile(thumbnails[videoIndex]!);
   }
 
   String getName(int videoIndex) {

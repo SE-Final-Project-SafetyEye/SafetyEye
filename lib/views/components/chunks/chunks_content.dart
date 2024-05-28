@@ -17,7 +17,7 @@ class ChunksPage extends StatefulWidget {
 class _ChunksPageState extends State<ChunksPage>{
   @override
   Widget build(BuildContext context) {
-    final chunks = Provider.of<IocContainerProvider>(context, listen: false).container.get<ChunksProvider>();
+    final chunks = Provider.of<ChunksProvider>(context);
 
     if(widget.local) {
       String videoName = widget.path.split('/').last.split('.').first;
@@ -30,7 +30,7 @@ class _ChunksPageState extends State<ChunksPage>{
             } else if (snapshot.hasError) {
               return const Center(child: Text('Error loading chunks'));
             } else {
-              if (chunks.chunksPaths.isNotEmpty) {
+              if (chunks.chunksPaths.isNotEmpty && snapshot.hasData) {
                 return _buildLocalChunksListView(videoName, chunks);
               } else {
                 return const Center(child: CircularProgressIndicator());

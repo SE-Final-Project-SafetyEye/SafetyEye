@@ -14,7 +14,9 @@ import 'package:speech_to_text/speech_to_text_provider.dart';
 import '../../../providers/video_recording_provider.dart';
 
 class RecordingPage extends StatefulWidget {
-  const RecordingPage({super.key});
+  final VideoRecordingProvider videoRecordingProvider;
+
+  const RecordingPage(this.videoRecordingProvider,{super.key});
 
   @override
   State<RecordingPage> createState() => _RecordingPageState();
@@ -26,13 +28,16 @@ class _RecordingPageState extends State<RecordingPage> {
   StreamSubscription<SpeechRecognitionEvent>? _subscription;
   late SpeechToTextProvider speechProvider;
   late VideoRecordingProvider cameraProvider;
+  late Future<CameraController> controllerFuture;
 
   @override
   void initState() {
     super.initState();
     KeepScreenOn.turnOn();
+    controllerFuture = widget.videoRecordingProvider.initializeCamera().then((_) => widget.videoRecordingProvider.cameraController!);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeSpeechRecognition(context);
+
     });
   }
 
@@ -105,12 +110,14 @@ class _RecordingPageState extends State<RecordingPage> {
 
   @override
   void dispose() {
+    super.dispose();
     KeepScreenOn.turnOff();
-    speechProvider.stop(); // Stop listening if the widget is disposed
-    _subscription?.cancel();
     FlutterVolumeController.setMute(false,
         stream: AudioStream.alarm); // Restore volume
-    super.dispose();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      speechProvider.stop(); // Stop listening if the widget is disposed
+      _subscription?.cancel();
+    });
   }
 
   @override
@@ -121,7 +128,7 @@ class _RecordingPageState extends State<RecordingPage> {
       return buildCamaraPreviewContent(cameraProvider);
     } else {
       return FutureBuilder(
-          future: cameraProvider.initializeCamera(),
+          future: controllerFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -136,19 +143,7 @@ class _RecordingPageState extends State<RecordingPage> {
 
   Widget buildCamaraPreviewContent(VideoRecordingProvider cameraProvider) {
     return Stack(alignment: AlignmentDirectional.bottomEnd, children: [
-      Expanded(
-        child: Center(child: CameraPreview(cameraProvider.cameraController!)),
-      ),
-      const Padding(
-        padding: EdgeInsets.fromLTRB(15, 15, 15, 10),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: <Widget>[
-            SizedBox(width: 15),
-            SizedBox(width: 15),
-          ],
-        ),
-      ),
+      Center(child: CameraPreview(cameraProvider.cameraController!)),
       buildRecordButton(cameraProvider)
     ]);
   }

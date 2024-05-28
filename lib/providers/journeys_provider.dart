@@ -21,4 +21,14 @@ class JourneysProvider extends ChangeNotifier {
     final videoList = await backendService.getJourneys();
     backendVideoFolders = videoList.journeys;
   }
+
+  Future<void> getLocalJourneys() async {
+    localVideoFolders = await fileSystemRepository.getVideoList();
+    notifyListeners();
+  }
+
+  Future<void> getBackendJourneys() async {
+    backendVideoFolders = await backendService.getJourneys().then((response) => response.journeys);
+    notifyListeners();
+  }
 }

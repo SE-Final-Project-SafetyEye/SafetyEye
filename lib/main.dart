@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:safety_eye_app/providers/auth_provider.dart';
+import 'package:safety_eye_app/providers/chunks_provider.dart';
 import 'package:safety_eye_app/providers/ioc_provider.dart';
+import 'package:safety_eye_app/providers/journeys_provider.dart';
 import 'package:safety_eye_app/providers/settings_provider.dart';
 import 'package:safety_eye_app/providers/permissions_provider.dart';
 import 'package:safety_eye_app/providers/sensors_provider.dart';
@@ -34,7 +36,9 @@ void main() async {
         }),
         ChangeNotifierProvider(create: (context) => iocProvider.container.get<SignaturesProvider>()),
         ChangeNotifierProvider(create: (context) => iocProvider.container.get<SpeechToTextProvider>()),
-        ChangeNotifierProvider(create: (context) => iocProvider.container.get<VideoRecordingProvider>())
+        ChangeNotifierProvider(create: (context) => iocProvider.container.get<VideoRecordingProvider>()),
+        ChangeNotifierProvider(create: (context) => iocProvider.container.get<ChunksProvider>()),
+        ChangeNotifierProvider(create: (context) => iocProvider.container.get<JourneysProvider>()),
       ], child: const MyApp());
     },
   ));
@@ -48,6 +52,8 @@ class MyApp extends StatelessWidget {
     final authProvider = Provider.of<AuthenticationProvider>(context, listen: true);
     final permissionsProvider = Provider.of<PermissionsProvider>(context, listen: false);
     final settingsProvider = Provider.of<SettingsProvider>(context);
+    final journeysProvider = Provider.of<JourneysProvider>(context, listen: false);
+    final video = Provider.of<VideoRecordingProvider>(context, listen: false);
 
     return FutureBuilder(
       future: permissionsProvider.init(),
@@ -58,7 +64,12 @@ class MyApp extends StatelessWidget {
               if (snapshot.connectionState != ConnectionState.active) {
                 return const Center(child: CircularProgressIndicator());
               }
-              final widgetToStart = snapshot.data == null ? const AuthScreen() : HomeScreen(settingsProvider);
+              final widgetToStart = snapshot.data == null
+                  ? const AuthScreen()
+                  : HomeScreen(
+                      settingsProvider: settingsProvider,
+                      journeysProvider: journeysProvider,
+                      videoRecordingProvider: video);
               return MaterialApp(
                   title: 'SafetyEye',
                   theme: ThemeData(
@@ -69,7 +80,10 @@ class MyApp extends StatelessWidget {
                   ),
                   home: widgetToStart,
                   routes: {
-                    "/home": (context) => HomeScreen(settingsProvider),
+                    "/home": (context) => HomeScreen(
+                        settingsProvider: settingsProvider,
+                        journeysProvider: journeysProvider,
+                        videoRecordingProvider: video),
                     "/auth": (context) => const AuthScreen(),
                   });
             });

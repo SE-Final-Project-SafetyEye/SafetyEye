@@ -16,7 +16,12 @@ class AuthenticationProvider extends ChangeNotifier {
     return isDev ? MockUser() : _currentUser;
   }
 
-  AuthenticationProvider(this._auth);
+  AuthenticationProvider(this._auth) {
+    _auth.currentUser.listen((User? user) {
+      _currentUser = user;
+      if (user != currentUser) notifyListeners();
+    });
+  }
 
   Stream<User?> get currentUserStream {
     return _auth.currentUser;
@@ -56,11 +61,5 @@ class AuthenticationProvider extends ChangeNotifier {
     } catch (error, stackTrace) {
       _logger.e(error.toString(), stackTrace: stackTrace);
     }
-  }
-
-  bool isSignedIn() {
-    _currentUser = _auth.currentUser;
-    notifyListeners();
-    return currentUser != null;
   }
 }
