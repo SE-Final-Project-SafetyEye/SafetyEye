@@ -5,6 +5,7 @@ import 'package:camera/camera.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:safety_eye_app/providers/auth_provider.dart';
+import 'package:uuid/uuid.dart';
 
 class FileSystemRepository {
   Directory? _saveDir;
@@ -12,10 +13,11 @@ class FileSystemRepository {
   final Logger _logger = Logger();
   String userId = "";
   String latestFilePath = '';
+  var uuid = const Uuid();
 
   FileSystemRepository({required this.authProvider}) {
     authProvider.currentUserStream.listen((user) {
-      if(user!= null) {
+      if (user != null) {
         userId = user.uid;
       } else {
         userId = '';
@@ -27,18 +29,20 @@ class FileSystemRepository {
     _saveDirUpdate();
   }
 
-  Future<void> saveDataToFile(String jsonData) async {
-    String filePath = '$latestFilePath/chunkMetadata.json';
+  Future<File> saveDataToFile(String jsonData) async {
+    var uuidG = uuid.v4();
+    String filePath = '$latestFilePath/chunkMetadata$uuidG.json';
     _logger.i('save metaDate into json... path: $filePath');
     File file = File(filePath);
     await file.writeAsString(jsonData);
+    return file;
   }
 
   Future<void> _saveDirUpdate() async {
     final dir = await getApplicationDocumentsDirectory();
 
-    if(userId.isEmpty) {
-      return Future.error(new Exception());
+    if (userId.isEmpty) {
+      return Future.error(Exception());
     }
 
     final videosDirectory = Directory('${dir.path}/videos/$userId');
@@ -59,20 +63,25 @@ class FileSystemRepository {
     String lastFilePath = _latestFilePath(chunkNumber: chunkNumber);
     _logger.i(lastFilePath);
     final videosDirectory = Directory(lastFilePath);
-    videoChunk.saveTo(videosDirectory.path).then((_) {
-      File(videoChunk.path).delete();
-    });
+
+    try {
+      await videoChunk.saveTo(videosDirectory.path);
+      await File(videoChunk.path).delete();
+    } catch (e) {
+      _logger.e('Error saving or deleting file: $e');
+    }
+
     return videosDirectory;
   }
 
   String _latestFilePath({required chunkNumber}) {
     latestFilePath = '${_saveDir?.path ?? ''}/$chunkNumber';
-    _logger.i(latestFilePath);
     final latestFilePath0 = Directory(latestFilePath);
     if (!latestFilePath0.existsSync()) {
       latestFilePath0.createSync();
     }
-    return '$latestFilePath/CVR-chunkNumber_$chunkNumber.mp4';
+    var uuidG = uuid.v4();
+    return '$latestFilePath/CVR-chunkNumber_${chunkNumber}_$uuidG.mp4';
   }
 
   FutureOr<List<FileSystemEntity>> getVideoList() async {

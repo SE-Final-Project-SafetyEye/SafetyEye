@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
@@ -99,16 +100,14 @@ class VideoRecordingProvider extends ChangeNotifier {
     if (cameraController?.value.isRecordingVideo ?? false) {
       recording = isRecordRecursively;
       notifyListeners();
-      sensorsProvider
-          .stopCollectMetadata()
-          .then((value) => fileSystemRepository.saveDataToFile(value));
+      String jsonFile = await sensorsProvider
+          .stopCollectMetadata();
       cameraController?.stopVideoRecording().then((tempFile) async {
         _logger.d(
             "stopped recording: status ${cameraController?.value.isRecordingVideo}");
         _logger.i("Start chunkProcessorService");
-
         _logger.i("2 stopped recording: status ${cameraController?.value.isRecordingVideo}");
-        chunkProcessorService.processChunk(tempFile, chunkNumber);
+        chunkProcessorService.processChunk(tempFile, chunkNumber,jsonFile);
         _logger.i("stop chunkProcessorService");
         chunkNumber++;
         if (isRecordRecursively) {

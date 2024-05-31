@@ -82,6 +82,7 @@ dependencies:
   sqflite_common_ffi: ^2.3.3
   ioc_container: ^1.0.12
   chewie: ^1.8.1
+  uuid: ^4.4.0
 
 dev_dependencies:
   retrofit_generator: ^8.1.0

@@ -25,14 +25,14 @@ class SignaturesProvider extends ChangeNotifier {
     });
   }
 
-  Future<Signature> sign(String message) async {
-    return signaturesService.signMessage(message);
+  Future<Signature> sign(String id, String message) async {
+    return signaturesService.signMessage(id,message);
   }
 
   Future<bool> verifySignature(String message, Signature signature) async =>
       signaturesService.verifySignature(message, signature);
 
-  Future<String> getSignature(String message) async {
-    return signaturesService.getSignature(message);
+  Future<String> getSignature(String id) async {
+    return signaturesService.getSignature(id);
   }
 }
