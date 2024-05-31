@@ -9,4 +9,3 @@ export 'settings_provider.dart';
 export 'sensors_provider.dart';
 export 'signatures_provider.dart';
 export 'video_recording_provider.dart';
-export 'voice_recognition_provider.dart';
