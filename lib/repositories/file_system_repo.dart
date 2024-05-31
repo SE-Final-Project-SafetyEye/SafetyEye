@@ -166,4 +166,8 @@ class FileSystemRepository {
     }
     return File('');
   }
+
+  String getName(String path) {
+    return XFile(path).name;
+  }
 }

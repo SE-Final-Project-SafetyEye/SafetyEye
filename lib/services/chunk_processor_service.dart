@@ -29,12 +29,9 @@ class ChunkProcessorService {
       XFile jsonXFile = XFile(jsonFile.path);
       Uint8List jsonBytes = await jsonXFile.readAsBytes();
       await extractFrames(dir);
-      String jsonMetaDataID = _extractUuidFromFileName(jsonXFile.name);
-      await signaturesProvider.sign(jsonMetaDataID, base64Encode(jsonBytes));
+      await signaturesProvider.sign(jsonXFile.name, base64Encode(jsonBytes));
       XFile xFile = XFile(dir.path);
-      String videoID = _extractUuidFromFileName(xFile.name);
-      _logger.i("video Id: $videoID");
-      await signaturesProvider.sign(videoID, base64Encode(videoBytes));
+      await signaturesProvider.sign(xFile.name, base64Encode(videoBytes));
     } catch (e) {
       _logger.e('Error processing chunk: $e');
     }
@@ -86,9 +83,7 @@ class ChunkProcessorService {
     for (var entity in frames) {
       XFile frameFile = XFile(entity.path);
       Uint8List frameBytes = await frameFile.readAsBytes();
-      String frameID = _extractUuidFromFileName(frameFile.name);
-      _logger.i("video Id: $frameID");
-      await signaturesProvider.sign(frameID, base64Encode(frameBytes));
+      await signaturesProvider.sign(frameFile.name, base64Encode(frameBytes));
     }
   }
 
