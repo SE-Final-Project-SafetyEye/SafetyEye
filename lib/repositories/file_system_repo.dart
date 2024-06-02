@@ -29,9 +29,11 @@ class FileSystemRepository {
     _saveDirUpdate();
   }
 
-  Future<File> saveDataToFile(String jsonData) async {
+  Future<File> saveDataToFile(String jsonData, int chunkNumber) async {
     var uuidG = uuid.v4();
-    String filePath = '$latestFilePath/chunkMetadata$uuidG.json';
+    Directory dir = Directory(latestFilePath);
+    String journeyId = XFile(dir.parent.path).name;
+    String filePath = '$latestFilePath/${journeyId}_chunknumber-${chunkNumber}_${uuidG}_metadata.json';
     _logger.i('save metaDate into json... path: $filePath');
     File file = File(filePath);
     await file.writeAsString(jsonData);
@@ -80,8 +82,9 @@ class FileSystemRepository {
     if (!latestFilePath0.existsSync()) {
       latestFilePath0.createSync();
     }
+    String journeyId = XFile(latestFilePath0.parent.path).name;
     var uuidG = uuid.v4();
-    return '$latestFilePath/CVR-chunkNumber_${chunkNumber}_$uuidG.mp4';
+    return '$latestFilePath/${journeyId}_chunknumber-${chunkNumber}_$uuidG.mp4';
   }
 
   FutureOr<List<FileSystemEntity>> getVideoList() async {
