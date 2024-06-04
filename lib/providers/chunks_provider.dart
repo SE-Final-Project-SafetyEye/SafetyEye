@@ -69,10 +69,13 @@ class ChunksProvider extends ChangeNotifier {
 
   Future<void> handleCloudUploadButtonPress(int videoIndex) async {
     File video = fileSystemRepository.getChunkVideo(chunksPaths[videoIndex]);
+    _logger.i("fetch video file - path ${video.path}");
     List<File> pics =
         fileSystemRepository.getChunkPics(chunksPaths[videoIndex]);
+    _logger.i("fetch pic files - length ${pics.length}");
     File metaData =
         fileSystemRepository.getChunkMetadata(chunksPaths[videoIndex]);
+    _logger.i("fetch metadata file - path ${metaData.path}");
 
     String videoSign =
         await signaturesProvider.getSignature(fileSystemRepository.getName(video.path));
@@ -110,13 +113,14 @@ class ChunksProvider extends ChangeNotifier {
     return chunksPaths[videoIndex]; // Assuming chunksPaths contains video paths
   }
 
-  Future<void> getChunk(String journeyId) async {
+  Future<void> getChunks(String journeyId) async {
     final chunks = await backendService.getJourneyChunks(journeyId);
     chunksPaths = chunks;
+    notifyListeners();
   }
 
-  Future<void> download(String journeyId, int chunkId) async {
-    backendService.downloadChunk(
-        journeyId, chunkId.toString()); //TODO: check if works
+  Future<File> download(String journeyId, int chunkIndex) async {
+    return backendService.downloadChunk(
+        journeyId, chunksPaths[chunkIndex]); //TODO: check if works
   }
 }

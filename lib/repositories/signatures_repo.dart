@@ -89,7 +89,7 @@ class SignaturesRepository {
   // Retrieve signature from the database
   Future<(String?, String?)> getSignature(String id) async {
     final db = await database;
-    _logger.d('Try to get signature message: ');
+    _logger.d('Try to get signature message: $id');
     final List<Map<String, dynamic>> maps = await db.query(
       sigTableName,
       where: '$fileNameId = ?',

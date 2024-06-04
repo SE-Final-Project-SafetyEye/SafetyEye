@@ -136,6 +136,7 @@ class FileSystemRepository {
     final dir = await getApplicationDocumentsDirectory();
     final videosDirectory = Directory('${dir.path}/videos/$userId');
     File chunkFile = File('${videosDirectory.path}/$journeyId/$chunkId');
+    _logger.i("saving chunk to ${chunkFile.path}");
     return await chunkFile.writeAsBytes(chunkBytes);
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/chunks_provider.dart';
 import '../videoPlayer/video_player.dart';
@@ -6,14 +7,31 @@ import '../videoPlayer/video_player.dart';
 class ChunksPage extends StatefulWidget {
   final String path;
   final bool local;
+  final ChunksProvider chunksProvider;
 
-  const ChunksPage({super.key, required this.path, required this.local});
+  ChunksPage({super.key, required this.path, required this.local, required this.chunksProvider});
 
   @override
   State<ChunksPage> createState() => _ChunksPageState();
 }
 
 class _ChunksPageState extends State<ChunksPage> {
+  final Logger _logger = Logger();
+  late final ChunksProvider chunksProvider;
+
+  late Future<void> future;
+  @override
+  void initState() {
+    chunksProvider = widget.chunksProvider;
+    if (widget.local) {
+      future = chunksProvider.initChunks(widget.path);
+    }
+    else {
+      future = chunksProvider.getChunks(widget.path);
+    }
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     final chunks = Provider.of<ChunksProvider>(context);
@@ -22,7 +40,7 @@ class _ChunksPageState extends State<ChunksPage> {
 
       return Scaffold(
         body: FutureBuilder(
-          future: chunks.initChunks(widget.path),
+          future: future,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -37,7 +55,7 @@ class _ChunksPageState extends State<ChunksPage> {
     } else {
       return Scaffold(
         body: FutureBuilder(
-          future: chunks.getChunk(widget.path),
+          future: future,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -45,7 +63,7 @@ class _ChunksPageState extends State<ChunksPage> {
               return const Center(child: Text('Error loading chunks'));
             } else {
 
-              if (chunks.chunksPaths.isNotEmpty && snapshot.hasData) {
+              if (chunks.chunksPaths.isNotEmpty) {
                 return _buildBackendChunksListView(chunks);
               } else {
                 return const Center(child: CircularProgressIndicator());
@@ -132,12 +150,7 @@ class _ChunksPageState extends State<ChunksPage> {
                           onPressed: () {
                             String videoPath =
                                 chunks.handlePlayButtonPress(context, index);
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => ChewieVideoPlayer(
-                                          srcs: [videoPath],
-                                        )));
+                            _playVideo(videoPath);
                           },
                           icon: const Icon(Icons.play_arrow),
                           tooltip: 'Play video',
@@ -152,6 +165,15 @@ class _ChunksPageState extends State<ChunksPage> {
         ),
       ],
     );
+  }
+
+  void _playVideo(String videoPath) {
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => ChewieVideoPlayer(
+                  srcs: [videoPath],
+                )));
   }
 
   Widget _buildBackendChunksListView(ChunksProvider chunks) {
@@ -173,31 +195,20 @@ class _ChunksPageState extends State<ChunksPage> {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: chunks.chunksPaths.length,
               itemBuilder: (context, index) {
-                return GestureDetector(
-                  onTap: () {},
-                  child: Card(
-                    margin: const EdgeInsets.all(8.0),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const SizedBox(width: 8.0),
-                                IconButton(
-                                  icon: const Icon(Icons.cloud_download),
-                                  onPressed: () =>
-                                      chunks.download(widget.path, index),
-                                  tooltip: 'Download from Cloud',
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                return Card(
+                  margin: const EdgeInsets.all(8.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(width: 8.0),
+                      IconButton(
+                        icon: const Icon(Icons.cloud_download),
+                        onPressed: () =>
+                            chunks.download(widget.path, index),
+                        tooltip: 'Download from Cloud',
+                      ),
+                      Text(chunks.chunksPaths[index].split("_").first),
+                    ],
                   ),
                 );
               },
@@ -206,5 +217,19 @@ class _ChunksPageState extends State<ChunksPage> {
         ),
       ],
     );
+  }
+
+  void onCloudIconPressed(BuildContext context, String journeyId, int chunkIndex) async {
+    final chunks = Provider.of<ChunksProvider>(context);
+      try {
+        final file = await chunks.download(journeyId, chunkIndex);
+        _logger.i("Finished downloading chunk");
+        _playVideo(file.path);
+      } catch (e) {
+        _logger.e(e);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(e.toString()),
+        ));
+      }
   }
 }
