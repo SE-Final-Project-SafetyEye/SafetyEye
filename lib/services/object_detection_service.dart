@@ -330,13 +330,15 @@ class ObjectTracking {
         .colRange(demandedX, demandedX + width)
         .rowRange(demandedY, demandedY + height);
 
-    cv.imwrite('$workingPath/cropped$lpID.png', cropped);
+    // DEV
+    // cv.imwrite('$workingPath/cropped$lpID.png', cropped);
     // File deleteMe = File('$workingPath/cropped$lpID.png');
     // deleteMe.delete();
 
     cv.Mat gray = cv.cvtColor(cropped, cv.COLOR_BGR2GRAY);
 
-    cv.imwrite('$workingPath/gray$lpID.png', gray);
+    // DEV
+    // cv.imwrite('$workingPath/gray$lpID.png', gray);
     // File deleteMe = File('$workingPath/gray$lpID.png');
     // deleteMe.delete();
 
@@ -344,7 +346,7 @@ class ObjectTracking {
 
     cv.imwrite('$workingPath/gray_tres$lpID.png', gray_tres);
 
-    // read the cropped LP
+    // scan and read the cropped LP
     final InputImage plateImage =
     InputImage.fromFilePath('$workingPath/gray_tres$lpID.png');
     final RecognizedText recognized =
@@ -359,8 +361,8 @@ class ObjectTracking {
       recognizedText = match![0] ?? recognizedText;
     }
 
-    //File deleteMe = File('$workingPath/gray_tres$lpID.png');
-    // deleteMe.delete();
+    File deleteMe = File('$workingPath/gray_tres$lpID.png');
+    deleteMe.delete();
 
     return recognizedText;
   }
