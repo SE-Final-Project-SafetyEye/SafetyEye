@@ -75,13 +75,13 @@ class ChunksProvider extends ChangeNotifier {
         fileSystemRepository.getChunkMetadata(chunksPaths[videoIndex]);
 
     String videoSign =
-        await signaturesProvider.getSignature(await _convert(video));
+        await signaturesProvider.getSignature(fileSystemRepository.getName(video.path));
     String metaDataSign =
-        await signaturesProvider.getSignature(await _convert(metaData));
+        await signaturesProvider.getSignature(fileSystemRepository.getName(metaData.path));
 
     List<Future<String>> picSignFutures = pics
         .map(
-            (pic) async => signaturesProvider.getSignature(await _convert(pic)))
+            (pic) async => signaturesProvider.getSignature(fileSystemRepository.getName(pic.path)))
         .toList();
     List<String> picsSign = await Future.wait(picSignFutures);
 

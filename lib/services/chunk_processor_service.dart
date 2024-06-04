@@ -7,14 +7,12 @@ import 'package:logger/logger.dart';
 import 'package:safety_eye_app/providers/providers.dart';
 import 'package:uuid/uuid.dart';
 import '../repositories/file_system_repo.dart';
-import 'package:safety_eye_app/services/object_detection_service.dart';
 
 class ChunkProcessorService {
   final FileSystemRepository fileSystemRepository;
   final SignaturesProvider signaturesProvider;
   final Logger _logger = Logger();
   var uuid = const Uuid();
-  final ObjectTracking _objectTracking = ObjectTracking();
 
   ChunkProcessorService({
     required this.fileSystemRepository,
@@ -27,17 +25,13 @@ class ChunkProcessorService {
       Uint8List videoBytes = await videoChunk.readAsBytes();
       Directory dir =
           await fileSystemRepository.stopRecording(videoChunk, chunkNumber);
-      await _objectTracking.detectChunkObjects(dir.path); // object_detect
-      File jsonFile = await fileSystemRepository.saveDataToFile(jsonMetaData);
+      File jsonFile = await fileSystemRepository.saveDataToFile(jsonMetaData, chunkNumber);
       XFile jsonXFile = XFile(jsonFile.path);
       Uint8List jsonBytes = await jsonXFile.readAsBytes();
       await extractFrames(dir);
-      String jsonMetaDataID = _extractUuidFromFileName(jsonXFile.name);
-      await signaturesProvider.sign(jsonMetaDataID, base64Encode(jsonBytes));
+      await signaturesProvider.sign(jsonXFile.name, base64Encode(jsonBytes));
       XFile xFile = XFile(dir.path);
-      String videoID = _extractUuidFromFileName(xFile.name);
-      _logger.i("video Id: $videoID");
-      await signaturesProvider.sign(videoID, base64Encode(videoBytes));
+      await signaturesProvider.sign(xFile.name, base64Encode(videoBytes));
     } catch (e) {
       _logger.e('Error processing chunk: $e');
     }
@@ -46,14 +40,14 @@ class ChunkProcessorService {
   Future<void> extractFrames(Directory outputDir) async {
     try {
       FlutterFFmpeg ffmpeg = FlutterFFmpeg();
-
-      // Generate a unique UUID for each extraction
       var uuidG = const Uuid().v4();
       _logger.i("outputDir: ${outputDir.path}");
+      String chunknumber = XFile(outputDir.parent.path).name;
 
-      // Use the correct FFmpeg command to extract frames with the desired output file format
+      String journeyId = XFile(outputDir.parent.parent.path).name;
+      _logger.i("journeyId: ${journeyId}");
       int rc = await ffmpeg.execute(
-        '-i ${outputDir.path} -vf fps=1/5 "${outputDir.parent.path}/extractFrame_$uuidG-%03d.jpg"',
+        '-i ${outputDir.path} -vf fps=1/5 "${outputDir.parent.path}/${journeyId}_chunknumber-${chunknumber}_${uuidG}_pic-%03d.jpg"',
       );
 
       if (rc == 0) {
@@ -89,9 +83,7 @@ class ChunkProcessorService {
     for (var entity in frames) {
       XFile frameFile = XFile(entity.path);
       Uint8List frameBytes = await frameFile.readAsBytes();
-      String frameID = _extractUuidFromFileName(frameFile.name);
-      _logger.i("video Id: $frameID");
-      await signaturesProvider.sign(frameID, base64Encode(frameBytes));
+      await signaturesProvider.sign(frameFile.name, base64Encode(frameBytes));
     }
   }
 
