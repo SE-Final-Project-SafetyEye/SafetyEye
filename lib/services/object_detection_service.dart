@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:typed_data';
 import 'package:pytorch_lite/pytorch_lite.dart';
 import 'dart:io';
 import 'dart:async';
@@ -28,53 +29,12 @@ const IOU_THRESHOLD = 0.5;
 //   }
 // }
 
-// class ModelObjectDetectionSingleton {
-//   static ModelObjectDetectionSingleton? _singleton;
-//   ModelObjectDetection objectModel;
-//
-//   factory ModelObjectDetectionSingleton() {
-//     if (_singleton == null) {
-//       _singleton = ModelObjectDetectionSingleton._internal();
-//     }
-//     return _singleton!;
-//   }
-//
-//   ModelObjectDetectionSingleton._internal() {
-//     objectModel = await PytorchLite.loadObjectDetectionModel(
-//         "assets/yolov8s_LP_TS_220224v1.torchscript",
-//         //This specific model trained on 640*640 resolution format
-//         NUM_OF_LABELS,
-//         DEV_MODEL_MAX_FRAME_SIDE,
-//         DEV_MODEL_MAX_FRAME_SIDE,
-//         labelPath: "assets/labels.txt",
-//         objectDetectionModelType: ObjectDetectionModelType.yolov8);
-//   }
-// }
-// class ModelObjectDetectionSingleton {
-//   static final ModelObjectDetectionSingleton _singleton = ModelObjectDetectionSingleton._internal();
-//
-//   factory ModelObjectDetectionSingleton() {
-//     return _singleton;
-//   }
-//
-//   ModelObjectDetectionSingleton._internal() {
-//     ModelObjectDetection objectModel = await PytorchLite.loadObjectDetectionModel(
-//         "assets/yolov8s_LP_TS_220224v1.torchscript",
-//         //This specific model trained on 640*640 resolution format
-//         NUM_OF_LABELS,
-//         DEV_MODEL_MAX_FRAME_SIDE,
-//         DEV_MODEL_MAX_FRAME_SIDE,
-//         labelPath: "assets/labels.txt",
-//         objectDetectionModelType: ObjectDetectionModelType.yolov8);
-//     return objectModel;
-//   }
-// }
-
 
 class ObjectTracking {
 
   ModelObjectDetection? objectModel;
 
+  // loading a detection model from a .torchscript file.
   Future<void> initModel() async{
     objectModel ??= await PytorchLite
           .loadObjectDetectionModel(
@@ -90,8 +50,11 @@ class ObjectTracking {
 
   Future<bool> detectChunkObjects(String pathToChunk) async {
     try {
-      //Isolate.run(() => _detect(pathToChunk));
-      await _detect(pathToChunk);
+
+      // Future<void> detectionIsolate(pathToChunk) => Isolate.run(() => _detect(pathToChunk), debugName: "*********************");
+      // await detectionIsolate(pathToChunk);
+      final resultPort = ReceivePort();
+      await Isolate.spawn(_detect, [resultPort.sendPort, pathToChunk]);
     } on Exception catch (e) {
       // log the exception;
       print('********************************************\n');
@@ -103,7 +66,9 @@ class ObjectTracking {
     return true;
   }
 
-  Future<void> _detect(String pathToChunk) async {
+  Future<void> _detect(List<dynamic> args) async {
+    SendPort responsePort = args[0];
+    String pathToChunk = args[1];
     String EMULATED_PATH =
     pathToChunk.substring(0, pathToChunk.lastIndexOf('/'));
 
@@ -111,8 +76,6 @@ class ObjectTracking {
     pathToChunk.substring(pathToChunk.lastIndexOf('/') + 1);
     chunkNameNoExtension = chunkNameNoExtension.substring(
         0, chunkNameNoExtension.lastIndexOf('.'));
-
-    // loading a detection model from a .torchscript file.
 
 
     // captures the frames of the video file
@@ -144,11 +107,12 @@ class ObjectTracking {
 
       cv.imwrite(tempFile.path, blackFrameMat);
 
-      img.Image blackFrameImage =
-      img.decodeImage(await tempFile.readAsBytes())!;
+      Uint8List tempFileBytes = await tempFile.readAsBytes();
+      // img.Image blackFrameImage = img.decodeImage(tempFileBytes)!;
+      // tempFileBytes = img.encodePng(blackFrameImage);
 
       List<ResultObjectDetection> objDetect =
-      await objectModel!.getImagePrediction(img.encodePng(blackFrameImage),
+      await objectModel!.getImagePrediction(tempFileBytes,
           minimumScore: DETECTION_COEFF,
           iOUThreshold: IOU_THRESHOLD,
           boxesLimit: 13);
@@ -179,6 +143,7 @@ class ObjectTracking {
     tempFile =
         File('$EMULATED_PATH/obj_detect_metadata_$chunkNameNoExtension.json');
     tempFile.writeAsString(jsonText);
+    Isolate.exit(responsePort, true);
   }
 
   Future<cv.Mat> preprocessImage(cv.Mat frame, double xRatio, double yRatio,
