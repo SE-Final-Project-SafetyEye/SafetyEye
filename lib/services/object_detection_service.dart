@@ -28,12 +28,75 @@ const IOU_THRESHOLD = 0.5;
 //   }
 // }
 
+// class ModelObjectDetectionSingleton {
+//   static ModelObjectDetectionSingleton? _singleton;
+//   ModelObjectDetection objectModel;
+//
+//   factory ModelObjectDetectionSingleton() {
+//     if (_singleton == null) {
+//       _singleton = ModelObjectDetectionSingleton._internal();
+//     }
+//     return _singleton!;
+//   }
+//
+//   ModelObjectDetectionSingleton._internal() {
+//     objectModel = await PytorchLite.loadObjectDetectionModel(
+//         "assets/yolov8s_LP_TS_220224v1.torchscript",
+//         //This specific model trained on 640*640 resolution format
+//         NUM_OF_LABELS,
+//         DEV_MODEL_MAX_FRAME_SIDE,
+//         DEV_MODEL_MAX_FRAME_SIDE,
+//         labelPath: "assets/labels.txt",
+//         objectDetectionModelType: ObjectDetectionModelType.yolov8);
+//   }
+// }
+// class ModelObjectDetectionSingleton {
+//   static final ModelObjectDetectionSingleton _singleton = ModelObjectDetectionSingleton._internal();
+//
+//   factory ModelObjectDetectionSingleton() {
+//     return _singleton;
+//   }
+//
+//   ModelObjectDetectionSingleton._internal() {
+//     ModelObjectDetection objectModel = await PytorchLite.loadObjectDetectionModel(
+//         "assets/yolov8s_LP_TS_220224v1.torchscript",
+//         //This specific model trained on 640*640 resolution format
+//         NUM_OF_LABELS,
+//         DEV_MODEL_MAX_FRAME_SIDE,
+//         DEV_MODEL_MAX_FRAME_SIDE,
+//         labelPath: "assets/labels.txt",
+//         objectDetectionModelType: ObjectDetectionModelType.yolov8);
+//     return objectModel;
+//   }
+// }
+
+
 class ObjectTracking {
+
+  ModelObjectDetection? objectModel;
+
+  Future<void> initModel() async{
+    objectModel ??= await PytorchLite
+          .loadObjectDetectionModel(
+          "assets/yolov8s_LP_TS_220224v1.torchscript",
+          //This specific model trained on 640*640 resolution format
+          NUM_OF_LABELS,
+          DEV_MODEL_MAX_FRAME_SIDE,
+          DEV_MODEL_MAX_FRAME_SIDE,
+          labelPath: "assets/labels.txt",
+          objectDetectionModelType: ObjectDetectionModelType.yolov8);
+  }
+
+
   Future<bool> detectChunkObjects(String pathToChunk) async {
     try {
-      Isolate.spawn(_detect, pathToChunk);
-    } on Exception catch (_) {
+      //Isolate.run(() => _detect(pathToChunk));
+      await _detect(pathToChunk);
+    } on Exception catch (e) {
       // log the exception;
+      print('********************************************\n');
+      print(e);
+      print('********************************************\n');
       return false;
     }
 
@@ -50,13 +113,7 @@ class ObjectTracking {
         0, chunkNameNoExtension.lastIndexOf('.'));
 
     // loading a detection model from a .torchscript file.
-    ModelObjectDetection objectModel = await PytorchLite.loadObjectDetectionModel(
-        "assets/yolov8s_LP_TS_220224v1.torchscript", //This specific model trained on 640*640 resolution format
-        NUM_OF_LABELS,
-        DEV_MODEL_MAX_FRAME_SIDE,
-        DEV_MODEL_MAX_FRAME_SIDE,
-        labelPath: "assets/labels.txt",
-        objectDetectionModelType: ObjectDetectionModelType.yolov8);
+
 
     // captures the frames of the video file
     final cap = cv.VideoCapture.fromFile(pathToChunk);
@@ -91,7 +148,7 @@ class ObjectTracking {
       img.decodeImage(await tempFile.readAsBytes())!;
 
       List<ResultObjectDetection> objDetect =
-      await objectModel.getImagePrediction(img.encodePng(blackFrameImage),
+      await objectModel!.getImagePrediction(img.encodePng(blackFrameImage),
           minimumScore: DETECTION_COEFF,
           iOUThreshold: IOU_THRESHOLD,
           boxesLimit: 13);
