@@ -9,6 +9,7 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 import 'dart:convert';
 import 'dart:isolate';
 import 'package:logger/logger.dart';
+import 'package:flutter_isolate/flutter_isolate.dart';
 
 // TODOs PLACED AT THE END OF THE FILE
 
@@ -29,46 +30,66 @@ const IOU_THRESHOLD = 0.5;
 //   }
 // }
 
+class ModelObjectDetectionSingleton {
+  static final  ModelObjectDetectionSingleton _instance = ModelObjectDetectionSingleton._internal();
+  ModelObjectDetection? _odModel;
+
+  ModelObjectDetectionSingleton._internal(){setModel();}
+
+  factory ModelObjectDetectionSingleton() {
+    return _instance;
+  }
+
+  Future<bool> setModel() async {
+    _odModel ??= await initModel();
+    return true;
+  }
+  ModelObjectDetection get odModel => _odModel!;
+}
+
+// loading a detection model from a .torchscript file.
+Future<ModelObjectDetection> initModel() async{
+  ModelObjectDetection objectModel = await PytorchLite
+      .loadObjectDetectionModel(
+      "assets/yolov8s_LP_TS_220224v1.torchscript",
+      //This specific model trained on 640*640 resolution format
+      NUM_OF_LABELS,
+      DEV_MODEL_MAX_FRAME_SIDE,
+      DEV_MODEL_MAX_FRAME_SIDE,
+      labelPath: "assets/labels.txt",
+      objectDetectionModelType: ObjectDetectionModelType.yolov8);
+  return objectModel;
+}
+
+
+runObjectModule(String pathToChunk){
+  FlutterIsolate.spawn(detectChunkObjects, pathToChunk); // isolate init
+}
+
+@pragma('vm:entry-point')
+Future<bool> detectChunkObjects(String pathToChunk) async {
+  try {
+    var redundantBool = await ModelObjectDetectionSingleton().setModel();
+    ObjectTracking ot = ObjectTracking();
+    ot.detect(pathToChunk);
+  } on Exception catch (e) {
+    // log the exception;
+    print('********************************************\n');
+    print(e);
+    print('********************************************\n');
+    return false;
+  }
+
+  return true;
+}
+
 
 class ObjectTracking {
 
-  ModelObjectDetection? objectModel;
-
-  // loading a detection model from a .torchscript file.
-  Future<void> initModel() async{
-    objectModel ??= await PytorchLite
-          .loadObjectDetectionModel(
-          "assets/yolov8s_LP_TS_220224v1.torchscript",
-          //This specific model trained on 640*640 resolution format
-          NUM_OF_LABELS,
-          DEV_MODEL_MAX_FRAME_SIDE,
-          DEV_MODEL_MAX_FRAME_SIDE,
-          labelPath: "assets/labels.txt",
-          objectDetectionModelType: ObjectDetectionModelType.yolov8);
-  }
+  ModelObjectDetection objectModel = ModelObjectDetectionSingleton()._odModel!;
 
 
-  Future<bool> detectChunkObjects(String pathToChunk) async {
-    try {
-
-      // Future<void> detectionIsolate(pathToChunk) => Isolate.run(() => _detect(pathToChunk), debugName: "*********************");
-      // await detectionIsolate(pathToChunk);
-      final resultPort = ReceivePort();
-      await Isolate.spawn(_detect, [resultPort.sendPort, pathToChunk]);
-    } on Exception catch (e) {
-      // log the exception;
-      print('********************************************\n');
-      print(e);
-      print('********************************************\n');
-      return false;
-    }
-
-    return true;
-  }
-
-  Future<void> _detect(List<dynamic> args) async {
-    SendPort responsePort = args[0];
-    String pathToChunk = args[1];
+  Future<void> detect(String pathToChunk) async {
     String EMULATED_PATH =
     pathToChunk.substring(0, pathToChunk.lastIndexOf('/'));
 
@@ -112,7 +133,7 @@ class ObjectTracking {
       // tempFileBytes = img.encodePng(blackFrameImage);
 
       List<ResultObjectDetection> objDetect =
-      await objectModel!.getImagePrediction(tempFileBytes,
+      await objectModel.getImagePrediction(tempFileBytes,
           minimumScore: DETECTION_COEFF,
           iOUThreshold: IOU_THRESHOLD,
           boxesLimit: 13);
@@ -143,7 +164,7 @@ class ObjectTracking {
     tempFile =
         File('$EMULATED_PATH/obj_detect_metadata_$chunkNameNoExtension.json');
     tempFile.writeAsString(jsonText);
-    Isolate.exit(responsePort, true);
+    //Isolate.exit(responsePort, true);
   }
 
   Future<cv.Mat> preprocessImage(cv.Mat frame, double xRatio, double yRatio,
