@@ -68,14 +68,29 @@ class ChunksProvider extends ChangeNotifier {
   Future<void> handleHighlightsButtonPress(int videoIndex) async {} //TODO:
 
   Future<void> handleCloudUploadButtonPress(int videoIndex) async {
+
+    // got all the files
     File video = fileSystemRepository.getChunkVideo(chunksPaths[videoIndex]);
+    _logger.i("fetch video file - path ${video.path}");
     List<File> pics =
         fileSystemRepository.getChunkPics(chunksPaths[videoIndex]);
+    _logger.i("fetch pic files - length ${pics.length}");
     File metaData =
         fileSystemRepository.getChunkMetadata(chunksPaths[videoIndex]);
+    _logger.i("fetch metadata file - path ${metaData.path}");
 
+    // get video signature and verify it.
     String videoSign =
-        await signaturesProvider.getSignature(fileSystemRepository.getName(video.path));
+    await signaturesProvider.getSignature(fileSystemRepository.getName(video.path));
+
+    //run AI model on video
+    //marge AI metadata result with existing metadata
+    //sign metadata
+
+    //compress video and sign
+
+    //upload to cloud
+
     String metaDataSign =
         await signaturesProvider.getSignature(fileSystemRepository.getName(metaData.path));
 
@@ -110,13 +125,14 @@ class ChunksProvider extends ChangeNotifier {
     return chunksPaths[videoIndex]; // Assuming chunksPaths contains video paths
   }
 
-  Future<void> getChunk(String journeyId) async {
+  Future<void> getChunks(String journeyId) async {
     final chunks = await backendService.getJourneyChunks(journeyId);
     chunksPaths = chunks;
+    notifyListeners();
   }
 
-  Future<void> download(String journeyId, int chunkId) async {
-    backendService.downloadChunk(
-        journeyId, chunkId.toString()); //TODO: check if works
+  Future<File> download(String journeyId, int chunkIndex) async {
+    return backendService.downloadChunk(
+        journeyId, chunksPaths[chunkIndex]); //TODO: check if works
   }
 }

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:safety_eye_app/providers/journeys_provider.dart';
+import '../../../providers/chunks_provider.dart';
 import '../../../providers/ioc_provider.dart';
 import '../chunks/chunks_content.dart';
 
@@ -108,6 +109,7 @@ class LocalVideoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final chunksProvider = Provider.of<ChunksProvider>(context);
     String videoFolderName = fileSystemEntity.path.split('/').last;
     return GestureDetector(
       onTap: () {
@@ -117,6 +119,7 @@ class LocalVideoCard extends StatelessWidget {
               builder: (context) => ChunksPage(
                 path: fileSystemEntity.path,
                 local: true,
+                chunksProvider: chunksProvider,
               ),
             ));
       },
@@ -138,12 +141,13 @@ class BackEndVideoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final chunksProvider = Provider.of<ChunksProvider>(context);
     return GestureDetector(
       onTap: () {
         Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ChunksPage(path: journeyName, local: false),
+              builder: (context) => ChunksPage(path: journeyName, local: false, chunksProvider: chunksProvider,),
             ));
       },
       child: Card(
