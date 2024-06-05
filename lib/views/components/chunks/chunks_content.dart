@@ -94,69 +94,66 @@ class _ChunksPageState extends State<ChunksPage> {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: chunks.chunksPaths.length,
               itemBuilder: (context, index) {
-                return GestureDetector(
-                  onTap: () {},
-                  child: Card(
-                    margin: const EdgeInsets.all(8.0),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8.0),
-                          child: chunks.generateThumbnailIsNotEmpty(index)
-                              ? Image.file(
-                                  chunks.getThumbnail(index),
-                                  width: 100,
-                                  height: 56.25,
-                                  fit: BoxFit.cover,
-                                )
-                              : Container(
-                                  width: 100,
-                                  height: 56.25,
-                                  color: Colors.grey, // Placeholder color
-                                ),
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                (index + 1).toString(),
-                                style: const TextStyle(fontSize: 16.0),
+                return Card(
+                  margin: const EdgeInsets.all(8.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8.0),
+                        child: chunks.generateThumbnailIsNotEmpty(index)
+                            ? Image.file(
+                                chunks.getThumbnail(index),
+                                width: 100,
+                                height: 56.25,
+                                fit: BoxFit.cover,
+                              )
+                            : Container(
+                                width: 100,
+                                height: 56.25,
+                                color: Colors.grey, // Placeholder color
                               ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              (index + 1).toString(),
+                              style: const TextStyle(fontSize: 16.0),
                             ),
-                            Row(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.highlight),
-                                  onPressed: () =>
-                                      chunks.handleHighlightsButtonPress(index),
-                                  tooltip: 'Add Highlights',
-                                ),
-                                const SizedBox(width: 8.0),
-                                IconButton(
-                                  icon: const Icon(Icons.cloud_upload),
-                                  onPressed: () => chunks
-                                      .handleCloudUploadButtonPress(index),
-                                  tooltip: 'Upload to Cloud',
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const Spacer(),
-                        IconButton(
-                          onPressed: () {
-                            String videoPath =
-                                chunks.handlePlayButtonPress(context, index);
-                            _playVideo(videoPath);
-                          },
-                          icon: const Icon(Icons.play_arrow),
-                          tooltip: 'Play video',
-                        ),
-                      ],
-                    ),
+                          ),
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.highlight),
+                                onPressed: () =>
+                                    chunks.handleHighlightsButtonPress(index),
+                                tooltip: 'Add Highlights',
+                              ),
+                              const SizedBox(width: 8.0),
+                              IconButton(
+                                icon: const Icon(Icons.cloud_upload),
+                                onPressed: () => chunks
+                                    .handleCloudUploadButtonPress(index),
+                                tooltip: 'Upload to Cloud',
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        onPressed: () {
+                          String videoPath =
+                              chunks.handlePlayButtonPress(context, index);
+                          _playVideo(context,videoPath);
+                        },
+                        icon: const Icon(Icons.play_arrow),
+                        tooltip: 'Play video',
+                      ),
+                    ],
                   ),
                 );
               },
@@ -167,7 +164,7 @@ class _ChunksPageState extends State<ChunksPage> {
     );
   }
 
-  void _playVideo(String videoPath) {
+  void _playVideo(BuildContext context,String videoPath) {
     Navigator.push(
         context,
         MaterialPageRoute(
@@ -224,12 +221,18 @@ class _ChunksPageState extends State<ChunksPage> {
       try {
         final file = await chunks.download(journeyId, chunkIndex);
         _logger.i("Finished downloading chunk");
-        _playVideo(file.path);
+        if(context.mounted) {
+          _playVideo(context, file.path);
+        } else {
+          _logger.i("Context not mounted");
+        }
       } catch (e) {
         _logger.e(e);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        if(context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(e.toString()),
         ));
+        }
       }
   }
 }

@@ -68,6 +68,8 @@ class ChunksProvider extends ChangeNotifier {
   Future<void> handleHighlightsButtonPress(int videoIndex) async {} //TODO:
 
   Future<void> handleCloudUploadButtonPress(int videoIndex) async {
+
+    // got all the files
     File video = fileSystemRepository.getChunkVideo(chunksPaths[videoIndex]);
     _logger.i("fetch video file - path ${video.path}");
     List<File> pics =
@@ -77,8 +79,18 @@ class ChunksProvider extends ChangeNotifier {
         fileSystemRepository.getChunkMetadata(chunksPaths[videoIndex]);
     _logger.i("fetch metadata file - path ${metaData.path}");
 
+    // get video signature and verify it.
     String videoSign =
-        await signaturesProvider.getSignature(fileSystemRepository.getName(video.path));
+    await signaturesProvider.getSignature(fileSystemRepository.getName(video.path));
+
+    //run AI model on video
+    //marge AI metadata result with existing metadata
+    //sign metadata
+
+    //compress video and sign
+
+    //upload to cloud
+
     String metaDataSign =
         await signaturesProvider.getSignature(fileSystemRepository.getName(metaData.path));
 
