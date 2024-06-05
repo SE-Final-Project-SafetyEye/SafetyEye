@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'dart:typed_data';
+import 'package:logger/logger.dart';
 import 'package:pytorch_lite/pytorch_lite.dart';
 import 'dart:io';
 import 'dart:async';
@@ -18,6 +19,8 @@ const CHUNK_FRAMES_INTERVAL = 0.25;
 const NUM_OF_LABELS = 82;
 const DETECTION_COEFF = 0.4;
 const IOU_THRESHOLD = 0.5;
+
+final Logger _logger = Logger();
 
 // possible init method to set the values of 'consts' according to model type etc.
 // void initODModule() {
@@ -47,21 +50,29 @@ class ModelObjectDetectionSingleton {
 
 // loading a detection model from a .torchscript file.
 Future<ModelObjectDetection> initModel() async{
-  ModelObjectDetection objectModel = await PytorchLite
-      .loadObjectDetectionModel(
-      "assets/yolov8s_LP_TS_220224v1.torchscript",
-      //This specific model trained on 640*640 resolution format
-      NUM_OF_LABELS,
-      DEV_MODEL_MAX_FRAME_SIDE,
-      DEV_MODEL_MAX_FRAME_SIDE,
-      labelPath: "assets/labels.txt",
-      objectDetectionModelType: ObjectDetectionModelType.yolov8);
+  ModelObjectDetection objectModel = ModelObjectDetection(0, DEV_MODEL_MAX_FRAME_SIDE, DEV_MODEL_MAX_FRAME_SIDE, []); // empty model
+  try {
+    objectModel = await PytorchLite
+        .loadObjectDetectionModel(
+        "assets/yolov8s_LP_TS_220224v1.torchscript", //This specific model trained on 640*640 resolution format
+        NUM_OF_LABELS,
+        DEV_MODEL_MAX_FRAME_SIDE,
+        DEV_MODEL_MAX_FRAME_SIDE,
+        labelPath: "assets/labels.txt",
+        objectDetectionModelType: ObjectDetectionModelType.yolov8);
+  }on Exception catch (e){
+    _logger.e('Error during object detection model initialization: $e');
+  }
   return objectModel;
 }
 
 
 runObjectModule(String pathToChunk){
+  try{
   FlutterIsolate.spawn(detectChunkObjects, pathToChunk); // isolate init
+  }on Exception catch (e){
+    _logger.e('Error during FlutterIsolate spawn of ObjectTracking class: $e');
+  }
 }
 
 @pragma('vm:entry-point')
@@ -71,10 +82,7 @@ Future<bool> detectChunkObjects(String pathToChunk) async {
     ObjectTracking ot = ObjectTracking();
     ot.detect(pathToChunk);
   } on Exception catch (e) {
-    // log the exception;
-    print('********************************************\n');
-    print(e);
-    print('********************************************\n');
+    _logger.e('Error in detectChunkObjects method of ObjectTracking class: $e');
     return false;
   }
 
@@ -88,6 +96,7 @@ class ObjectTracking {
 
 
   Future<void> detect(String pathToChunk) async {
+    try{
     String EMULATED_PATH =
     pathToChunk.substring(0, pathToChunk.lastIndexOf('/'));
 
@@ -162,37 +171,48 @@ class ObjectTracking {
     tempFile =
         File('$EMULATED_PATH/obj_detect_metadata_$chunkNameNoExtension.json');
     tempFile.writeAsString(jsonText);
-    //Isolate.exit(responsePort, true);
+    }on Exception catch (e) {
+      _logger.e(
+          'Error during main detect() method of ObjectTracking class: $e');
+    }
   }
 
   Future<cv.Mat> preprocessImage(cv.Mat frame, double xRatio, double yRatio,
       double frameWidth, double frameHeight, String path) async {
-    var interpolation = cv.INTER_AREA;
-    if (DEV_MODEL_MAX_FRAME_SIDE * DEV_MODEL_MAX_FRAME_SIDE >
-        frameHeight * frameWidth) {
-      interpolation = cv.INTER_CUBIC;
+    try {
+      var interpolation = cv.INTER_AREA;
+      if (DEV_MODEL_MAX_FRAME_SIDE * DEV_MODEL_MAX_FRAME_SIDE >
+          frameHeight * frameWidth) {
+        interpolation = cv.INTER_CUBIC;
+      }
+
+      var resized = cv.resize(frame, (0, 0),
+          fx: xRatio * (DEV_MODEL_MAX_FRAME_SIDE / (frameWidth)),
+          fy: yRatio * (DEV_MODEL_MAX_FRAME_SIDE / (frameHeight)),
+          interpolation: interpolation);
+
+      int top = 0;
+      int bottom = DEV_MODEL_MAX_FRAME_SIDE - resized.height;
+      int left = 0;
+      int right = DEV_MODEL_MAX_FRAME_SIDE - resized.width;
+      var filled_resized = cv.copyMakeBorder(
+          resized, top, bottom, left, right, cv.BORDER_CONSTANT,
+          value: cv.Scalar.fromRgb(0, 0, 0));
+
+      var filled_resized_colored = cv.cvtColor(
+          filled_resized, cv.COLOR_BGR2RGB);
+      return filled_resized_colored;
+    } on Exception catch (e) {
+      _logger.e(
+          'Error during preprocessImage method of ObjectTracking class: $e');
+      return cv.Mat.empty();
     }
-
-    var resized = cv.resize(frame, (0, 0),
-        fx: xRatio * (DEV_MODEL_MAX_FRAME_SIDE / (frameWidth)),
-        fy: yRatio * (DEV_MODEL_MAX_FRAME_SIDE / (frameHeight)),
-        interpolation: interpolation);
-
-    int top = 0;
-    int bottom = DEV_MODEL_MAX_FRAME_SIDE - resized.height;
-    int left = 0;
-    int right = DEV_MODEL_MAX_FRAME_SIDE - resized.width;
-    var filled_resized = cv.copyMakeBorder(
-        resized, top, bottom, left, right, cv.BORDER_CONSTANT,
-        value: cv.Scalar.fromRgb(0, 0, 0));
-
-    var filled_resized_colored = cv.cvtColor(filled_resized, cv.COLOR_BGR2RGB);
-    return filled_resized_colored;
   }
 
   Future<List> getFrameMetadata(List<ResultObjectDetection> objDetect,
       int frameIndex, cv.Mat blackFrameMat, String workingPath) async {
     List<dynamic> frameMetadata = ['frame_$frameIndex'];
+    try{
     Map<String, String> detectedObjMetadata = {};
     int i = 1;
 
@@ -244,6 +264,10 @@ class ObjectTracking {
       detectedObjMetadata = {};
       i++;
     }
+    } on Exception catch (e) {
+      _logger.e(
+          'Error during getFrameMetadata method of ObjectTracking class: $e');
+    }
 
     return frameMetadata;
   }
@@ -254,9 +278,14 @@ class ObjectTracking {
     // TODO: assign the LP to a car that contains it using IoU Threshold method
 
     Map<String, String> out = {};
+    try{} on Exception catch (e) {
+      _logger.e(
+          'Error during mapLicensePlatesToCars method of ObjectTracking class: $e');
+    }
     return out;
   }
 
+  //DEV
   Future<cv.Mat> drawRectanglesCV(
       cv.Mat img, List<ResultObjectDetection> objDetect) async {
     cv.Mat out = img;
@@ -285,6 +314,8 @@ class ObjectTracking {
 
   Future<String> detectLicensePlateNumber(cv.Mat blackFrameMat,
       ResultObjectDetection objDetect, String workingPath, String lpID) async {
+    var recognizedText = 'not_recognized';
+    try{
     final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
 
     int x1 = (objDetect.rect.left * DEV_MODEL_MAX_FRAME_SIDE).toInt();
@@ -336,25 +367,23 @@ class ObjectTracking {
     final RecognizedText recognized =
     await textRecognizer.processImage(plateImage);
 
-    var recognizedText = 'not_recognized';
-
     if (recognized.text.trim() != '') {
       final validLicencePlateNumber = RegExp(
           r'[0-9]{2,3}\-?[0-9]{2,3}\-?[0-9]{2,3}|[0-9]{2,3}\-?[0-9]{2,3}|[0-9]{6}');
       RegExpMatch? match = validLicencePlateNumber.firstMatch(recognized.text);
       recognizedText = match![0] ?? recognizedText;
     }
-
     File deleteMe = File('$workingPath/gray_tres$lpID.png');
     deleteMe.delete();
 
+    } on Exception catch (e) {
+      _logger.e(
+          'Error during detectLicensePlateNumber method of ObjectTracking class: $e');
+    }
     return recognizedText;
   }
 }
 
-// make logger
-
-// TODO: try and catch
 
 /*
 TODO: make a documentation for the methods
