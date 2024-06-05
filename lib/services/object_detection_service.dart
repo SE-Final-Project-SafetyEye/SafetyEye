@@ -136,6 +136,8 @@ class ObjectTracking {
       cv.imwrite(tempFile.path, blackFrameMat);
 
       Uint8List tempFileBytes = await tempFile.readAsBytes();
+
+      // restore those lines if the objectModel facing a bad input image format
       // img.Image blackFrameImage = img.decodeImage(tempFileBytes)!;
       // tempFileBytes = img.encodePng(blackFrameImage);
 
@@ -285,33 +287,6 @@ class ObjectTracking {
     return out;
   }
 
-  //DEV
-  Future<cv.Mat> drawRectanglesCV(
-      cv.Mat img, List<ResultObjectDetection> objDetect) async {
-    cv.Mat out = img;
-    for (ResultObjectDetection res in objDetect) {
-      int x1 = (res.rect.left * DEV_MODEL_MAX_FRAME_SIDE).toInt();
-      int y1 = (res.rect.bottom * DEV_MODEL_MAX_FRAME_SIDE).toInt();
-      int x2 = (res.rect.right * DEV_MODEL_MAX_FRAME_SIDE).toInt();
-      int y2 = (res.rect.top * DEV_MODEL_MAX_FRAME_SIDE).toInt();
-      String cls = res.className!;
-      double conf = res.score;
-
-      cv.Rect rect = cv.Rect(x1, y2, (x2 - x1).abs(), (y1 - y2).abs());
-      out = cv.rectangle(img, rect, cv.Scalar.fromRgb(255, 0, 0), thickness: 1);
-
-      cv.Point pClass = cv.Point(x1, y2 - 5);
-      out = cv.putText(out, cls, pClass, cv.FONT_HERSHEY_SIMPLEX, 0.5,
-          cv.Scalar.fromRgb(0, 0, 255));
-
-      cv.Point pConf = cv.Point(x1, y2 - 15);
-      out = cv.putText(out, conf.toString().substring(0, 4), pConf,
-          cv.FONT_HERSHEY_SIMPLEX, 0.5, cv.Scalar.fromRgb(0, 255, 0));
-    }
-
-    return out;
-  }
-
   Future<String> detectLicensePlateNumber(cv.Mat blackFrameMat,
       ResultObjectDetection objDetect, String workingPath, String lpID) async {
     var recognizedText = 'not_recognized';
@@ -323,7 +298,7 @@ class ObjectTracking {
     int x2 = (objDetect.rect.right * DEV_MODEL_MAX_FRAME_SIDE).toInt();
     int y2 = (objDetect.rect.top * DEV_MODEL_MAX_FRAME_SIDE).toInt();
 
-    // crop and save the cropped image
+    // crop and then save the cropped image
     int demandedX = x1;
     int demandedY = y2;
     int width = (x2 - x1).abs();
@@ -345,17 +320,7 @@ class ObjectTracking {
         .colRange(demandedX, demandedX + width)
         .rowRange(demandedY, demandedY + height);
 
-    // DEV
-    // cv.imwrite('$workingPath/cropped$lpID.png', cropped);
-    // File deleteMe = File('$workingPath/cropped$lpID.png');
-    // deleteMe.delete();
-
     cv.Mat gray = cv.cvtColor(cropped, cv.COLOR_BGR2GRAY);
-
-    // DEV
-    // cv.imwrite('$workingPath/gray$lpID.png', gray);
-    // File deleteMe = File('$workingPath/gray$lpID.png');
-    // deleteMe.delete();
 
     var (_, gray_tres) = cv.threshold(gray, 64, 255, cv.THRESH_BINARY_INV);
 
@@ -394,3 +359,32 @@ TODO: make a documentation for the methods
 /// of [src] and [height].
 
 */
+
+
+
+//DEV
+Future<cv.Mat> drawRectanglesCV(
+    cv.Mat img, List<ResultObjectDetection> objDetect) async {
+  cv.Mat out = img;
+  for (ResultObjectDetection res in objDetect) {
+    int x1 = (res.rect.left * DEV_MODEL_MAX_FRAME_SIDE).toInt();
+    int y1 = (res.rect.bottom * DEV_MODEL_MAX_FRAME_SIDE).toInt();
+    int x2 = (res.rect.right * DEV_MODEL_MAX_FRAME_SIDE).toInt();
+    int y2 = (res.rect.top * DEV_MODEL_MAX_FRAME_SIDE).toInt();
+    String cls = res.className!;
+    double conf = res.score;
+
+    cv.Rect rect = cv.Rect(x1, y2, (x2 - x1).abs(), (y1 - y2).abs());
+    out = cv.rectangle(img, rect, cv.Scalar.fromRgb(255, 0, 0), thickness: 1);
+
+    cv.Point pClass = cv.Point(x1, y2 - 5);
+    out = cv.putText(out, cls, pClass, cv.FONT_HERSHEY_SIMPLEX, 0.5,
+        cv.Scalar.fromRgb(0, 0, 255));
+
+    cv.Point pConf = cv.Point(x1, y2 - 15);
+    out = cv.putText(out, conf.toString().substring(0, 4), pConf,
+        cv.FONT_HERSHEY_SIMPLEX, 0.5, cv.Scalar.fromRgb(0, 255, 0));
+  }
+
+  return out;
+}
