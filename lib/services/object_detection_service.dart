@@ -7,8 +7,6 @@ import 'package:image/image.dart' as img;
 import 'package:opencv_dart/opencv_dart.dart' as cv;
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'dart:convert';
-import 'dart:isolate';
-import 'package:logger/logger.dart';
 import 'package:flutter_isolate/flutter_isolate.dart';
 
 // TODOs PLACED AT THE END OF THE FILE
