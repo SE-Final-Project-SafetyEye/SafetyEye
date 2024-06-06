@@ -26,7 +26,14 @@ class ChunkProcessorService {
       Uint8List videoBytes = await videoChunk.readAsBytes();
       Directory dir =
           await fileSystemRepository.stopRecording(videoChunk, chunkNumber);
-      runObjectModule(dir.path);
+      ModelObjectDetectionSingleton().addWork(dir.path);
+      print('^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^');
+      print('******************************************');
+      print('##########################################');
+      print(ModelObjectDetectionSingleton().numberOfIsolateUses);
+      print('^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^');
+      print('******************************************');
+      print('##########################################');
 
       File jsonFile = await fileSystemRepository.saveDataToFile(jsonMetaData, chunkNumber);
       XFile jsonXFile = XFile(jsonFile.path);

@@ -1,3 +1,4 @@
+import 'dart:isolate';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:logger/logger.dart';
@@ -32,15 +33,27 @@ final Logger _logger = Logger();
 // }
 
 class ModelObjectDetectionSingleton {
-  static final  ModelObjectDetectionSingleton _instance = ModelObjectDetectionSingleton._internal();
+  static final ModelObjectDetectionSingleton _instance = ModelObjectDetectionSingleton
+      ._internal();
   ModelObjectDetection? _odModel;
-  List<String> _queue = [];
-  bool working = false;
+  final List<String> _queue = [];
+  int _working = 0;
+  int numberOfIsolateUses = 0;
 
-  ModelObjectDetectionSingleton._internal(){setModel();}
+  ModelObjectDetection get odModel => _odModel!;
+  List<String> get queue => _queue;
+  int get working => _working;
+
+  ModelObjectDetectionSingleton._internal(){
+    setModel();
+  }
 
   factory ModelObjectDetectionSingleton() {
     return _instance;
+  }
+
+  void incrementUse() {
+    numberOfIsolateUses += 1;
   }
 
   Future<bool> setModel() async {
@@ -48,62 +61,76 @@ class ModelObjectDetectionSingleton {
     return true;
   }
 
-  void addWork(String pathToChunk){
+  void addWork(String pathToChunk) {
     _queue.add(pathToChunk);
+    if(_working == 0){
+      _working += 1;
+      runIsolateOnObjectModule();
+    }
   }
 
-  String getWork(){
-    if(working || _queue.isEmpty){return "";}
-    working = true;
+  String getWork() {
+    if (_working > 0 || _queue.isEmpty) {
+      return "";
+    }
+    _working += 1;
     return _queue.removeAt(0);
   }
 
-  void workIsDone(){working = false;}
-
-  ModelObjectDetection get odModel => _odModel!;
-  List<String> get queue => _queue;
-
-}
-
-// loading a detection model from a .torchscript file.
-Future<ModelObjectDetection> initModel() async{
-  ModelObjectDetection objectModel = ModelObjectDetection(0, DEV_MODEL_MAX_FRAME_SIDE, DEV_MODEL_MAX_FRAME_SIDE, []); // empty model
-  try {
-    objectModel = await PytorchLite
-        .loadObjectDetectionModel(
-        "assets/yolov8s_LP_TS_220224v1.torchscript", //This specific model trained on 640*640 resolution format
-        NUM_OF_LABELS,
-        DEV_MODEL_MAX_FRAME_SIDE,
-        DEV_MODEL_MAX_FRAME_SIDE,
-        labelPath: "assets/labels.txt",
-        objectDetectionModelType: ObjectDetectionModelType.yolov8);
-  }on Exception catch (e){
-    _logger.e('Error during object detection model initialization: $e');
+  void workIsDone() {
+    _working -= 1;
   }
-  return objectModel;
-}
 
 
-runObjectModule(String pathToChunk) {
-  try {
-    // OneIsolateWorking concept
-    ModelObjectDetectionSingleton modelSingleton = ModelObjectDetectionSingleton();
-    modelSingleton.addWork(pathToChunk);
-    String task;
-    if((task = modelSingleton.getWork()) != "") {
-      FlutterIsolate.spawn(detectChunkObjects, task); // isolate init
+  void runIsolateOnObjectModule() async {
+    try {
+      // OneIsolateWorking concept
+      //ReceivePort listenPort = ReceivePort();
+      Completer completer = Completer();
+      while (_queue.length > 0) { // first time entrance
+        String task = getWork();
+        var isolate = await FlutterIsolate.spawn(
+            detectChunkObjects, [task, completer]); // isolate init
+        // TODO: listen when isolate is terminated and then spawn another one
+        await completer.future;
+        workIsDone();
+      }
+    } on Exception catch (e) {
+      _logger.e(
+          'Error during FlutterIsolate spawn of ObjectTracking class: $e');
     }
-  } on Exception catch (e) {
-    _logger.e('Error during FlutterIsolate spawn of ObjectTracking class: $e');
+  }
+
+
+  // loading a detection model from a .torchscript file.
+  Future<ModelObjectDetection> initModel() async {
+    ModelObjectDetection objectModel = ModelObjectDetection(
+        0, DEV_MODEL_MAX_FRAME_SIDE, DEV_MODEL_MAX_FRAME_SIDE,
+        []); // empty model
+    try {
+      objectModel = await PytorchLite
+          .loadObjectDetectionModel(
+          "assets/yolov8s_LP_TS_220224v1.torchscript",
+          //This specific model trained on 640*640 resolution format
+          NUM_OF_LABELS,
+          DEV_MODEL_MAX_FRAME_SIDE,
+          DEV_MODEL_MAX_FRAME_SIDE,
+          labelPath: "assets/labels.txt",
+          objectDetectionModelType: ObjectDetectionModelType.yolov8);
+    } on Exception catch (e) {
+      _logger.e('Error during object detection model initialization: $e');
+    }
+    return objectModel;
   }
 }
+
 
 @pragma('vm:entry-point')
-Future<bool> detectChunkObjects(String pathToChunk) async {
+Future<bool> detectChunkObjects(List<dynamic> args) async {
   try {
     var redundantBool = await ModelObjectDetectionSingleton().setModel();
     ObjectTracking ot = ObjectTracking();
-    ot.detect(pathToChunk);
+    ot.detect(args);
   } on Exception catch (e) {
     _logger.e('Error in detectChunkObjects method of ObjectTracking class: $e');
     return false;
@@ -112,100 +139,96 @@ Future<bool> detectChunkObjects(String pathToChunk) async {
   return true;
 }
 
-
 class ObjectTracking {
 
   ModelObjectDetection objectModel = ModelObjectDetectionSingleton()._odModel!;
 
+  Future<void> detect(List<dynamic> args) async {
+    try {
+      String pathToChunk = args[0];
+      Completer sendComplete = args[1];
+      ModelObjectDetectionSingleton().incrementUse();
+      String EMULATED_PATH =
+      pathToChunk.substring(0, pathToChunk.lastIndexOf('/'));
 
-  Future<void> detect(String pathToChunk) async {
-    try{
-    String EMULATED_PATH =
-    pathToChunk.substring(0, pathToChunk.lastIndexOf('/'));
-
-    String chunkNameNoExtension =
-    pathToChunk.substring(pathToChunk.lastIndexOf('/') + 1);
-    chunkNameNoExtension = chunkNameNoExtension.substring(
-        0, chunkNameNoExtension.lastIndexOf('.'));
+      String chunkNameNoExtension =
+      pathToChunk.substring(pathToChunk.lastIndexOf('/') + 1);
+      chunkNameNoExtension = chunkNameNoExtension.substring(
+          0, chunkNameNoExtension.lastIndexOf('.'));
 
 
-    // captures the frames of the video file
-    final cap = cv.VideoCapture.fromFile(pathToChunk);
-    var fps = cap.get(cv.CAP_PROP_FPS);
+      // captures the frames of the video file
+      final cap = cv.VideoCapture.fromFile(pathToChunk);
+      var fps = cap.get(cv.CAP_PROP_FPS);
 
-    int fpsCoeff = min((fps / 4), fps).toInt(); // for retrieving only 4 fps
+      int fpsCoeff = min((fps / 4), fps).toInt(); // for retrieving only 4 fps
 
-    var (ret, frame) = cap.read();
+      var (ret, frame) = cap.read();
 
-    double frameHeight = cap.get(cv.CAP_PROP_FRAME_HEIGHT);
-    double frameWidth = cap.get(cv.CAP_PROP_FRAME_WIDTH);
+      double frameHeight = cap.get(cv.CAP_PROP_FRAME_HEIGHT);
+      double frameWidth = cap.get(cv.CAP_PROP_FRAME_WIDTH);
 
-    double xRatio = 1;
-    double yRatio = 1;
-    if (frameWidth > frameHeight) {
-      yRatio = frameHeight / frameWidth;
-    } else {
-      xRatio = frameWidth / frameHeight;
-    }
-
-    int frameIndex = 1;
-    List<List> chunkMetadata = [];
-    File tempFile = File('$EMULATED_PATH/filled_resized_colored.png');
-
-    while (ret) {
-      var blackFrameMat = await preprocessImage(
-          frame, xRatio, yRatio, frameWidth, frameHeight, EMULATED_PATH);
-
-      cv.imwrite(tempFile.path, blackFrameMat);
-
-      Uint8List tempFileBytes = await tempFile.readAsBytes();
-
-      // restore those lines if the objectModel facing a bad input image format
-      // img.Image blackFrameImage = img.decodeImage(tempFileBytes)!;
-      // tempFileBytes = img.encodePng(blackFrameImage);
-
-      List<ResultObjectDetection> objDetect =
-      await objectModel.getImagePrediction(tempFileBytes,
-          minimumScore: DETECTION_COEFF,
-          iOUThreshold: IOU_THRESHOLD,
-          boxesLimit: 13);
-
-      // get FrameMetadata and add metadata to list
-      List<dynamic> frameMetadata = await getFrameMetadata(
-          objDetect, frameIndex, blackFrameMat, EMULATED_PATH);
-
-      // TODO: frameMetadata = mapLicensePlatesToCars(frameMetadata, platesText);
-
-      chunkMetadata.add(frameMetadata);
-
-      var next = 0;
-      while (fpsCoeff > next) {
-        cap.read();
-        next++;
-        frameIndex++;
+      double xRatio = 1;
+      double yRatio = 1;
+      if (frameWidth > frameHeight) {
+        yRatio = frameHeight / frameWidth;
+      } else {
+        xRatio = frameWidth / frameHeight;
       }
 
-      var (capret, capframe) = cap.read();
-      frameIndex++;
-      ret = capret;
-      frame = capframe;
-    }
-    tempFile.delete();
-    cap.release();
-    var jsonText = jsonEncode(chunkMetadata);
-    tempFile =
-        File('$EMULATED_PATH/obj_detect_metadata_$chunkNameNoExtension.json');
-    tempFile.writeAsString(jsonText);
+      int frameIndex = 1;
+      List<List> chunkMetadata = [];
+      File tempFile = File('$EMULATED_PATH/filled_resized_colored.png');
 
-    // OneIsolateWorking maintenance
-    ModelObjectDetectionSingleton modelSingleton = ModelObjectDetectionSingleton();
-    modelSingleton.workIsDone();
-    if((pathToChunk = modelSingleton.getWork()) != "") {
-      FlutterIsolate.spawn(detectChunkObjects, pathToChunk); // isolate init
-    }
-    FlutterIsolate.current.kill();
+      while (ret) {
+        var blackFrameMat = await preprocessImage(
+            frame, xRatio, yRatio, frameWidth, frameHeight, EMULATED_PATH);
 
-    }on Exception catch (e) {
+        cv.imwrite(tempFile.path, blackFrameMat);
+
+        Uint8List tempFileBytes = await tempFile.readAsBytes();
+
+        // restore those lines if the objectModel facing a bad input image format
+        // img.Image blackFrameImage = img.decodeImage(tempFileBytes)!;
+        // tempFileBytes = img.encodePng(blackFrameImage);
+
+        List<ResultObjectDetection> objDetect =
+        await objectModel.getImagePrediction(tempFileBytes,
+            minimumScore: DETECTION_COEFF,
+            iOUThreshold: IOU_THRESHOLD,
+            boxesLimit: 13);
+
+        // get FrameMetadata and add metadata to list
+        List<dynamic> frameMetadata = await getFrameMetadata(
+            objDetect, frameIndex, blackFrameMat, EMULATED_PATH);
+
+        // TODO: frameMetadata = mapLicensePlatesToCars(frameMetadata, platesText);
+
+        chunkMetadata.add(frameMetadata);
+
+        var next = 0;
+        while (fpsCoeff > next) {
+          cap.read();
+          next++;
+          frameIndex++;
+        }
+
+        var (capret, capframe) = cap.read();
+        frameIndex++;
+        ret = capret;
+        frame = capframe;
+      }
+      tempFile.delete();
+      cap.release();
+      var jsonText = jsonEncode(chunkMetadata);
+      tempFile =
+          File('$EMULATED_PATH/obj_detect_metadata_$chunkNameNoExtension.json');
+      tempFile.writeAsString(jsonText);
+
+      sendComplete.complete();
+      FlutterIsolate.current.kill();
+
+    } on Exception catch (e) {
       _logger.e(
           'Error during main detect() method of ObjectTracking class: $e');
     }
@@ -370,7 +393,7 @@ class ObjectTracking {
       final validLicencePlateNumber = RegExp(
           r'[0-9]{2,3}\-?[0-9]{2,3}\-?[0-9]{2,3}|[0-9]{2,3}\-?[0-9]{2,3}|[0-9]{6}');
       RegExpMatch? match = validLicencePlateNumber.firstMatch(recognized.text);
-      recognizedText = match![0] ?? recognizedText;
+      recognizedText = match != null ? (match[0] != null ? match[0]! : recognizedText) : recognizedText;
     }
     File deleteMe = File('$workingPath/gray_tres$lpID.png');
     deleteMe.delete();
