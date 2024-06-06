@@ -34,6 +34,8 @@ final Logger _logger = Logger();
 class ModelObjectDetectionSingleton {
   static final  ModelObjectDetectionSingleton _instance = ModelObjectDetectionSingleton._internal();
   ModelObjectDetection? _odModel;
+  List<String> _queue = [];
+  bool working = false;
 
   ModelObjectDetectionSingleton._internal(){setModel();}
 
@@ -45,7 +47,22 @@ class ModelObjectDetectionSingleton {
     _odModel ??= await initModel();
     return true;
   }
+
+  void addWork(String pathToChunk){
+    _queue.add(pathToChunk);
+  }
+
+  String getWork(){
+    if(working || _queue.isEmpty){return "";}
+    working = true;
+    return _queue.removeAt(0);
+  }
+
+  void workIsDone(){working = false;}
+
   ModelObjectDetection get odModel => _odModel!;
+  List<String> get queue => _queue;
+
 }
 
 // loading a detection model from a .torchscript file.
@@ -67,10 +84,16 @@ Future<ModelObjectDetection> initModel() async{
 }
 
 
-runObjectModule(String pathToChunk){
-  try{
-  FlutterIsolate.spawn(detectChunkObjects, pathToChunk); // isolate init
-  }on Exception catch (e){
+runObjectModule(String pathToChunk) {
+  try {
+    // OneIsolateWorking concept
+    ModelObjectDetectionSingleton modelSingleton = ModelObjectDetectionSingleton();
+    modelSingleton.addWork(pathToChunk);
+    String task;
+    if((task = modelSingleton.getWork()) != "") {
+      FlutterIsolate.spawn(detectChunkObjects, task); // isolate init
+    }
+  } on Exception catch (e) {
     _logger.e('Error during FlutterIsolate spawn of ObjectTracking class: $e');
   }
 }
@@ -173,6 +196,15 @@ class ObjectTracking {
     tempFile =
         File('$EMULATED_PATH/obj_detect_metadata_$chunkNameNoExtension.json');
     tempFile.writeAsString(jsonText);
+
+    // OneIsolateWorking maintenance
+    ModelObjectDetectionSingleton modelSingleton = ModelObjectDetectionSingleton();
+    modelSingleton.workIsDone();
+    if((pathToChunk = modelSingleton.getWork()) != "") {
+      FlutterIsolate.spawn(detectChunkObjects, pathToChunk); // isolate init
+    }
+    FlutterIsolate.current.kill();
+
     }on Exception catch (e) {
       _logger.e(
           'Error during main detect() method of ObjectTracking class: $e');
@@ -219,10 +251,11 @@ class ObjectTracking {
     int i = 1;
 
     for (ResultObjectDetection res in objDetect) {
-      int x1 = (res.rect.left * DEV_MODEL_MAX_FRAME_SIDE).toInt();
-      int y1 = (res.rect.bottom * DEV_MODEL_MAX_FRAME_SIDE).toInt();
-      int x2 = (res.rect.right * DEV_MODEL_MAX_FRAME_SIDE).toInt();
-      int y2 = (res.rect.top * DEV_MODEL_MAX_FRAME_SIDE).toInt();
+      // PAY ATTENTION!!! Y coordinates start from the top - meaning HIGHER y value is PHYSICALLY LOWER on the image.
+      double x1 = res.rect.left;
+      double y1 = res.rect.bottom;
+      double x2 = res.rect.right;
+      double y2 = res.rect.top;
       String cls = res.className!;
       double conf = res.score;
       String objID = '$frameIndex' + '_$cls' + '_$i';
@@ -276,7 +309,7 @@ class ObjectTracking {
 
   Future<Map<String, String>> mapLicensePlatesToCars(
       List metadata, Map<String, String> platesText) async {
-    // pay attention!!!!!! y coordinates start from top meaning higher y value is physically lower on the image.
+    // pay attention!!!!!! y coordinates start from top - meaning higher y value is physically lower on the image.
     // TODO: assign the LP to a car that contains it using IoU Threshold method
 
     Map<String, String> out = {};
@@ -293,6 +326,7 @@ class ObjectTracking {
     try{
     final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
 
+    // PAY ATTENTION!!! Y coordinates start from the top - meaning HIGHER y value is PHYSICALLY LOWER on the image.
     int x1 = (objDetect.rect.left * DEV_MODEL_MAX_FRAME_SIDE).toInt();
     int y1 = (objDetect.rect.bottom * DEV_MODEL_MAX_FRAME_SIDE).toInt();
     int x2 = (objDetect.rect.right * DEV_MODEL_MAX_FRAME_SIDE).toInt();
