@@ -36,100 +36,38 @@ class ModelObjectDetectionSingleton {
   static final ModelObjectDetectionSingleton _instance = ModelObjectDetectionSingleton
       ._internal();
   ModelObjectDetection? _odModel;
-  final List<String> _queue = [];
-  int _working = 0;
-  int numberOfIsolateUses = 0;
+  final ReceivePort pathPort = ReceivePort();
 
-  ModelObjectDetection get odModel => _odModel!;
-  List<String> get queue => _queue;
-  int get working => _working;
-
-  ModelObjectDetectionSingleton._internal(){
-    setModel();
-  }
+  ModelObjectDetectionSingleton._internal();
 
   factory ModelObjectDetectionSingleton() {
     return _instance;
   }
 
-  void incrementUse() {
-    numberOfIsolateUses += 1;
-  }
-
-  Future<bool> setModel() async {
+  Future<void> setModel() async {
     _odModel ??= await initModel();
-    return true;
   }
 
-  void addWork(String pathToChunk) {
-    _queue.add(pathToChunk);
-    if(_working++ == 0){
-      runIsolateOnObjectModule();
-    }else{_working--;}
-
-  }
-
-  String getWork() {
-    if (_working > 0 || _queue.isEmpty) {
-      return "";
+  void addWork(String pathToChunk) async {
+    await setModel();
+    if((await FlutterIsolate.runningIsolates).isEmpty){
+      await runIsolateOnObjectModule(pathToChunk);
     }
-    _working += 1;
-    return _queue.removeAt(0);
-  }
-
-  void workIsDone() {
-    _working -= 1;
+    else{pathPort.sendPort.send(pathToChunk);}
   }
 
 
-
-  // call modelObject function from chunkProcessor
-  // this function sends a work to a port of managerIsolate
-  // managerIsolate listens on a port
-  // on receiving new work it validates if there is currently running workerIsolate
-      // if yes - it waits for its termination
-      // if not - it starts a new isolate to do the work
-  // on workerIsolate termination managerIsolate checks if there is work to perform
-  // the communication between main isolate and the manager isolate through port
-  // the communication between the worker isolate and the manager isolate through port
-  // completer?
-
-
-  void runIsolateOnObjectModule() async {
+  Future<bool> runIsolateOnObjectModule(String pathToChunk) async {
     try {
       // OneIsolateWorking concept
-      //ReceivePort listenPort = ReceivePort();
-
-      // make this modelObject working field as a listener on port so it will be updated according to managerIsolate signal
-
-      // create a port
-      // create managerisolate and send him receiveport and work as arguments
-      // make code in managerisolate as following:
-          // take moduleObject instance and add work to queue
-          // create completer
-          // while(queue.length > 0)
-              // take a work
-              // create workerIsolate with _detect, work and completer
-              // await completer
-              // terminate the workerisolate
-          // send a signal to a port so main will know to zerofy the outside working field
-          // terminate managerisolate from within
-
-
-
-      Completer completer = Completer();
-      while (_queue.length > 0) { // first time entrance
-        String task = getWork();
-        var isolate = await FlutterIsolate.spawn(
-            detectChunkObjects, [task, completer]); // isolate init
-        // TODO: listen when isolate is terminated and then spawn another one
-        await completer.future;
-        workIsDone();
-      }
+      ModelObjectDetection model = ModelObjectDetectionSingleton()._odModel!;
+      //Map<String, dynamic> mapForIsolate = {"pathPort":pathPort, "pathToChunk":pathToChunk};
+      await FlutterIsolate.spawn(managerIsolateRoutine, pathPort);
     } on Exception catch (e) {
       _logger.e(
           'Error during FlutterIsolate spawn of ObjectTracking class: $e');
     }
+    return true;
   }
 
 
@@ -157,9 +95,26 @@ class ModelObjectDetectionSingleton {
 
 
 @pragma('vm:entry-point')
-Future<bool> detectChunkObjects(List<dynamic> args) async {
+Future<void> managerIsolateRoutine(ReceivePort args) async {
+  String workPath;
+  //ReceivePort listenPort = args["pathPort"];
+  ReceivePort port = ReceivePort();
+  ModelObjectDetection model = await ModelObjectDetectionSingleton().initModel();
+  while (true) { //workPath = await listenPort.first
+    Completer completeMe = Completer();
+    Map<String, dynamic> mapForIsolate = {"workPath":args, "completeMe":12345};
+    var workerIsolate = await FlutterIsolate.spawn(
+        detectChunkObjects, mapForIsolate);
+    await completeMe.future;
+    workerIsolate.kill();
+  }
+  FlutterIsolate.current.kill();
+}
+
+
+@pragma('vm:entry-point')
+Future<bool> detectChunkObjects(Map<String, dynamic> args) async {
   try {
-    var redundantBool = await ModelObjectDetectionSingleton().setModel();
     ObjectTracking ot = ObjectTracking();
     ot.detect(args);
   } on Exception catch (e) {
@@ -172,13 +127,12 @@ Future<bool> detectChunkObjects(List<dynamic> args) async {
 
 class ObjectTracking {
 
-  ModelObjectDetection objectModel = ModelObjectDetectionSingleton()._odModel!;
-
-  Future<void> detect(List<dynamic> args) async {
+  Future<void> detect(Map<String, dynamic> args) async {
     try {
-      String pathToChunk = args[0];
-      Completer sendComplete = args[1];
-      ModelObjectDetectionSingleton().incrementUse();
+      String pathToChunk = args["workPath"];
+      Completer sendComplete = args["completeMe"];
+      ModelObjectDetection objectModel = await ModelObjectDetectionSingleton().initModel();
+
       String EMULATED_PATH =
       pathToChunk.substring(0, pathToChunk.lastIndexOf('/'));
 
@@ -257,8 +211,6 @@ class ObjectTracking {
       tempFile.writeAsString(jsonText);
 
       sendComplete.complete();
-      FlutterIsolate.current.kill();
-
     } on Exception catch (e) {
       _logger.e(
           'Error during main detect() method of ObjectTracking class: $e');
@@ -300,59 +252,59 @@ class ObjectTracking {
   Future<List> getFrameMetadata(List<ResultObjectDetection> objDetect,
       int frameIndex, cv.Mat blackFrameMat, String workingPath) async {
     List<dynamic> frameMetadata = ['frame_$frameIndex'];
-    try{
-    Map<String, String> detectedObjMetadata = {};
-    int i = 1;
+    try {
+      Map<String, String> detectedObjMetadata = {};
+      int i = 1;
 
-    for (ResultObjectDetection res in objDetect) {
-      // PAY ATTENTION!!! Y coordinates start from the top - meaning HIGHER y value is PHYSICALLY LOWER on the image.
-      double x1 = res.rect.left;
-      double y1 = res.rect.bottom;
-      double x2 = res.rect.right;
-      double y2 = res.rect.top;
-      String cls = res.className!;
-      double conf = res.score;
-      String objID = '$frameIndex' + '_$cls' + '_$i';
+      for (ResultObjectDetection res in objDetect) {
+        // PAY ATTENTION!!! Y coordinates start from the top - meaning HIGHER y value is PHYSICALLY LOWER on the image.
+        double x1 = res.rect.left;
+        double y1 = res.rect.bottom;
+        double x2 = res.rect.right;
+        double y2 = res.rect.top;
+        String cls = res.className!;
+        double conf = res.score;
+        String objID = '$frameIndex' + '_$cls' + '_$i';
 
-      MapEntry<String, String> id = MapEntry('objID', objID);
-      MapEntry<String, String> xCoord =
-      MapEntry('xCoordinateLeft', x1.toString());
-      MapEntry<String, String> yCoord =
-      MapEntry('yCoordinateBottom', y1.toString());
-      MapEntry<String, String> width =
-      MapEntry('width', (x2 - x1).abs().toString());
-      MapEntry<String, String> height =
-      MapEntry('height', (y2 - y1).abs().toString());
-      MapEntry<String, String> label = MapEntry('label', cls);
-      MapEntry<String, String> confidence =
-      MapEntry('confidence', conf.toString().substring(0, 5));
-      MapEntry<String, String> licensePlateOpt =
-      const MapEntry('licensePlateOpt', '');
-      MapEntry<String, String> licensePlateCarOpt =
-      const MapEntry('licensePlateCarOpt', '');
+        MapEntry<String, String> id = MapEntry('objID', objID);
+        MapEntry<String, String> xCoord =
+        MapEntry('xCoordinateLeft', x1.toString());
+        MapEntry<String, String> yCoord =
+        MapEntry('yCoordinateBottom', y1.toString());
+        MapEntry<String, String> width =
+        MapEntry('width', (x2 - x1).abs().toString());
+        MapEntry<String, String> height =
+        MapEntry('height', (y2 - y1).abs().toString());
+        MapEntry<String, String> label = MapEntry('label', cls);
+        MapEntry<String, String> confidence =
+        MapEntry('confidence', conf.toString().substring(0, 5));
+        MapEntry<String, String> licensePlateOpt =
+        const MapEntry('licensePlateOpt', '');
+        MapEntry<String, String> licensePlateCarOpt =
+        const MapEntry('licensePlateCarOpt', '');
 
-      if (cls == 'license_plate') {
-        String plateText = await detectLicensePlateNumber(
-            blackFrameMat, res, workingPath, objID);
-        licensePlateOpt = MapEntry('licensePlateOpt', plateText);
+        if (cls == 'license_plate') {
+          String plateText = await detectLicensePlateNumber(
+              blackFrameMat, res, workingPath, objID);
+          licensePlateOpt = MapEntry('licensePlateOpt', plateText);
+        }
+
+        detectedObjMetadata.addEntries([
+          id,
+          xCoord,
+          yCoord,
+          width,
+          height,
+          label,
+          confidence,
+          licensePlateOpt,
+          licensePlateCarOpt
+        ]);
+
+        frameMetadata.add(detectedObjMetadata);
+        detectedObjMetadata = {};
+        i++;
       }
-
-      detectedObjMetadata.addEntries([
-        id,
-        xCoord,
-        yCoord,
-        width,
-        height,
-        label,
-        confidence,
-        licensePlateOpt,
-        licensePlateCarOpt
-      ]);
-
-      frameMetadata.add(detectedObjMetadata);
-      detectedObjMetadata = {};
-      i++;
-    }
     } on Exception catch (e) {
       _logger.e(
           'Error during getFrameMetadata method of ObjectTracking class: $e');
@@ -361,13 +313,13 @@ class ObjectTracking {
     return frameMetadata;
   }
 
-  Future<Map<String, String>> mapLicensePlatesToCars(
-      List metadata, Map<String, String> platesText) async {
+  Future<Map<String, String>> mapLicensePlatesToCars(List metadata,
+      Map<String, String> platesText) async {
     // pay attention!!!!!! y coordinates start from top - meaning higher y value is physically lower on the image.
     // TODO: assign the LP to a car that contains it using IoU Threshold method
 
     Map<String, String> out = {};
-    try{} on Exception catch (e) {
+    try {} on Exception catch (e) {
       _logger.e(
           'Error during mapLicensePlatesToCars method of ObjectTracking class: $e');
     }
@@ -377,58 +329,61 @@ class ObjectTracking {
   Future<String> detectLicensePlateNumber(cv.Mat blackFrameMat,
       ResultObjectDetection objDetect, String workingPath, String lpID) async {
     var recognizedText = 'not_recognized';
-    try{
-    final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+    try {
+      final textRecognizer = TextRecognizer(
+          script: TextRecognitionScript.latin);
 
-    // PAY ATTENTION!!! Y coordinates start from the top - meaning HIGHER y value is PHYSICALLY LOWER on the image.
-    int x1 = (objDetect.rect.left * DEV_MODEL_MAX_FRAME_SIDE).toInt();
-    int y1 = (objDetect.rect.bottom * DEV_MODEL_MAX_FRAME_SIDE).toInt();
-    int x2 = (objDetect.rect.right * DEV_MODEL_MAX_FRAME_SIDE).toInt();
-    int y2 = (objDetect.rect.top * DEV_MODEL_MAX_FRAME_SIDE).toInt();
+      // PAY ATTENTION!!! Y coordinates start from the top - meaning HIGHER y value is PHYSICALLY LOWER on the image.
+      int x1 = (objDetect.rect.left * DEV_MODEL_MAX_FRAME_SIDE).toInt();
+      int y1 = (objDetect.rect.bottom * DEV_MODEL_MAX_FRAME_SIDE).toInt();
+      int x2 = (objDetect.rect.right * DEV_MODEL_MAX_FRAME_SIDE).toInt();
+      int y2 = (objDetect.rect.top * DEV_MODEL_MAX_FRAME_SIDE).toInt();
 
-    // crop and then save the cropped image
-    int demandedX = x1;
-    int demandedY = y2;
-    int width = (x2 - x1).abs();
-    int height = (y2 - y1).abs();
+      // crop and then save the cropped image
+      int demandedX = x1;
+      int demandedY = y2;
+      int width = (x2 - x1).abs();
+      int height = (y2 - y1).abs();
 
-    if (width < 32) {
-      int diff = (demandedX - (32 - width) / 2).toInt();
-      demandedX = min(max(0, diff), (640 - 32));
-      width = 32;
-    }
+      if (width < 32) {
+        int diff = (demandedX - (32 - width) / 2).toInt();
+        demandedX = min(max(0, diff), (640 - 32));
+        width = 32;
+      }
 
-    if (height < 32) {
-      int diff = (demandedY - (32 - height) / 2).toInt();
-      demandedY = min(max(0, diff), (640 - 32));
-      height = 32;
-    }
+      if (height < 32) {
+        int diff = (demandedY - (32 - height) / 2).toInt();
+        demandedY = min(max(0, diff), (640 - 32));
+        height = 32;
+      }
 
-    cv.Mat cropped = blackFrameMat
-        .colRange(demandedX, demandedX + width)
-        .rowRange(demandedY, demandedY + height);
+      cv.Mat cropped = blackFrameMat
+          .colRange(demandedX, demandedX + width)
+          .rowRange(demandedY, demandedY + height);
 
-    cv.Mat gray = cv.cvtColor(cropped, cv.COLOR_BGR2GRAY);
+      cv.Mat gray = cv.cvtColor(cropped, cv.COLOR_BGR2GRAY);
 
-    var (_, gray_tres) = cv.threshold(gray, 64, 255, cv.THRESH_BINARY_INV);
+      var (_, gray_tres) = cv.threshold(gray, 64, 255, cv.THRESH_BINARY_INV);
 
-    cv.imwrite('$workingPath/gray_tres$lpID.png', gray_tres);
+      cv.imwrite('$workingPath/gray_tres$lpID.png', gray_tres);
 
-    // scan and read the cropped LP
-    final InputImage plateImage =
-    InputImage.fromFilePath('$workingPath/gray_tres$lpID.png');
-    final RecognizedText recognized =
-    await textRecognizer.processImage(plateImage);
+      // scan and read the cropped LP
+      final InputImage plateImage =
+      InputImage.fromFilePath('$workingPath/gray_tres$lpID.png');
+      final RecognizedText recognized =
+      await textRecognizer.processImage(plateImage);
 
-    if (recognized.text.trim() != '') {
-      final validLicencePlateNumber = RegExp(
-          r'[0-9]{2,3}\-?[0-9]{2,3}\-?[0-9]{2,3}|[0-9]{2,3}\-?[0-9]{2,3}|[0-9]{6}');
-      RegExpMatch? match = validLicencePlateNumber.firstMatch(recognized.text);
-      recognizedText = match != null ? (match[0] != null ? match[0]! : recognizedText) : recognizedText;
-    }
-    File deleteMe = File('$workingPath/gray_tres$lpID.png');
-    deleteMe.delete();
-
+      if (recognized.text.trim() != '') {
+        final validLicencePlateNumber = RegExp(
+            r'[0-9]{2,3}\-?[0-9]{2,3}\-?[0-9]{2,3}|[0-9]{2,3}\-?[0-9]{2,3}|[0-9]{6}');
+        RegExpMatch? match = validLicencePlateNumber.firstMatch(
+            recognized.text);
+        recognizedText = match != null
+            ? (match[0] != null ? match[0]! : recognizedText)
+            : recognizedText;
+      }
+      File deleteMe = File('$workingPath/gray_tres$lpID.png');
+      deleteMe.delete();
     } on Exception catch (e) {
       _logger.e(
           'Error during detectLicensePlateNumber method of ObjectTracking class: $e');
