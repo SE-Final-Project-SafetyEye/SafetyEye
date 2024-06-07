@@ -63,10 +63,10 @@ class ModelObjectDetectionSingleton {
 
   void addWork(String pathToChunk) {
     _queue.add(pathToChunk);
-    if(_working == 0){
-      _working += 1;
+    if(_working++ == 0){
       runIsolateOnObjectModule();
-    }
+    }else{_working--;}
+
   }
 
   String getWork() {
@@ -82,10 +82,41 @@ class ModelObjectDetectionSingleton {
   }
 
 
+
+  // call modelObject function from chunkProcessor
+  // this function sends a work to a port of managerIsolate
+  // managerIsolate listens on a port
+  // on receiving new work it validates if there is currently running workerIsolate
+      // if yes - it waits for its termination
+      // if not - it starts a new isolate to do the work
+  // on workerIsolate termination managerIsolate checks if there is work to perform
+  // the communication between main isolate and the manager isolate through port
+  // the communication between the worker isolate and the manager isolate through port
+  // completer?
+
+
   void runIsolateOnObjectModule() async {
     try {
       // OneIsolateWorking concept
       //ReceivePort listenPort = ReceivePort();
+
+      // make this modelObject working field as a listener on port so it will be updated according to managerIsolate signal
+
+      // create a port
+      // create managerisolate and send him receiveport and work as arguments
+      // make code in managerisolate as following:
+          // take moduleObject instance and add work to queue
+          // create completer
+          // while(queue.length > 0)
+              // take a work
+              // create workerIsolate with _detect, work and completer
+              // await completer
+              // terminate the workerisolate
+          // send a signal to a port so main will know to zerofy the outside working field
+          // terminate managerisolate from within
+
+
+
       Completer completer = Completer();
       while (_queue.length > 0) { // first time entrance
         String task = getWork();
