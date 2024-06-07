@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:gallery_saver/gallery_saver.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_compress/video_compress.dart';
 import 'dart:io';
@@ -53,7 +52,6 @@ class CompressProvider extends ChangeNotifier {
     if (compressedFile != null) {
       try {
         // Save the compressed video to the gallery
-        await GallerySaver.saveVideo(compressedFile.path);
       } catch (e) {
         print('Error saving compressed video: $e');
         // Handle errors or show a message if necessary
