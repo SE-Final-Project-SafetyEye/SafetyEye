@@ -7,6 +7,7 @@ import 'package:logger/logger.dart';
 import 'package:safety_eye_app/providers/providers.dart';
 import 'package:uuid/uuid.dart';
 import '../repositories/file_system_repo.dart';
+import 'package:safety_eye_app/services/object_detection_service.dart';
 
 class ChunkProcessorService {
   final FileSystemRepository fileSystemRepository;
@@ -25,6 +26,15 @@ class ChunkProcessorService {
       Uint8List videoBytes = await videoChunk.readAsBytes();
       Directory dir =
           await fileSystemRepository.stopRecording(videoChunk, chunkNumber);
+      ModelObjectDetectionSingleton().addWork(dir.path);
+      print('^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^');
+      print('******************************************');
+      print('##########################################');
+      print(ModelObjectDetectionSingleton().numberOfIsolateUses);
+      print('^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^');
+      print('******************************************');
+      print('##########################################');
+
       File jsonFile = await fileSystemRepository.saveDataToFile(jsonMetaData, chunkNumber);
       XFile jsonXFile = XFile(jsonFile.path);
       Uint8List jsonBytes = await jsonXFile.readAsBytes();
