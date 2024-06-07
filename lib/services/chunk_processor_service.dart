@@ -9,13 +9,11 @@ import 'package:uuid/uuid.dart';
 import '../repositories/file_system_repo.dart';
 import 'package:safety_eye_app/services/object_detection_service.dart';
 
-
 class ChunkProcessorService {
   final FileSystemRepository fileSystemRepository;
   final SignaturesProvider signaturesProvider;
   final Logger _logger = Logger();
   var uuid = const Uuid();
-  final ObjectTracking _objectTracking = ObjectTracking();
 
   ChunkProcessorService({
     required this.fileSystemRepository,
@@ -25,11 +23,18 @@ class ChunkProcessorService {
   Future<void> processChunk(
       XFile videoChunk, int chunkNumber, String jsonMetaData) async {
     try {
-      await _objectTracking.initModel();
       Uint8List videoBytes = await videoChunk.readAsBytes();
       Directory dir =
           await fileSystemRepository.stopRecording(videoChunk, chunkNumber);
-      await _objectTracking.detectChunkObjects(dir.path); // object_detect
+      ModelObjectDetectionSingleton().addWork(dir.path);
+      print('^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^');
+      print('******************************************');
+      print('##########################################');
+      print(ModelObjectDetectionSingleton().numberOfIsolateUses);
+      print('^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^');
+      print('******************************************');
+      print('##########################################');
+
       File jsonFile = await fileSystemRepository.saveDataToFile(jsonMetaData, chunkNumber);
       XFile jsonXFile = XFile(jsonFile.path);
       Uint8List jsonBytes = await jsonXFile.readAsBytes();
