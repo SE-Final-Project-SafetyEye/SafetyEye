@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:logger/logger.dart';
@@ -32,7 +34,14 @@ class SignaturesProvider extends ChangeNotifier {
   Future<bool> verifySignature(String message, Signature signature) async =>
       signaturesService.verifySignature(message, signature);
 
+  Future<bool> verifySignatureUint8List(Uint8List message, Signature signature) async =>
+      signaturesService.verifySignatureUint8List(message, signature);
+
   Future<String> getSignature(String id) async {
     return signaturesService.getSignature(id);
+  }
+
+  Future<PublicKey> getPublicKey() async {
+    return (await signaturesService.getKeys()).extractPublicKey();
   }
 }

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:cryptography/cryptography.dart';
 import 'package:logger/logger.dart';
 import 'package:safety_eye_app/repositories/repositories.dart';
@@ -13,8 +14,9 @@ class SignaturesService {
   final PreferencesService _preferencesService = PreferencesService();
   late BackendService backendService;
   final Ed25519 _signingAlgorithm = Ed25519();
+  late PublicKey _publicKey;
 
-  late SimpleKeyPair? _keyPair;
+  SimpleKeyPair? _keyPair;
   bool areKeysGenerated = false;
 
   SignaturesService({required this.backendService});
@@ -48,11 +50,10 @@ class SignaturesService {
   }
 
   Future<void> _generateKeys() async {
-    await _signingAlgorithm.newKeyPair().then((value) {
-      _keyPair = value;
-      areKeysGenerated = true;
-      _storeKeys();
-    });
+    final value = await _signingAlgorithm.newKeyPair();
+    _keyPair = value;
+    areKeysGenerated = true;
+    await _storeKeys();
   }
 
   Future<void> _storeKeys() async {
@@ -84,6 +85,7 @@ class SignaturesService {
         .getPrefOrDefault<String>(PreferencesKeys.publicKey);
     final privateKey = await _preferencesService
         .getPrefOrDefault<String>(PreferencesKeys.privateKey);
+    _publicKey = SimplePublicKey(base64Decode(publicKey), type: _keyPairType);
     final keyPair = SimpleKeyPairData(base64Decode(privateKey),
         publicKey: SimplePublicKey(base64Decode(publicKey), type: _keyPairType),
         type: _keyPairType);
@@ -91,9 +93,12 @@ class SignaturesService {
     return keyPair;
   }
 
-  Future<(String, String)> getKeys() async {
+  Future<SimpleKeyPair> getKeys() async {
     if (!(await areKeysStored())) {
       await _generateKeys();
+    }
+    if(_keyPair == null){
+      await init();
     }
     final privateKeyBytes = await _keyPair!.extractPrivateKeyBytes();
     final publicKeyBytes =
@@ -106,7 +111,7 @@ class SignaturesService {
     _logger.i(
         "Keypair and constructed key pair are equal: ${constructedKeyPair == _keyPair}");
 
-    return (base64Encode(publicKeyBytes), base64Encode(privateKeyBytes));
+    return constructedKeyPair;
   }
 
   Future<Signature> signMessage(String id, String message) async {
@@ -125,6 +130,11 @@ class SignaturesService {
     return await _signingAlgorithm.verify(utf8.encode(message),
         signature: signature);
   }
+  Future<bool> verifySignatureUint8List(Uint8List message, Signature signature) async {
+    return await _signingAlgorithm.verify(message,
+        signature: signature);
+  }
+
 
   Future<String> getSignature(String id) async {
     final (signature, _) = await _signaturesRepository.getSignature(id);
@@ -133,5 +143,13 @@ class SignaturesService {
     } else {
       throw Exception("Signature not found");
     }
+  }
+
+  Future<PublicKey?> getPublicKey() async {
+    _logger.i("perform init inside getPublicKey");
+    await init();
+    PublicKey? publicKey = await _keyPair!.extractPublicKey();
+    _logger.i("getPublicKey: $publicKey");
+    return publicKey;
   }
 }

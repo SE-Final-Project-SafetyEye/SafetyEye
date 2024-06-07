@@ -42,12 +42,12 @@ class ChunkProcessorService {
       FlutterFFmpeg ffmpeg = FlutterFFmpeg();
       var uuidG = const Uuid().v4();
       _logger.i("outputDir: ${outputDir.path}");
-      String chunknumber = XFile(outputDir.parent.path).name;
+      String chunkNumber = XFile(outputDir.parent.path).name;
 
       String journeyId = XFile(outputDir.parent.parent.path).name;
-      _logger.i("journeyId: ${journeyId}");
+      _logger.i("journeyId: $journeyId");
       int rc = await ffmpeg.execute(
-        '-i ${outputDir.path} -vf fps=1/5 "${outputDir.parent.path}/${journeyId}_chunknumber-${chunknumber}_${uuidG}_pic-%03d.jpg"',
+        '-i ${outputDir.path} -vf fps=1/5 "${outputDir.parent.path}/${journeyId}_chunknumber-${chunkNumber}_${uuidG}_pic-%03d.jpg"',
       );
 
       if (rc == 0) {
@@ -84,17 +84,6 @@ class ChunkProcessorService {
       XFile frameFile = XFile(entity.path);
       Uint8List frameBytes = await frameFile.readAsBytes();
       await signaturesProvider.sign(frameFile.name, base64Encode(frameBytes));
-    }
-  }
-
-  String _extractUuidFromFileName(String fileName) {
-    List<String> parts = fileName.split('_');
-
-    if (parts.length > 1) {
-      String uuidPart = parts[1];
-      return uuidPart.split('.').first; // Remove the "." extension if present
-    } else {
-      return '';
     }
   }
 }

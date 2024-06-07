@@ -45,11 +45,12 @@ extension IocContainerBuilderExtension on IocContainerBuilder {
         final authProvider = container.get<AuthenticationProvider>();
         final backend = container.get<BackendService>();
         final signature = container.get<SignaturesProvider>();
+        final compress = container.get<CompressionService>();
         return ChunksProvider(
             authenticationProvider: authProvider,
             backendService: backend,
             fileSystemRepository: fileSystemRepo,
-            signaturesProvider: signature);
+            signaturesProvider: signature,compressionService: compress);
       })
       ..addSingleton<SignaturesProvider>((container) => SignaturesProvider(
           container.get<AuthenticationProvider>(),
@@ -59,6 +60,7 @@ extension IocContainerBuilderExtension on IocContainerBuilder {
   void addServices() {
     this
       ..addSingleton<AuthService>((container) => AuthService())
+      ..addSingleton<CompressionService>((container) => CompressionService())
       ..addSingleton<ChunkProcessorService>((container) {
         final fileSystemRepo = container.get<FileSystemRepository>();
         final signaturesProvider = container.get<SignaturesProvider>();

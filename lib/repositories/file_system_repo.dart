@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
 import 'package:logger/logger.dart';
@@ -173,5 +174,11 @@ class FileSystemRepository {
 
   String getName(String path) {
     return XFile(path).name;
+  }
+
+  Future<Uint8List> getUint8List(String path) async {
+    XFile videoCo = XFile(path);
+    Uint8List videoCoBytes = await videoCo.readAsBytes();
+    return videoCoBytes;
   }
 }

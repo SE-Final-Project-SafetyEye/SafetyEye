@@ -51,6 +51,9 @@ class VideoRecordingProvider extends ChangeNotifier {
     recordMin = 0.15;//settingsProvider.settingsState.chunkDuration; //TODO: delete the integer
     try {
       await cameraController?.initialize();
+      bool? audio = cameraController?.enableAudio;
+      _logger.i("enableAudio: $audio");
+      permissions.checkAndRequestVoicePermissions();
     } catch (e) {
       if (e is CameraException) {
         switch (e.code) {
