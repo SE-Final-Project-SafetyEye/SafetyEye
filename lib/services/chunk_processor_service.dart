@@ -7,6 +7,7 @@ import 'package:logger/logger.dart';
 import 'package:safety_eye_app/providers/providers.dart';
 import 'package:uuid/uuid.dart';
 import '../repositories/file_system_repo.dart';
+import 'package:safety_eye_app/services/object_detection_service.dart';
 
 class ChunkProcessorService {
   final FileSystemRepository fileSystemRepository;
@@ -24,7 +25,18 @@ class ChunkProcessorService {
     try {
       Uint8List videoBytes = await videoChunk.readAsBytes();
       Directory dir =
-          await fileSystemRepository.stopRecording(videoChunk, chunkNumber);
+      await fileSystemRepository.stopRecording(videoChunk, chunkNumber);
+/*
+      ModelObjectDetectionSingleton().addWork(dir.path);
+      print('^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^');
+      print('******************************************');
+      print('##########################################');
+      print(ModelObjectDetectionSingleton().numberOfIsolateUses);
+      print('^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^');
+      print('******************************************');
+      print('##########################################');
+*/
+
       File jsonFile = await fileSystemRepository.saveDataToFile(jsonMetaData, chunkNumber);
       XFile jsonXFile = XFile(jsonFile.path);
       Uint8List jsonBytes = await jsonXFile.readAsBytes();
@@ -42,12 +54,12 @@ class ChunkProcessorService {
       FlutterFFmpeg ffmpeg = FlutterFFmpeg();
       var uuidG = const Uuid().v4();
       _logger.i("outputDir: ${outputDir.path}");
-      String chunkNumber = XFile(outputDir.parent.path).name;
+      String chunknumber = XFile(outputDir.parent.path).name;
 
       String journeyId = XFile(outputDir.parent.parent.path).name;
-      _logger.i("journeyId: $journeyId");
+      _logger.i("journeyId: ${journeyId}");
       int rc = await ffmpeg.execute(
-        '-i ${outputDir.path} -vf fps=1/5 "${outputDir.parent.path}/${journeyId}_chunknumber-${chunkNumber}_${uuidG}_pic-%03d.jpg"',
+        '-i ${outputDir.path} -vf fps=1/5 "${outputDir.parent.path}/${journeyId}_chunknumber-${chunknumber}_${uuidG}_pic-%03d.jpg"',
       );
 
       if (rc == 0) {
@@ -84,6 +96,17 @@ class ChunkProcessorService {
       XFile frameFile = XFile(entity.path);
       Uint8List frameBytes = await frameFile.readAsBytes();
       await signaturesProvider.sign(frameFile.name, base64Encode(frameBytes));
+    }
+  }
+
+  String _extractUuidFromFileName(String fileName) {
+    List<String> parts = fileName.split('_');
+
+    if (parts.length > 1) {
+      String uuidPart = parts[1];
+      return uuidPart.split('.').first; // Remove the "." extension if present
+    } else {
+      return '';
     }
   }
 }

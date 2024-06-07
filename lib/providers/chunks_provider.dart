@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-
-import 'package:cryptography/cryptography.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
@@ -56,7 +54,7 @@ class ChunksProvider extends ChangeNotifier {
       _logger.i("_generateThumbnail: Thumbnail generated for $videoPath");
     } catch (e) {
       _logger.e('Error generating thumbnail for $videoPath: $e');
-      thumbnail = null;
+      thumbnail = null; // Set thumbnail to null on error
     }
     return thumbnail;
   }
@@ -70,7 +68,7 @@ class ChunksProvider extends ChangeNotifier {
     return fileSystemRepository.getThumbnailFile(thumbnails[videoIndex]!);
   }
 
-  Future<void> handleHighlightsButtonPress(int videoIndex) async {}
+  Future<void> handleHighlightsButtonPress(int videoIndex) async {} //TODO:
 
   Future<void> handleCloudUploadButtonPress(int videoIndex) async {
     // got all the files
@@ -82,36 +80,41 @@ class ChunksProvider extends ChangeNotifier {
     File metaData =
         fileSystemRepository.getChunkMetadata(chunksPaths[videoIndex]);
     _logger.i("fetch metadata file - path ${metaData.path}");
-    bool verifyVideo = await verifySignature(video);
-    bool verifyMetadata = await verifySignature(metaData);
-    List<Future<bool>> verificationFutures =
-        pics.map((file) => verifySignature(file)).toList();
-    List<bool> verificationResults = await Future.wait(verificationFutures);
-    bool verifyPics = verificationResults.every((result) => result);
-    if (!(verifyPics && verifyMetadata && verifyVideo)) {
-      throw Exception();
-    }
-    _logger.i("cool cool cool");
-    // get video signature and verify it.
 
+    // get video signature and verify it.
+    String videoSig = await signaturesProvider
+        .getSignature(fileSystemRepository.getName(video.path));
+
+    Uint8List videoBytes = await video.readAsBytes();
+
+    try {
+      bool verifyResult = await signaturesProvider.verifySignature(
+          videoBytes, base64Decode(videoSig));
+      _logger.i("verifyResult: $verifyResult");
+      if (!verifyResult) {
+        return Future.error(
+            "Signature verification failed, video my be corrupt");
+      }
+      _logger.i("Signature verified");
+    } catch (e) {
+      _logger.e('Error verifying signature: $e');
+    }
     //run AI model on video
     //marge AI metadata result with existing metadata
     //sign metadata
+
     //compress video and sign
+
     //upload to cloud
-    final comVideo = await compressionService.compressVideo(video.path);
+    final compressVideo = await compressionService.compressVideo(video.path);
 
-    File? compressVideo = comVideo?.file;
-    Uint8List videoCoBytes =
-        await fileSystemRepository.getUint8List(compressVideo!.path);
-
+    Uint8List compressVideoBytes =
+        await fileSystemRepository.getUint8List(compressVideo!.file!.path);
     await signaturesProvider.sign(
-        fileSystemRepository.getName(compressVideo.path),
-        base64Encode(videoCoBytes));
-
-    String comVideoSign = await signaturesProvider
-        .getSignature(fileSystemRepository.getName(compressVideo.path));
-
+        fileSystemRepository.getName(compressVideo.file!.path),
+        base64Encode(compressVideoBytes));
+    String compressVideoSignature = await signaturesProvider
+        .getSignature(fileSystemRepository.getName(compressVideo.file!.path));
     String metaDataSign = await signaturesProvider
         .getSignature(fileSystemRepository.getName(metaData.path));
 
@@ -119,19 +122,28 @@ class ChunksProvider extends ChangeNotifier {
         .map((pic) async => signaturesProvider
             .getSignature(fileSystemRepository.getName(pic.path)))
         .toList();
-
     List<String> picsSign = await Future.wait(picSignFutures);
 
     UploadChunkSignaturesRequest uploadChunkSignaturesRequest =
         UploadChunkSignaturesRequest(
-      videoSig: comVideoSign,
+      videoSig: compressVideoSignature,
       picturesSig: picsSign,
       metadataSig: metaDataSign,
     );
 
-    backendService.uploadChunk(
-        compressVideo, pics, metaData, uploadChunkSignaturesRequest, null);
+    backendService.uploadChunk(compressVideo.file!, pics, metaData,
+        uploadChunkSignaturesRequest, null);
   }
+
+  // Future<String> _convert(File file) async {
+  //   try {
+  //     List<int> bytes = await file.readAsBytes();
+  //     String base64String = base64Encode(bytes);
+  //     return base64String;
+  //   } catch (e) {
+  //     return '';
+  //   }
+  // }
 
   handlePlayButtonPress(context, int videoIndex) {
     return chunksPaths[videoIndex]; // Assuming chunksPaths contains video paths
@@ -145,23 +157,6 @@ class ChunksProvider extends ChangeNotifier {
 
   Future<File> download(String journeyId, int chunkIndex) async {
     return backendService.downloadChunk(
-        journeyId, chunksPaths[chunkIndex]);
-  }
-
-  Future<bool> verifySignature(File f) async {
-    Uint8List stringFile = await fileSystemRepository.getUint8List(f.path);
-
-    PublicKey publicKey = await signaturesProvider.getPublicKey();
-
-    _logger.i("verifysignature. retreat publicKey: $publicKey");
-    Signature signature0 =
-        Signature(stringFile, publicKey: publicKey);
-
-    _logger.i("verifysignature . signature created");
-    bool verifysignature = await signaturesProvider.verifySignatureUint8List(
-        stringFile, signature0);
-
-    _logger.i("verifysignature: $verifysignature");
-    return verifysignature;
+        journeyId, chunksPaths[chunkIndex]); //TODO: check if works
   }
 }
