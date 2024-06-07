@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
@@ -68,20 +69,29 @@ class ChunksProvider extends ChangeNotifier {
   Future<void> handleHighlightsButtonPress(int videoIndex) async {} //TODO:
 
   Future<void> handleCloudUploadButtonPress(int videoIndex) async {
-
     // got all the files
     File video = fileSystemRepository.getChunkVideo(chunksPaths[videoIndex]);
     _logger.i("fetch video file - path ${video.path}");
-    List<File> pics =
-        fileSystemRepository.getChunkPics(chunksPaths[videoIndex]);
+    List<File> pics = fileSystemRepository.getChunkPics(chunksPaths[videoIndex]);
     _logger.i("fetch pic files - length ${pics.length}");
-    File metaData =
-        fileSystemRepository.getChunkMetadata(chunksPaths[videoIndex]);
+    File metaData = fileSystemRepository.getChunkMetadata(chunksPaths[videoIndex]);
     _logger.i("fetch metadata file - path ${metaData.path}");
 
     // get video signature and verify it.
-    String videoSign =
-    await signaturesProvider.getSignature(fileSystemRepository.getName(video.path));
+    String videoSig = await signaturesProvider.getSignature(fileSystemRepository.getName(video.path));
+
+    Uint8List videoBytes = await video.readAsBytes();
+
+    try {
+      bool verifyResult = await signaturesProvider.verifySignature(videoBytes, base64Decode(videoSig));
+      _logger.i("verifyResult: $verifyResult");
+      if (!verifyResult) {
+        return Future.error("Signature verification failed, video my be corrupt");
+      }
+      _logger.i("Signature verified");
+    } catch (e) {
+      _logger.e('Error verifying signature: $e');
+    }
 
     //run AI model on video
     //marge AI metadata result with existing metadata
@@ -91,24 +101,19 @@ class ChunksProvider extends ChangeNotifier {
 
     //upload to cloud
 
-    String metaDataSign =
-        await signaturesProvider.getSignature(fileSystemRepository.getName(metaData.path));
+    String metaDataSign = await signaturesProvider.getSignature(fileSystemRepository.getName(metaData.path));
 
-    List<Future<String>> picSignFutures = pics
-        .map(
-            (pic) async => signaturesProvider.getSignature(fileSystemRepository.getName(pic.path)))
-        .toList();
+    List<Future<String>> picSignFutures =
+        pics.map((pic) async => signaturesProvider.getSignature(fileSystemRepository.getName(pic.path))).toList();
     List<String> picsSign = await Future.wait(picSignFutures);
 
-    UploadChunkSignaturesRequest uploadChunkSignaturesRequest =
-        UploadChunkSignaturesRequest(
-      videoSig: videoSign,
+    UploadChunkSignaturesRequest uploadChunkSignaturesRequest = UploadChunkSignaturesRequest(
+      videoSig: videoSig,
       picturesSig: picsSign,
       metadataSig: metaDataSign,
     );
 
-    backendService.uploadChunk(
-        video, pics, metaData, uploadChunkSignaturesRequest, null);
+    backendService.uploadChunk(video, pics, metaData, uploadChunkSignaturesRequest, null);
   }
 
   Future<String> _convert(File file) async {
@@ -132,7 +137,6 @@ class ChunksProvider extends ChangeNotifier {
   }
 
   Future<File> download(String journeyId, int chunkIndex) async {
-    return backendService.downloadChunk(
-        journeyId, chunksPaths[chunkIndex]); //TODO: check if works
+    return backendService.downloadChunk(journeyId, chunksPaths[chunkIndex]); //TODO: check if works
   }
 }
