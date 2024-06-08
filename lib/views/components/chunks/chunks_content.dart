@@ -20,7 +20,6 @@ class ChunksPage extends StatefulWidget {
 }
 
 class _ChunksPageState extends State<ChunksPage> {
-  final Logger _logger = Logger();
   late final ChunksProvider chunksProvider;
 
   late Future<void> future;
@@ -89,7 +88,7 @@ class _ChunksPageState extends State<ChunksPage> {
               child: Text(
                 videoName,
                 style:
-                const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
             ListView.builder(
@@ -159,7 +158,19 @@ class LocalChunkCard extends StatefulWidget {
 }
 
 class _LocalChunkCardState extends State<LocalChunkCard> {
-  bool isUpLoad = false;
+  bool isUpload = false;
+  final Logger _logger = Logger();
+  late final ChunksProvider chunks;
+  late final String videoId;
+  late final int chunkIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    chunks = widget.chunks;
+    videoId = widget.videoId;
+    chunkIndex = widget.chunkIndex;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -170,9 +181,9 @@ class _LocalChunkCardState extends State<LocalChunkCard> {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(8.0),
-            child: widget.chunks.generateThumbnailIsNotEmpty(widget.chunkIndex)
+            child: chunks.generateThumbnailIsNotEmpty(chunkIndex)
                 ? Image.file(
-                    widget.chunks.getThumbnail(widget.chunkIndex),
+                    chunks.getThumbnail(chunkIndex),
                     width: 100,
                     height: 56.25,
                     fit: BoxFit.cover,
@@ -189,7 +200,7 @@ class _LocalChunkCardState extends State<LocalChunkCard> {
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Text(
-                  (widget.chunkIndex + 1).toString(),
+                  (chunkIndex + 1).toString(),
                   style: const TextStyle(fontSize: 16.0),
                 ),
               ),
@@ -197,23 +208,23 @@ class _LocalChunkCardState extends State<LocalChunkCard> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.highlight),
-                    onPressed: () => widget.chunks
-                        .handleHighlightsButtonPress(widget.chunkIndex),
+                    onPressed: () =>
+                        chunks.handleHighlightsButtonPress(chunkIndex),
                     tooltip: 'Add Highlights',
                   ),
                   const SizedBox(width: 8.0),
                   IconButton(
-                    icon: isUpLoad
+                    icon: isUpload
                         ? const Icon(Icons.cloud_upload_outlined)
                         : const Icon(Icons.cloud_upload),
                     onPressed: () async {
                       setState(() {
-                        isUpLoad = true;
+                        isUpload = true;
                       });
-                      await widget.chunks
-                          .handleCloudUploadButtonPress(widget.chunkIndex);
+                      await chunks.handleCloudUploadButtonPress(chunkIndex,
+                          progressCallback: _progressCallback);
                       setState(() {
-                        isUpLoad = false;
+                        isUpload = false;
                       });
                     },
                     tooltip: 'Upload to Cloud',
@@ -225,8 +236,8 @@ class _LocalChunkCardState extends State<LocalChunkCard> {
           const Spacer(),
           IconButton(
             onPressed: () {
-              String videoPath = widget.chunks
-                  .handlePlayButtonPress(context, widget.chunkIndex);
+              String videoPath =
+                  chunks.handlePlayButtonPress(context, chunkIndex);
               _playVideo(context, videoPath);
             },
             icon: const Icon(Icons.play_arrow),
@@ -235,6 +246,16 @@ class _LocalChunkCardState extends State<LocalChunkCard> {
         ],
       ),
     );
+  }
+
+  void _progressCallback(int count, int total) {
+    _logger.i("Progress is: $count/$total -- ${100 * (count / total)}%");
+    if (context.mounted && count == total) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("$count/$total"),
+        duration: const Duration(seconds: 1),
+      ));
+    }
   }
 }
 
@@ -256,11 +277,21 @@ class BackEndChunkCard extends StatefulWidget {
 class _BackEndChunkCardState extends State<BackEndChunkCard> {
   bool isDownLoad = false;
   final Logger _logger = Logger();
+  late final ChunksProvider chunks;
+  late final String videoId;
+  late final int chunkIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    chunks = widget.chunks;
+    videoId = widget.videoId;
+    chunkIndex = widget.chunkIndex;
+  }
 
   @override
   Widget build(BuildContext context) {
-    _logger.i(
-        "videoId: ${widget.videoId}, chunkList: ${widget.chunks.chunksPaths.toString()}");
+    _logger.i("videoId: $videoId, chunkList: ${chunks.chunksPaths.toString()}");
     return Card(
       margin: const EdgeInsets.all(8.0),
       child: Row(
@@ -277,7 +308,7 @@ class _BackEndChunkCardState extends State<BackEndChunkCard> {
               });
 
               // Ensure this part is asynchronous if onCloudIconPressed is a Future
-              onCloudIconPressed(context, widget.videoId, widget.chunkIndex);
+              onCloudIconPressed(context, videoId, chunkIndex);
 
               setState(() {
                 isDownLoad = false;
@@ -285,7 +316,7 @@ class _BackEndChunkCardState extends State<BackEndChunkCard> {
             },
             tooltip: 'Download from Cloud',
           ),
-          Text(widget.chunks.chunksPaths[widget.chunkIndex]),
+          Text(chunks.chunksPaths[chunkIndex].split('_').first),
         ],
       ),
     );
@@ -294,7 +325,7 @@ class _BackEndChunkCardState extends State<BackEndChunkCard> {
   void onCloudIconPressed(
       BuildContext context, String journeyId, int chunkIndex) async {
     try {
-      final file = await widget.chunks.download(journeyId, chunkIndex);
+      final file = await chunks.download(journeyId, chunkIndex);
       _logger.i("Finished downloading chunk");
       if (context.mounted) {
         _playVideo(context, file.path);
@@ -310,18 +341,7 @@ class _BackEndChunkCardState extends State<BackEndChunkCard> {
       }
     }
   }
-
-  void _progressCallback(int count, int total) {
-
-    _logger.i("Progress is: $count/$total -- ${100 * (count / total)}%");
-    if (context.mounted && count == total) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text("$count/$total"),
-        duration: const Duration(seconds: 1),
-      ));
-    }
-  }
-  }
+}
 
 void _playVideo(BuildContext context, String videoPath) {
   Navigator.push(
