@@ -4,14 +4,12 @@ import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
 import 'package:cryptography/cryptography.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:logger/logger.dart';
-import 'package:safety_eye_app/environment_config.dart';
-import 'package:safety_eye_app/models/payloads/request/requests.dart';
 import 'package:safety_eye_app/providers/signatures_provider.dart';
 import 'package:safety_eye_app/repositories/file_system_repo.dart';
 import 'package:safety_eye_app/services/object_detection_service.dart';
 import 'package:video_compress/video_compress.dart';
+import 'package:path/path.dart';
 
 import '../services/compression_service.dart';
 
@@ -120,17 +118,12 @@ class UploadHandler {
 
   Future<File> compressVideo() async {
     final compressionService = CompressionService();
+    _logger.i("before compressing video with name ${video.path}: ${await video.length()}");
+    File compressedFile = await compressionService.compressVideo(video.path, deleteOrigin: false);
+    _logger.i("after compressing video with name ${compressedFile.path}: ${await compressedFile.length()}");
+    return compressedFile;
 
-    MediaInfo? compressedFile = await compressionService.compressVideo(video.path);
 
-    if (compressedFile == null) {
-      throw Exception("Could not compress video");
-    }
-    if (compressedFile.file == null) {
-      throw Exception("Compressed file was not created");
-    } else {
-      return compressedFile.file!;
-    }
   }
 
   Future<String> resignFile(File file) async {
@@ -142,8 +135,19 @@ class UploadHandler {
   }
 
   //todo: need to merge them
-  Future<File> mergeMetadata(File metadata, File modelMetadata) async {
+  Future<File> mergeMetadata() async {
+    // String directoryPath = metadata.parent.path;
+    // Directory dir = Directory(directoryPath);
+    //
+    //
+    // List<FileSystemEntity> files = await dir
+    //     .list(recursive: true)
+    //     .where((fsEntity) => fsEntity is File && fsEntity.path.endsWith('.json'))
+    //     .toList();
+
     return metadata;
+
+
   }
 
   Future<void> runObjectDetectionModel() async {
