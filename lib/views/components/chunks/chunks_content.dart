@@ -20,6 +20,7 @@ class _ChunksPageState extends State<ChunksPage> {
   late final ChunksProvider chunksProvider;
 
   late Future<void> future;
+
   @override
   void initState() {
     chunksProvider = widget.chunksProvider;
@@ -35,9 +36,12 @@ class _ChunksPageState extends State<ChunksPage> {
   @override
   Widget build(BuildContext context) {
     final chunks = Provider.of<ChunksProvider>(context);
-    String videoName = widget.path.split('/').last.split('.').first;
+    String videoName = widget.path
+        .split('/')
+        .last
+        .split('.')
+        .first;
     if (widget.local) {
-
       return Scaffold(
         body: FutureBuilder(
           future: future,
@@ -62,7 +66,6 @@ class _ChunksPageState extends State<ChunksPage> {
             } else if (snapshot.hasError) {
               return const Center(child: Text('Error loading chunks'));
             } else {
-
               if (chunks.chunksPaths.isNotEmpty) {
                 return _buildBackendChunksListView(chunks);
               } else {
@@ -86,7 +89,7 @@ class _ChunksPageState extends State<ChunksPage> {
               child: Text(
                 videoName,
                 style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
             ListView.builder(
@@ -103,16 +106,16 @@ class _ChunksPageState extends State<ChunksPage> {
                         borderRadius: BorderRadius.circular(8.0),
                         child: chunks.generateThumbnailIsNotEmpty(index)
                             ? Image.file(
-                                chunks.getThumbnail(index),
-                                width: 100,
-                                height: 56.25,
-                                fit: BoxFit.cover,
-                              )
+                          chunks.getThumbnail(index),
+                          width: 100,
+                          height: 56.25,
+                          fit: BoxFit.cover,
+                        )
                             : Container(
-                                width: 100,
-                                height: 56.25,
-                                color: Colors.grey, // Placeholder color
-                              ),
+                          width: 100,
+                          height: 56.25,
+                          color: Colors.grey, // Placeholder color
+                        ),
                       ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,8 +138,9 @@ class _ChunksPageState extends State<ChunksPage> {
                               const SizedBox(width: 8.0),
                               IconButton(
                                 icon: const Icon(Icons.cloud_upload),
-                                onPressed: () => chunks
-                                    .handleCloudUploadButtonPress(index),
+                                onPressed: () =>
+                                    chunks
+                                        .handleCloudUploadButtonPress(index, progressCallback: _progressCallback),
                                 tooltip: 'Upload to Cloud',
                               ),
                             ],
@@ -147,8 +151,8 @@ class _ChunksPageState extends State<ChunksPage> {
                       IconButton(
                         onPressed: () {
                           String videoPath =
-                              chunks.handlePlayButtonPress(context, index);
-                          _playVideo(context,videoPath);
+                          chunks.handlePlayButtonPress(context, index);
+                          _playVideo(context, videoPath);
                         },
                         icon: const Icon(Icons.play_arrow),
                         tooltip: 'Play video',
@@ -164,11 +168,12 @@ class _ChunksPageState extends State<ChunksPage> {
     );
   }
 
-  void _playVideo(BuildContext context,String videoPath) {
+  void _playVideo(BuildContext context, String videoPath) {
     Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) => ChewieVideoPlayer(
+            builder: (context) =>
+                ChewieVideoPlayer(
                   srcs: [videoPath],
                 )));
   }
@@ -184,7 +189,7 @@ class _ChunksPageState extends State<ChunksPage> {
               child: Text(
                 widget.path,
                 style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
             ListView.builder(
@@ -204,7 +209,9 @@ class _ChunksPageState extends State<ChunksPage> {
                             chunks.download(widget.path, index),
                         tooltip: 'Download from Cloud',
                       ),
-                      Text(chunks.chunksPaths[index].split("_").first),
+                      Text(chunks.chunksPaths[index]
+                          .split("_")
+                          .first),
                     ],
                   ),
                 );
@@ -218,21 +225,32 @@ class _ChunksPageState extends State<ChunksPage> {
 
   void onCloudIconPressed(BuildContext context, String journeyId, int chunkIndex) async {
     final chunks = Provider.of<ChunksProvider>(context);
-      try {
-        final file = await chunks.download(journeyId, chunkIndex);
-        _logger.i("Finished downloading chunk");
-        if(context.mounted) {
-          _playVideo(context, file.path);
-        } else {
-          _logger.i("Context not mounted");
-        }
-      } catch (e) {
-        _logger.e(e);
-        if(context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    try {
+      final file = await chunks.download(journeyId, chunkIndex);
+      _logger.i("Finished downloading chunk");
+      if (context.mounted) {
+        _playVideo(context, file.path);
+      } else {
+        _logger.i("Context not mounted");
+      }
+    } catch (e) {
+      _logger.e(e);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(e.toString()),
         ));
-        }
       }
+    }
   }
-}
+
+  void _progressCallback(int count, int total) {
+
+    _logger.i("Progress is: $count/$total -- ${100 * (count / total)}%");
+    if (context.mounted && count == total) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("$count/$total"),
+        duration: const Duration(seconds: 1),
+      ));
+    }
+  }
+  }
