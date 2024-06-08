@@ -83,7 +83,7 @@ class ChunksProvider extends ChangeNotifier {
 
     // verify signatures
     _logger.i("********* Verifying Signatures ***********");
-    UploadHandler uploadHandler = UploadHandler(signaturesProvider, fileSystemRepository,video, pics, metaData);
+    UploadHandler uploadHandler = UploadHandler(signaturesProvider, fileSystemRepository, video, pics, metaData);
     bool verifyResult = await uploadHandler.verifySignatures();
     if (!verifyResult) {
       throw IntegrityException("Signature verification failed, video my be corrupt");
@@ -93,21 +93,17 @@ class ChunksProvider extends ChangeNotifier {
 
     //run Ai model on video
     // await uploadHandler.runObjectDetectionModel();
-    // File mergedMetadataFile = await uploadHandler.mergeMetadataFiles();
+    File mergedMetadataFile = await uploadHandler.mergeMetadata();
     //sign metadata
-    // String metadataSig = await uploadHandler.signFile(mergedMetadataFile);
-
+    String metadataSig = await uploadHandler.resignFile(mergedMetadataFile);
 
     //compress video and sign
     _logger.i("********* Compressing Video ***********");
     File compressedVideo = await uploadHandler.compressVideo();
 
-
-
     //upload to cloud
     _logger.i("********* Uploading to Cloud ***********");
     String videoSig = await uploadHandler.resignFile(compressedVideo);
-    String metadataSig = await signaturesProvider.getSignature(fileSystemRepository.getName(metaData.path));
 
     List<Future<String>> picSigFutures =
         pics.map((pic) async => signaturesProvider.getSignature(fileSystemRepository.getName(pic.path))).toList();
@@ -119,10 +115,12 @@ class ChunksProvider extends ChangeNotifier {
       metadataSig: metadataSig,
     );
 
-    backendService.uploadChunk(video, pics, metaData, uploadChunkSignaturesRequest, progressCallback);
+    backendService.uploadChunk(video, pics, metaData, uploadChunkSignaturesRequest, progressCallback).then((_) {
+        //deleting files in the directory of the video chunk.
+      fileSystemRepository.deleteDirectoryFiles(chunkPath);
+      notifyListeners();
+    });
   }
-
-
 
   handlePlayButtonPress(context, int videoIndex) {
     return chunksPaths[videoIndex]; // Assuming chunksPaths contains video paths
@@ -135,6 +133,8 @@ class ChunksProvider extends ChangeNotifier {
   }
 
   Future<File> download(String journeyId, int chunkIndex) async {
-    return backendService.downloadChunk(journeyId, chunksPaths[chunkIndex]); //TODO: check if works
+    File downloadedFile = await backendService.downloadChunk(journeyId, chunksPaths[chunkIndex]); //TODO: check if works
+    notifyListeners();
+    return downloadedFile;
   }
 }
