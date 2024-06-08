@@ -6,9 +6,9 @@ data collected is signed by using public-private key encryption.
 ## Building App:
 before running the app, the following commands need to be ran:
 - `flutter pub get` - getting the missing dependencies
-- `flutter pub run build_runner build` - creating auto generated classes from definition.
-- `flutter pub run environment_config:generate --BACKEND_URL="<current_url_of_backend>"  <br/>
+- `flutter pub run environment_config:generate --BACKEND_URL="<current_url_of_backend>" 
 --"<more configuration vars to set>"`
+- `flutter pub run build_runner build` - creating auto generated classes from definition.
 
 ## Running The App:
 For running the app, connect a device or run an emulator.

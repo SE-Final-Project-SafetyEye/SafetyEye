@@ -23,7 +23,7 @@ class SignaturesService {
     if (await areKeysStored()) {
       _logger.i('Found keys on device');
       _keyPair = await _loadKeys();
-      if (_keyPair!= null) {
+      if (_keyPair != null) {
         areKeysGenerated = true;
       } else {
         _logger.e('KeyPair is null. Initialization failed.');
@@ -69,25 +69,19 @@ class SignaturesService {
     _preferencesService.setPref(PreferencesKeys.publicKey, publicKey);
     _logger.i('Stored public key: $publicKey');
     _preferencesService.setPref(PreferencesKeys.privateKey, privateKey);
-    _preferencesService.setPref(
-        PreferencesKeys.areKeysInitialize, areKeysGenerated);
+    _preferencesService.setPref(PreferencesKeys.areKeysInitialize, areKeysGenerated);
   }
 
   Future<bool> areKeysStored() async {
-    areKeysGenerated = await _preferencesService
-        .getPrefOrDefault<bool>(PreferencesKeys.areKeysInitialize);
+    areKeysGenerated = await _preferencesService.getPrefOrDefault<bool>(PreferencesKeys.areKeysInitialize);
     return areKeysGenerated;
   }
 
   Future<SimpleKeyPair?> _loadKeys() async {
-
-    final publicKey = await _preferencesService
-        .getPrefOrDefault<String>(PreferencesKeys.publicKey);
-    final privateKey = await _preferencesService
-        .getPrefOrDefault<String>(PreferencesKeys.privateKey);
+    final publicKey = await _preferencesService.getPrefOrDefault<String>(PreferencesKeys.publicKey);
+    final privateKey = await _preferencesService.getPrefOrDefault<String>(PreferencesKeys.privateKey);
     final keyPair = SimpleKeyPairData(base64Decode(privateKey),
-        publicKey: SimplePublicKey(base64Decode(publicKey), type: _keyPairType),
-        type: _keyPairType);
+        publicKey: SimplePublicKey(base64Decode(publicKey), type: _keyPairType), type: _keyPairType);
     _keyPair = keyPair;
     return keyPair;
   }
@@ -96,29 +90,30 @@ class SignaturesService {
     if (!(await areKeysStored())) {
       await _generateKeys();
     }
-    if(_keyPair == null) {
+    if (_keyPair == null) {
       await init();
     }
     return _keyPair!;
   }
 
-
-  Future<Signature> signMessage(String id, String message) async {
+  Future<Signature> signMessage(String id, String message, bool saveToDb) async {
     if (!areKeysGenerated) {
       await _generateKeys();
     }
-    final signature =
-    await _signingAlgorithm.sign(base64Decode(message), keyPair: _keyPair!);
+    final signature = await _signingAlgorithm.sign(base64Decode(message), keyPair: _keyPair!);
     String encodedSignature = base64.encode(signature.bytes);
     _logger.i('generated Signature for message with id $id: $encodedSignature');
-    await _signaturesRepository.saveSignature(id, encodedSignature,
-        base64Encode((await _keyPair!.extractPublicKey()).bytes));
+    if (saveToDb) {
+      _logger.i('Saving signature to database...');
+      await _signaturesRepository.saveSignature(
+          id, encodedSignature, base64Encode((await _keyPair!.extractPublicKey()).bytes));
+      _logger.i('Signature saved to database');
+    }
     return signature;
   }
 
   Future<bool> verifySignature(List<int> message, Signature signature) async {
-    return _signingAlgorithm.verify(message,
-        signature: signature);
+    return _signingAlgorithm.verify(message, signature: signature);
   }
 
   Future<String> getSignature(String id) async {

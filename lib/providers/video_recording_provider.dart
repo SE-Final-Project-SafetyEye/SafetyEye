@@ -26,11 +26,11 @@ class VideoRecordingProvider extends ChangeNotifier {
 
   VideoRecordingProvider(
       {required this.permissions,
-        required this.sensorsProvider,
-        required this.authenticationProvider,
-        required this.settingsProvider,
-        required this.fileSystemRepository,
-        required this.chunkProcessorService});
+      required this.sensorsProvider,
+      required this.authenticationProvider,
+      required this.settingsProvider,
+      required this.fileSystemRepository,
+      required this.chunkProcessorService});
 
   get camera => cameraController;
 

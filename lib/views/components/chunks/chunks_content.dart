@@ -20,6 +20,7 @@ class ChunksPage extends StatefulWidget {
 }
 
 class _ChunksPageState extends State<ChunksPage> {
+  final Logger _logger = Logger();
   late final ChunksProvider chunksProvider;
 
   late Future<void> future;
@@ -88,7 +89,7 @@ class _ChunksPageState extends State<ChunksPage> {
               child: Text(
                 videoName,
                 style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
             ListView.builder(
@@ -309,7 +310,18 @@ class _BackEndChunkCardState extends State<BackEndChunkCard> {
       }
     }
   }
-}
+
+  void _progressCallback(int count, int total) {
+
+    _logger.i("Progress is: $count/$total -- ${100 * (count / total)}%");
+    if (context.mounted && count == total) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("$count/$total"),
+        duration: const Duration(seconds: 1),
+      ));
+    }
+  }
+  }
 
 void _playVideo(BuildContext context, String videoPath) {
   Navigator.push(
