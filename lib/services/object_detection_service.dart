@@ -9,6 +9,7 @@ import 'package:image/image.dart' as img;
 import 'package:opencv_dart/opencv_dart.dart' as cv;
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'dart:convert';
+import 'package:async/async.dart';
 //import 'package:flutter_isolate/flutter_isolate.dart';
 
 // TODOs PLACED AT THE END OF THE FILE
@@ -92,29 +93,34 @@ class ObjectTracking {
     if (worker++ <= 0) {
       rPort.listen((sPortIsolate) {
         ObjectTracking.sPortLate = sPortIsolate;
-        sPortIsolate.send(pathToChunk);
       });
+      //var completer = Completer();
+      // completer.future.then((value) { worker -= 1;});
       var managerIsolate = await Isolate.spawn(
-          managerIsolateRoutine, rPort.sendPort);
+          managerIsolateRoutine, [rPort.sendPort, pathToChunk]);
     } else {
-      worker--;
-      sPortLate!.send(pathToChunk);
+      sPortLate == null ? pathQueue.add(pathToChunk) : pathQueue.forEach(sPortLate!.send);
     }
   }
 
-  static Future<void> managerIsolateRoutine(SendPort sPort) async {
-    String pathToChunk;
+  static Future<void> managerIsolateRoutine(List<dynamic> args) async {
+    SendPort sPort = args[0];
+    String pathToChunk = args[1];
     ReceivePort isolateRPort = ReceivePort();
-    isolateRPort.listen((path)=>pathQueue.add(path));
+    //isolateRPort.listen((path) => pathQueue.add(path));
+    var events = StreamQueue<String>(isolateRPort.cast());
     sPort.send(isolateRPort.sendPort);
-    while (pathQueue.isNotEmpty) {
-      pathToChunk = pathQueue.removeAt(0);
-      Completer c = Completer();
+    while (pathToChunk.substring(pathToChunk.lastIndexOf(".")) == ".mp4") {
+      ReceivePort workerPort = ReceivePort();
       var workerIsolate = await Isolate.spawn(
-          detectChunkObjects, [pathToChunk, c]);
-      await c.future;
+          detectChunkObjects, [pathToChunk, workerPort.sendPort]);
+      await workerPort.last;
       workerIsolate.kill();
+      if(!await events.hasNext){break;}
+      pathToChunk = await events.next;
     }
+    events.cancel();
+    Isolate.current.kill();
   }
 
 
@@ -123,8 +129,8 @@ class ObjectTracking {
     try {
       ObjectTracking ot = ObjectTracking();
       String pathToChunk = args[0];
-      Completer c = jsonDecode(args[1]);
-      ot.detect([pathToChunk, c]);
+      SendPort sendCompletePort = args[1];
+      ot.detect([pathToChunk, sendCompletePort]);
     } on Exception catch (e) {
       _logger.e('Error in detectChunkObjects method of ObjectTracking class: $e');
       return false;
@@ -136,7 +142,7 @@ class ObjectTracking {
   Future<void> detect(List<dynamic> args) async {
     try {
       String pathToChunk = args[0];
-      Completer sendComplete = args[1];
+      SendPort sendCompletePort = args[1];
       ModelObjectDetection objectModel = await initModel();
       String EMULATED_PATH =
       pathToChunk.substring(0, pathToChunk.lastIndexOf('/'));
@@ -214,8 +220,7 @@ class ObjectTracking {
       tempFile =
           File('$EMULATED_PATH/obj_detect_metadata_$chunkNameNoExtension.json');
       tempFile.writeAsString(jsonText);
-
-      sendComplete.complete();
+      sendCompletePort.send("done");
     } on Exception catch (e) {
       _logger.e(
           'Error during main detect() method of ObjectTracking class: $e');
