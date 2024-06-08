@@ -108,8 +108,8 @@ class FileSystemRepository {
           }
         }
       }
-    } catch (e) {
-      _logger.e("Error getting original video list: $e");
+    } catch (e,st) {
+      _logger.e("Error getting original video list: $e,\n $st");
     }
     return videoFolders;
   }

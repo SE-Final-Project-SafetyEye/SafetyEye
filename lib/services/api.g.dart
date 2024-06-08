@@ -13,7 +13,7 @@ class _BackendApi implements BackendApi {
     this._dio, {
     this.baseUrl,
   }) {
-    baseUrl ??= 'ec2-18-194-55-158.eu-central-1.compute.amazonaws.com';
+    baseUrl ??= 'http://18.194.55.158:3000';
   }
 
   final Dio _dio;

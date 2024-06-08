@@ -47,11 +47,17 @@ class _JourneysPageState extends State<JourneysPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: ListView(
-        children: [
-          _buildLocalVideoList(context, localJourneysFuture),
-          _buildBackEndVideoList(context, backendJourneysFuture),
-        ],
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await localJourneysFuture;
+          await backendJourneysFuture;
+        },
+        child: ListView(
+          children: [
+            _buildLocalVideoList(context, localJourneysFuture),
+            _buildBackEndVideoList(context, backendJourneysFuture),
+          ],
+        ),
       ),
     );
   }

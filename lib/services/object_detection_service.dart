@@ -61,11 +61,11 @@ class ModelObjectDetectionSingleton {
     return true;
   }
 
-  void addWork(String pathToChunk) {
+  Future<void> addWork(String pathToChunk) async {
     _queue.add(pathToChunk);
     if(_working == 0){
       _working += 1;
-      runIsolateOnObjectModule();
+      return runIsolateOnObjectModule();
     }
   }
 
@@ -82,7 +82,7 @@ class ModelObjectDetectionSingleton {
   }
 
 
-  void runIsolateOnObjectModule() async {
+  Future<void> runIsolateOnObjectModule() async {
     try {
       // OneIsolateWorking concept
       //ReceivePort listenPort = ReceivePort();

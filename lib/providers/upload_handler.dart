@@ -166,6 +166,5 @@ class UploadHandler {
   Future<void> runObjectDetectionModel() async {
     ModelObjectDetectionSingleton().addWork(video.path);
 
-    // mergeMetadata(metadata, modelMetadata); ---> save on top of the metadata file
   }
 }
