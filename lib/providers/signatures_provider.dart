@@ -26,8 +26,8 @@ class SignaturesProvider extends ChangeNotifier {
     });
   }
 
-  Future<Signature> sign(String id, String message) async {
-    return signaturesService.signMessage(id,message);
+  Future<Signature> sign(String id, String message, {bool saveToDb = true}) async {
+    return signaturesService.signMessage(id,message, saveToDb);
   }
 
   Future<bool> verifySignature(List<int> message, Uint8List sigBytes) async {

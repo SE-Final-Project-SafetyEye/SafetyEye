@@ -2,11 +2,12 @@ import 'package:video_compress/video_compress.dart';
 
 class CompressionService {
   Future<MediaInfo?> compressVideo(String videoPath,
-      {VideoQuality quality = VideoQuality.LowQuality}) {
+      {VideoQuality quality = VideoQuality.LowQuality, bool deleteOrigin = false}) {
     return VideoCompress.compressVideo(
       videoPath,
       quality: quality,
-      deleteOrigin: false,
+      deleteOrigin: deleteOrigin,
+      includeAudio: false,
     );
   }
 }
