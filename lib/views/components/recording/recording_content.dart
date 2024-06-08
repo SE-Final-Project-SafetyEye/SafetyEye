@@ -35,8 +35,8 @@ class _RecordingPageState extends State<RecordingPage> {
     super.initState();
     KeepScreenOn.turnOn();
     controllerFuture = widget.videoRecordingProvider.initializeCamera().then((_) => widget.videoRecordingProvider.cameraController!);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeSpeechRecognition(context);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _initializeSpeechRecognition(context);
 
     });
   }
@@ -69,7 +69,7 @@ class _RecordingPageState extends State<RecordingPage> {
     bool available = await speechProvider.initialize();
     if (available) {
       await _subscribeToVoiceRecognition(speechProvider);
-      await _startListening(speechProvider);
+      _startListening(speechProvider);
     } else {
       _logger.w("The user has denied the use of speech recognition.");
     }
@@ -89,16 +89,15 @@ class _RecordingPageState extends State<RecordingPage> {
         var result = event.recognitionResult!;
         _logger.i("Final result: ${result.recognizedWords}");
         await _handleSpeechResult(result);
-        await _startListening(speechProvider); // Restart listening
+        _startListening(speechProvider); // Restart listening
       } else if (event.eventType == SpeechRecognitionEventType.errorEvent) {
         // _logger.e("Error: ${event.error?.errorMsg}");
-        // Future.delayed(const Duration(seconds: 1));
-        await _startListening(speechProvider); // Restart listening on error
+        _startListening(speechProvider); // Restart listening on error
       }
     });
   }
 
-  Future<void> _startListening(SpeechToTextProvider speechProvider) async {
+  void _startListening(SpeechToTextProvider speechProvider) {
     speechProvider.listen(
       listenFor: const Duration(seconds: 30),
       pauseFor: const Duration(seconds: 10),
