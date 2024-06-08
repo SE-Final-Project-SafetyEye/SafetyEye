@@ -9,7 +9,7 @@ import 'package:image/image.dart' as img;
 import 'package:opencv_dart/opencv_dart.dart' as cv;
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'dart:convert';
-import 'package:flutter_isolate/flutter_isolate.dart';
+//import 'package:flutter_isolate/flutter_isolate.dart';
 
 // TODOs PLACED AT THE END OF THE FILE
 
@@ -32,107 +32,112 @@ final Logger _logger = Logger();
 //   }
 // }
 
-class ModelObjectDetectionSingleton {
-  static final ModelObjectDetectionSingleton _instance = ModelObjectDetectionSingleton
-      ._internal();
-  ModelObjectDetection? _odModel;
-  final ReceivePort pathPort = ReceivePort();
+// class ModelObjectDetectionSingleton {
+//   static final ModelObjectDetectionSingleton _instance = ModelObjectDetectionSingleton
+//       ._internal();
+//   ModelObjectDetection? _odModel;
+//   ReceivePort? _pathPort;
+//   SendPort? _sendPort;
+//   int worker = 0;
+//
+//
+//   ModelObjectDetectionSingleton._internal();
+//
+//   factory ModelObjectDetectionSingleton() {
+//     return _instance;
+//   }
+//
+//   Future<void> setModel() async {
+//     _odModel ??= await initModel();
+//   }
+//
+//
+//
+//
+//
+// }
 
-  ModelObjectDetectionSingleton._internal();
 
-  factory ModelObjectDetectionSingleton() {
-    return _instance;
+// loading a detection model from a .torchscript file.
+Future<ModelObjectDetection> initModel() async {
+  ModelObjectDetection objectModel = ModelObjectDetection(
+      0, DEV_MODEL_MAX_FRAME_SIDE, DEV_MODEL_MAX_FRAME_SIDE,
+      []); // empty model
+  try {
+    objectModel = await PytorchLite
+        .loadObjectDetectionModel(
+        "assets/yolov8s_LP_TS_220224v1.torchscript",
+        //This specific model trained on 640*640 resolution format
+        NUM_OF_LABELS,
+        DEV_MODEL_MAX_FRAME_SIDE,
+        DEV_MODEL_MAX_FRAME_SIDE,
+        labelPath: "assets/labels.txt",
+        objectDetectionModelType: ObjectDetectionModelType.yolov8);
+  } on Exception catch (e) {
+    _logger.e('Error during object detection model initialization: $e');
   }
+  return objectModel;
+}
 
-  Future<void> setModel() async {
-    _odModel ??= await initModel();
-  }
 
-  void addWork(String pathToChunk) async {
-    await setModel();
-    if((await FlutterIsolate.runningIsolates).isEmpty){
-      await runIsolateOnObjectModule(pathToChunk);
+
+class ObjectTracking {
+  static List<String> pathQueue = [];
+  static int worker = 0;
+  static ReceivePort rPort = ReceivePort();
+  static SendPort? sPortLate;
+
+
+  static void addWork(String pathToChunk) async {
+    if (worker++ <= 0) {
+      rPort.listen((sPortIsolate) {
+        ObjectTracking.sPortLate = sPortIsolate;
+        sPortIsolate.send(pathToChunk);
+      });
+      var managerIsolate = await Isolate.spawn(
+          managerIsolateRoutine, rPort.sendPort);
+    } else {
+      worker--;
+      sPortLate!.send(pathToChunk);
     }
-    else{pathPort.sendPort.send(pathToChunk);}
+  }
+
+  static Future<void> managerIsolateRoutine(SendPort sPort) async {
+    String pathToChunk;
+    ReceivePort isolateRPort = ReceivePort();
+    isolateRPort.listen((path)=>pathQueue.add(path));
+    sPort.send(isolateRPort.sendPort);
+    while (pathQueue.isNotEmpty) {
+      pathToChunk = pathQueue.removeAt(0);
+      Completer c = Completer();
+      var workerIsolate = await Isolate.spawn(
+          detectChunkObjects, [pathToChunk, c]);
+      await c.future;
+      workerIsolate.kill();
+    }
   }
 
 
-  Future<bool> runIsolateOnObjectModule(String pathToChunk) async {
+
+  static Future<bool> detectChunkObjects(List<dynamic> args) async {
     try {
-      // OneIsolateWorking concept
-      ModelObjectDetection model = ModelObjectDetectionSingleton()._odModel!;
-      //Map<String, dynamic> mapForIsolate = {"pathPort":pathPort, "pathToChunk":pathToChunk};
-      await FlutterIsolate.spawn(managerIsolateRoutine, pathPort);
+      ObjectTracking ot = ObjectTracking();
+      String pathToChunk = args[0];
+      Completer c = jsonDecode(args[1]);
+      ot.detect([pathToChunk, c]);
     } on Exception catch (e) {
-      _logger.e(
-          'Error during FlutterIsolate spawn of ObjectTracking class: $e');
+      _logger.e('Error in detectChunkObjects method of ObjectTracking class: $e');
+      return false;
     }
+
     return true;
   }
 
-
-  // loading a detection model from a .torchscript file.
-  Future<ModelObjectDetection> initModel() async {
-    ModelObjectDetection objectModel = ModelObjectDetection(
-        0, DEV_MODEL_MAX_FRAME_SIDE, DEV_MODEL_MAX_FRAME_SIDE,
-        []); // empty model
+  Future<void> detect(List<dynamic> args) async {
     try {
-      objectModel = await PytorchLite
-          .loadObjectDetectionModel(
-          "assets/yolov8s_LP_TS_220224v1.torchscript",
-          //This specific model trained on 640*640 resolution format
-          NUM_OF_LABELS,
-          DEV_MODEL_MAX_FRAME_SIDE,
-          DEV_MODEL_MAX_FRAME_SIDE,
-          labelPath: "assets/labels.txt",
-          objectDetectionModelType: ObjectDetectionModelType.yolov8);
-    } on Exception catch (e) {
-      _logger.e('Error during object detection model initialization: $e');
-    }
-    return objectModel;
-  }
-}
-
-
-@pragma('vm:entry-point')
-Future<void> managerIsolateRoutine(ReceivePort args) async {
-  String workPath;
-  //ReceivePort listenPort = args["pathPort"];
-  ReceivePort port = ReceivePort();
-  ModelObjectDetection model = await ModelObjectDetectionSingleton().initModel();
-  while (true) { //workPath = await listenPort.first
-    Completer completeMe = Completer();
-    Map<String, dynamic> mapForIsolate = {"workPath":args, "completeMe":12345};
-    var workerIsolate = await FlutterIsolate.spawn(
-        detectChunkObjects, mapForIsolate);
-    await completeMe.future;
-    workerIsolate.kill();
-  }
-  FlutterIsolate.current.kill();
-}
-
-
-@pragma('vm:entry-point')
-Future<bool> detectChunkObjects(Map<String, dynamic> args) async {
-  try {
-    ObjectTracking ot = ObjectTracking();
-    ot.detect(args);
-  } on Exception catch (e) {
-    _logger.e('Error in detectChunkObjects method of ObjectTracking class: $e');
-    return false;
-  }
-
-  return true;
-}
-
-class ObjectTracking {
-
-  Future<void> detect(Map<String, dynamic> args) async {
-    try {
-      String pathToChunk = args["workPath"];
-      Completer sendComplete = args["completeMe"];
-      ModelObjectDetection objectModel = await ModelObjectDetectionSingleton().initModel();
-
+      String pathToChunk = args[0];
+      Completer sendComplete = args[1];
+      ModelObjectDetection objectModel = await initModel();
       String EMULATED_PATH =
       pathToChunk.substring(0, pathToChunk.lastIndexOf('/'));
 
