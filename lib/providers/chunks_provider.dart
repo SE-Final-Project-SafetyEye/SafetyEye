@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -131,27 +132,24 @@ class ChunksProvider extends ChangeNotifier {
       metadataSig: metaDataSign,
     );
 
-    backendService.uploadChunk(compressVideo.file!, pics, metaData,
-        uploadChunkSignaturesRequest, null);
+    backendService
+        .uploadChunk(compressVideo.file!, pics, metaData,
+            uploadChunkSignaturesRequest, null)
+        .then((val) => fileSystemRepository
+            .deleteDirectoryOfFile(video.path)
+            .then((val) => chunksPaths.removeAt(videoIndex)));
+    notifyListeners();
   }
-
-  // Future<String> _convert(File file) async {
-  //   try {
-  //     List<int> bytes = await file.readAsBytes();
-  //     String base64String = base64Encode(bytes);
-  //     return base64String;
-  //   } catch (e) {
-  //     return '';
-  //   }
-  // }
 
   handlePlayButtonPress(context, int videoIndex) {
     return chunksPaths[videoIndex]; // Assuming chunksPaths contains video paths
   }
 
   Future<void> getChunks(String journeyId) async {
+    _logger.i("journeyId: $journeyId");
     final chunks = await backendService.getJourneyChunks(journeyId);
     chunksPaths = chunks;
+    _logger.i("getJourneyChunks: ${chunks.toString()}");
     notifyListeners();
   }
 

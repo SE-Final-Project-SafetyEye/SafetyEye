@@ -54,6 +54,7 @@ class BackendService {
           5, (index) => 'chunk$index'); // TODO - create a real mock
     }
     final response = await api.getJourneyChunksById(journeyId);
+    log.i("response: ${response.chunks.length}");
     return response.chunks;
   }
 

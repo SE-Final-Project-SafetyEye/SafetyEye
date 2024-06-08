@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:safety_eye_app/providers/journeys_provider.dart';
 import '../../../providers/chunks_provider.dart';
-import '../../../providers/ioc_provider.dart';
 import '../chunks/chunks_content.dart';
 
 class JourneysPage extends StatefulWidget {

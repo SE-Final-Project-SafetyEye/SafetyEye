@@ -34,7 +34,8 @@ class FileSystemRepository {
     var uuidG = uuid.v4();
     Directory dir = Directory(latestFilePath);
     String journeyId = XFile(dir.parent.path).name;
-    String filePath = '$latestFilePath/${journeyId}_chunknumber-${chunkNumber}_${uuidG}_metadata.json';
+    String filePath =
+        '$latestFilePath/${journeyId}_chunknumber-${chunkNumber}_${uuidG}_metadata.json';
     _logger.i('save metaDate into json... path: $filePath');
     File file = File(filePath);
     await file.writeAsString(jsonData);
@@ -99,7 +100,12 @@ class FileSystemRepository {
         FileSystemEntity fileSystemEntity = file.absolute;
         FileStat fileStat = file.statSync();
         if (fileStat.type == FileSystemEntityType.directory) {
-          videoFolders.add(fileSystemEntity);
+          Directory directory = Directory(fileSystemEntity.path);
+          if (directory.listSync().isNotEmpty) {
+            videoFolders.add(fileSystemEntity);
+          } else {
+            directory.delete(recursive: true);
+          }
         }
       }
     } catch (e) {
@@ -180,5 +186,22 @@ class FileSystemRepository {
     XFile videoCo = XFile(path);
     Uint8List videoCoBytes = await videoCo.readAsBytes();
     return videoCoBytes;
+  }
+
+  Future<void> deleteDirectoryOfFile(String filePath) async {
+    final file = File(filePath);
+    final directory = file.parent;
+
+    // Check if the directory exists
+    if (await directory.exists()) {
+      try {
+        await directory.delete(recursive: true);
+        _logger.i('Directory deleted successfully');
+      } catch (e) {
+        _logger.e('Error deleting directory: $e');
+      }
+    } else {
+      _logger.e('Directory not found');
+    }
   }
 }
