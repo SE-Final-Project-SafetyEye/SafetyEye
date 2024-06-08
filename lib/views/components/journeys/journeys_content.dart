@@ -3,12 +3,24 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:safety_eye_app/providers/journeys_provider.dart';
 import '../../../providers/chunks_provider.dart';
+import 'package:intl/intl.dart' show DateFormat;
 import '../chunks/chunks_content.dart';
+
+
+
+String formatJourneyName(String name) {
+  int milis = int.parse(name);
+  DateTime date = DateTime.fromMillisecondsSinceEpoch(milis);
+  DateFormat formatter = DateFormat('dd-MM-yy HH:mm');
+  String formattedDate = formatter.format(date);
+  return formattedDate;
+}
+
 
 class JourneysPage extends StatefulWidget {
   JourneysProvider journeysProvider;
 
-  JourneysPage(this.journeysProvider,{super.key});
+  JourneysPage(this.journeysProvider, {super.key});
 
   @override
   State<JourneysPage> createState() => _JourneysPageState();
@@ -37,7 +49,7 @@ class _JourneysPageState extends State<JourneysPage> {
     return Scaffold(
       body: ListView(
         children: [
-          _buildLocalVideoList(context,localJourneysFuture),
+          _buildLocalVideoList(context, localJourneysFuture),
           _buildBackEndVideoList(context, backendJourneysFuture),
         ],
       ),
@@ -45,7 +57,7 @@ class _JourneysPageState extends State<JourneysPage> {
   }
 }
 
-Widget _buildLocalVideoList(BuildContext context,Future<void> localJourneysFuture) {
+Widget _buildLocalVideoList(BuildContext context, Future<void> localJourneysFuture) {
   final journeys = Provider.of<JourneysProvider>(context, listen: false);
   return Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -55,14 +67,18 @@ Widget _buildLocalVideoList(BuildContext context,Future<void> localJourneysFutur
           future: localJourneysFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.done) {
-              return ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: journeys.localVideoFolders.length,
-                itemBuilder: (context, index) {
-                  return LocalVideoCard(fileSystemEntity: journeys.localVideoFolders[index]);
-                },
-              );
+              if (journeys.localVideoFolders.isEmpty) {
+                return const Center(child: Text("No Local Journeys found"));
+              } else {
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: journeys.localVideoFolders.length,
+                  itemBuilder: (context, index) {
+                    return LocalJourneyCard(fileSystemEntity: journeys.localVideoFolders[index]);
+                  },
+                );
+              }
             } else {
               return const Center(child: CircularProgressIndicator());
             }
@@ -76,7 +92,7 @@ Widget _buildBackEndVideoList(BuildContext context, Future<void> backendJourneys
   return Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      const Text("BackEnd Journeys"),
+      const Text("Uploaded Journeys"),
       FutureBuilder(
           future: backendJourneysFuture,
           builder: (context, snapshot) {
@@ -89,7 +105,7 @@ Widget _buildBackEndVideoList(BuildContext context, Future<void> backendJourneys
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: journeys.backendVideoFolders.length,
                   itemBuilder: (context, index) {
-                    return BackEndVideoCard(journeyName: journeys.backendVideoFolders[index]);
+                    return BackendJourneyVideoCard(journeyName: journeys.backendVideoFolders[index]);
                   },
                 );
               }
@@ -101,10 +117,10 @@ Widget _buildBackEndVideoList(BuildContext context, Future<void> backendJourneys
   );
 }
 
-class LocalVideoCard extends StatelessWidget {
+class LocalJourneyCard extends StatelessWidget {
   final FileSystemEntity fileSystemEntity;
 
-  const LocalVideoCard({super.key, required this.fileSystemEntity});
+  const LocalJourneyCard({super.key, required this.fileSystemEntity});
 
   @override
   Widget build(BuildContext context) {
@@ -125,7 +141,7 @@ class LocalVideoCard extends StatelessWidget {
       child: Card(
         child: Column(
           children: [
-            ListTile(title: Text(videoFolderName)),
+            ListTile(title: Text(formatJourneyName(videoFolderName)), trailing: const Icon(Icons.keyboard_arrow_right)),
           ],
         ),
       ),
@@ -133,10 +149,10 @@ class LocalVideoCard extends StatelessWidget {
   }
 }
 
-class BackEndVideoCard extends StatelessWidget {
+class BackendJourneyVideoCard extends StatelessWidget {
   final String journeyName;
 
-  const BackEndVideoCard({super.key, required this.journeyName});
+  const BackendJourneyVideoCard({super.key, required this.journeyName});
 
   @override
   Widget build(BuildContext context) {
@@ -146,13 +162,17 @@ class BackEndVideoCard extends StatelessWidget {
         Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ChunksPage(path: journeyName, local: false, chunksProvider: chunksProvider,),
+              builder: (context) => ChunksPage(
+                path: journeyName,
+                local: false,
+                chunksProvider: chunksProvider,
+              ),
             ));
       },
       child: Card(
         child: Column(
           children: [
-            ListTile(title: Text(journeyName)),
+            ListTile(title: Text(formatJourneyName(journeyName)),trailing: const Icon(Icons.keyboard_arrow_right)),
           ],
         ),
       ),

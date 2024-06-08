@@ -119,8 +119,7 @@ class FileSystemRepository {
     try {
       final videosDirectory = Directory(path);
 
-      await for (FileSystemEntity entity
-          in videosDirectory.list(recursive: true)) {
+      await for (FileSystemEntity entity in videosDirectory.list(recursive: true)) {
         if (entity is File && entity.path.endsWith(".mp4")) {
           String videoDirectory = entity.path;
           if (!videoDirectories.contains(videoDirectory)) {
@@ -138,11 +137,21 @@ class FileSystemRepository {
     return File(thumbnail);
   }
 
-  Future<File> downLoadChunk(
-      List<int> chunkBytes, String journeyId, String chunkId) async {
+  Future<File> downLoadChunk(List<int> chunkBytes, String journeyId, String chunkId) async {
     final dir = await getApplicationDocumentsDirectory();
-    final videosDirectory = Directory('${dir.path}/videos/$userId');
-    File chunkFile = File('${videosDirectory.path}/$journeyId/$chunkId');
+    // spit name of chunk Id by _
+    String chunkNumber_number = chunkId.split('_').first;
+    //find the chunk file number
+    String chunkNumber = chunkNumber_number.split('-').last;
+    final chunkFolder = Directory('${dir.path}/videos/$userId/$journeyId/$chunkNumber');
+
+    //ensure directory exists
+    if (!await chunkFolder.exists()) {
+      await chunkFolder.create(recursive: true);
+    }
+
+    //save the chunk file to the chunk folder
+    final chunkFile = File('${chunkFolder.path}/$chunkId');
     _logger.i("saving chunk to ${chunkFile.path}");
     return await chunkFile.writeAsBytes(chunkBytes);
   }
@@ -176,6 +185,23 @@ class FileSystemRepository {
       }
     }
     return File('');
+  }
+
+  Future<void> deleteDirectoryFiles(String filePath) async {
+    final file = File(filePath);
+    final directory = file.parent;
+
+    // Check if the directory exists
+    if (await directory.exists()) {
+      try {
+        await directory.delete(recursive: true);
+        _logger.i('Directory deleted successfully');
+      } catch (e) {
+        _logger.e('Error deleting directory: $e');
+      }
+    } else {
+      _logger.e('Directory not found');
+    }
   }
 
   String getName(String path) {

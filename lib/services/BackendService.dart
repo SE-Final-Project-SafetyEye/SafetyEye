@@ -62,7 +62,7 @@ class BackendService {
     if (isDev) return File('test'); // TODO - create a real mock
     final chunkBytes = await api.downloadChunk(journeyId, chunkId);
     log.i("received chunkBytes: ${chunkBytes.length}");
-    return await fileSystemRepository.downLoadChunk(chunkBytes, journeyId, chunkId);
+    return fileSystemRepository.downLoadChunk(chunkBytes, journeyId, chunkId);
   }
 
   Future<void> uploadChunk(
