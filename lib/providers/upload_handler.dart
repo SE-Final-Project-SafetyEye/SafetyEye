@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -23,7 +24,6 @@ class UploadHandler {
 
   UploadHandler(this.sigProvider, this.filesystemRepo, this.video, this.pics, this.metadata);
 
-
   Future<bool> verifySignatures() async {
     bool verifyResult = await _verifyVideo();
     if (!verifyResult) {
@@ -39,7 +39,6 @@ class UploadHandler {
     }
     return true;
   }
-
 
   Future<bool> _verifyVideo() async {
     String videoSig = await sigProvider.getSignature(filesystemRepo.getName(video.path));
@@ -122,8 +121,6 @@ class UploadHandler {
     File compressedFile = await compressionService.compressVideo(video.path, deleteOrigin: false);
     _logger.i("after compressing video with name ${compressedFile.path}: ${await compressedFile.length()}");
     return compressedFile;
-
-
   }
 
   Future<String> resignFile(File file) async {
@@ -134,20 +131,36 @@ class UploadHandler {
     return base64Encode(signature.bytes);
   }
 
-  //todo: need to merge them
   Future<File> mergeMetadata() async {
-    // String directoryPath = metadata.parent.path;
-    // Directory dir = Directory(directoryPath);
-    //
-    //
-    // List<FileSystemEntity> files = await dir
-    //     .list(recursive: true)
-    //     .where((fsEntity) => fsEntity is File && fsEntity.path.endsWith('.json'))
-    //     .toList();
+    String directoryPath = metadata.parent.path;
+    Directory dir = Directory(directoryPath);
+
+    List<FileSystemEntity> files = await dir
+        .list(recursive: true)
+        .where((fsEntity) => fsEntity is File && fsEntity.path.endsWith('.json'))
+        .toList();
+
+    FileSystemEntity modelMetadata = files.firstWhere((fsEntity) => fsEntity.path != metadata.path, orElse: () {
+      _logger.i("No metadata file found, creating empty one");
+      final emptyFile = File(join(metadata.parent.path, "model_metadata.json"));
+      emptyFile.writeAsStringSync("{}");
+      return emptyFile;
+    });
+    final [
+      Future<String> modelMetadataFuture,
+      Future<String> videoMetadataFuture
+    ] = [File(modelMetadata.path).readAsString(), File(metadata.path).readAsString()];
+
+    final [modelMetadataJson, videoMetadataJson] = await Future.wait([modelMetadataFuture, videoMetadataFuture]);
+
+    Map<String, dynamic> modelMetadataMap = json.decode(modelMetadataJson);
+    Map<String, dynamic> videoMetadataMap = json.decode(videoMetadataJson);
+    Map<String, dynamic> metadataMap = {"model_metadata": modelMetadataMap, "video_metadata": videoMetadataMap};
+    final mergedJson = json.encode(metadataMap);
+
+    await metadata.writeAsString(mergedJson);
 
     return metadata;
-
-
   }
 
   Future<void> runObjectDetectionModel() async {
@@ -155,5 +168,4 @@ class UploadHandler {
 
     // mergeMetadata(metadata, modelMetadata); ---> save on top of the metadata file
   }
-
 }
