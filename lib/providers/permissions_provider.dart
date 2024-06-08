@@ -22,12 +22,7 @@ class PermissionsProvider extends ChangeNotifier {
           _logger.i('Location permission granted');
         }
       }
-      var status = await Permission.microphone.request();
-      if (status.isGranted) {
-        _logger.i('microphone permission granted');
-      } else {
-        _logger.w('User denied microphone permission.');
-      }
+
     } catch (error, stackTrace) {
       _logger.e(error.toString(), stackTrace: stackTrace);
     }
@@ -42,5 +37,14 @@ class PermissionsProvider extends ChangeNotifier {
       final result = await Permission.camera.request();
       return result.isGranted;
     }
+  }
+  Future<bool> checkAndRequestVoicePermissions() async{
+    var status = await Permission.microphone.request();
+    if (status.isGranted) {
+      _logger.i('microphone permission granted');
+    } else {
+      _logger.w('User denied microphone permission.');
+    }
+    return status.isGranted;
   }
 }

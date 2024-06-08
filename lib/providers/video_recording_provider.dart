@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -48,7 +47,7 @@ class VideoRecordingProvider extends ChangeNotifier {
       return;
     }
     cameraController = CameraController(permissions.cameras[0], ResolutionPreset.high, enableAudio: false);
-    recordMin = 0.15; //settingsProvider.settingsState.chunkDuration; //TODO: delete the integer
+    recordMin = settingsProvider.settingsState.chunkDuration / 60;
     try {
       await cameraController?.initialize();
     } catch (e) {
