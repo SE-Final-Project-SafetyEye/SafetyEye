@@ -1,7 +1,6 @@
 import 'dart:isolate';
 import 'dart:math';
 import 'dart:typed_data';
-import 'dart:ui';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:pytorch_lite/pytorch_lite.dart';
@@ -36,45 +35,49 @@ final Logger _logger = Logger();
 // }
 
 
-// loading a detection model from a .torchscript file.
-Future<ModelObjectDetection> initModel() async {
-  ModelObjectDetection objectModel = ModelObjectDetection(
-      0, DEV_MODEL_MAX_FRAME_SIDE, DEV_MODEL_MAX_FRAME_SIDE,
-      []); // empty model
-  try {
-    objectModel = await PytorchLite
-        .loadObjectDetectionModel(
-        "assets/yolov8s_LP_TS_220224v1.torchscript",
-        //This specific model trained on 640*640 resolution format
-        NUM_OF_LABELS,
-        DEV_MODEL_MAX_FRAME_SIDE,
-        DEV_MODEL_MAX_FRAME_SIDE,
-        labelPath: "assets/labels.txt",
-        objectDetectionModelType: ObjectDetectionModelType.yolov8);
-  } on Exception catch (e) {
-    _logger.e('Error during object detection model initialization: $e');
-  }
-  return objectModel;
-}
-
-
 
 class ObjectTracking {
   static List<String> pathQueue = [];
-  static ReceivePort receivePort = ReceivePort();
+  static ReceivePort? receivePort;
   static SendPort? sendPortLateBind;
 
 
+
+  // loading a detection model from a .torchscript file.
+  static Future<ModelObjectDetection?> initModel() async {
+    ModelObjectDetection? objectModel;
+    try {
+      objectModel = await PytorchLite
+          .loadObjectDetectionModel(
+          "assets/yolov8s_LP_TS_220224v1.torchscript",
+          //This specific model trained on 640*640 resolution format
+          NUM_OF_LABELS,
+          DEV_MODEL_MAX_FRAME_SIDE,
+          DEV_MODEL_MAX_FRAME_SIDE,
+          labelPath: "assets/labels.txt",
+          objectDetectionModelType: ObjectDetectionModelType.yolov8);
+    } on Exception catch (e) {
+      _logger.e('Error during object detection model initialization: $e');
+    }
+    return objectModel;
+  }
+
+
   static void addWork(String pathToChunk) async {
-    var isos = await FlutterIsolate.runningIsolates;
+    //var isos = await FlutterIsolate.runningIsolates;
     if ((await FlutterIsolate.runningIsolates).isEmpty) {
-      receivePort.listen((sPortIsolate) {
+      receivePort = ReceivePort();
+      receivePort!.listen((sPortIsolate) {
         ObjectTracking.sendPortLateBind = sPortIsolate;
       });
       var managerIsolate = await FlutterIsolate.spawn(
-          managerIsolateRoutine, [receivePort.sendPort, pathToChunk]);
+          managerIsolateRoutine, [receivePort!.sendPort, pathToChunk]);
     } else {
-      if(sendPortLateBind == null){ pathQueue.add(pathToChunk);}else{pathQueue.forEach(sendPortLateBind!.send); pathQueue = [];}
+      pathQueue.add(pathToChunk);
+      if (sendPortLateBind != null) {
+        pathQueue.forEach(sendPortLateBind!.send);
+        pathQueue = [];
+      }
     }
   }
 
@@ -118,7 +121,7 @@ class ObjectTracking {
     try {
       String pathToChunk = args[0];
       SendPort sendCompletePort = args[1];
-      ModelObjectDetection objectModel = await initModel();
+      ModelObjectDetection objectModel = (await initModel())!;
       String EMULATED_PATH =
       pathToChunk.substring(0, pathToChunk.lastIndexOf('/'));
 
@@ -126,6 +129,11 @@ class ObjectTracking {
       pathToChunk.substring(pathToChunk.lastIndexOf('/') + 1);
       chunkNameNoExtension = chunkNameNoExtension.substring(
           0, chunkNameNoExtension.lastIndexOf('.'));
+
+      String backupPathToChunk = pathToChunk;
+      File tempFileForOpenCV = File(pathToChunk);
+      pathToChunk = "$EMULATED_PATH/od_${DateTime.now().millisecondsSinceEpoch}.mp4";
+      tempFileForOpenCV.copy(pathToChunk);
 
 
       // captures the frames of the video file
@@ -194,7 +202,8 @@ class ObjectTracking {
       var jsonText = jsonEncode(chunkMetadata);
       tempFile =
           File('$EMULATED_PATH/obj_detect_metadata_$chunkNameNoExtension.json');
-      tempFile.writeAsString(jsonText);
+      await tempFile.writeAsString(jsonText);
+      await tempFileForOpenCV.delete();
       sendCompletePort.send("done");
     } on Exception catch (e) {
       _logger.e(
