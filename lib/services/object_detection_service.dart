@@ -1,6 +1,8 @@
 import 'dart:isolate';
 import 'dart:math';
 import 'dart:typed_data';
+import 'dart:ui';
+import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:pytorch_lite/pytorch_lite.dart';
 import 'dart:io';
@@ -10,7 +12,7 @@ import 'package:opencv_dart/opencv_dart.dart' as cv;
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'dart:convert';
 import 'package:async/async.dart';
-//import 'package:flutter_isolate/flutter_isolate.dart';
+import 'package:flutter_isolate/flutter_isolate.dart';
 
 // TODOs PLACED AT THE END OF THE FILE
 
@@ -31,31 +33,6 @@ final Logger _logger = Logger();
 //   } on Exception catch (_) {
 //     // log the exception;
 //   }
-// }
-
-// class ModelObjectDetectionSingleton {
-//   static final ModelObjectDetectionSingleton _instance = ModelObjectDetectionSingleton
-//       ._internal();
-//   ModelObjectDetection? _odModel;
-//   ReceivePort? _pathPort;
-//   SendPort? _sendPort;
-//   int worker = 0;
-//
-//
-//   ModelObjectDetectionSingleton._internal();
-//
-//   factory ModelObjectDetectionSingleton() {
-//     return _instance;
-//   }
-//
-//   Future<void> setModel() async {
-//     _odModel ??= await initModel();
-//   }
-//
-//
-//
-//
-//
 // }
 
 
@@ -84,22 +61,20 @@ Future<ModelObjectDetection> initModel() async {
 
 class ObjectTracking {
   static List<String> pathQueue = [];
-  static int worker = 0;
-  static ReceivePort rPort = ReceivePort();
-  static SendPort? sPortLate;
+  static ReceivePort receivePort = ReceivePort();
+  static SendPort? sendPortLateBind;
 
 
   static void addWork(String pathToChunk) async {
-    if (worker++ <= 0) {
-      rPort.listen((sPortIsolate) {
-        ObjectTracking.sPortLate = sPortIsolate;
+    var isos = await FlutterIsolate.runningIsolates;
+    if ((await FlutterIsolate.runningIsolates).isEmpty) {
+      receivePort.listen((sPortIsolate) {
+        ObjectTracking.sendPortLateBind = sPortIsolate;
       });
-      //var completer = Completer();
-      // completer.future.then((value) { worker -= 1;});
-      var managerIsolate = await Isolate.spawn(
-          managerIsolateRoutine, [rPort.sendPort, pathToChunk]);
+      var managerIsolate = await FlutterIsolate.spawn(
+          managerIsolateRoutine, [receivePort.sendPort, pathToChunk]);
     } else {
-      sPortLate == null ? pathQueue.add(pathToChunk) : pathQueue.forEach(sPortLate!.send);
+      if(sendPortLateBind == null){ pathQueue.add(pathToChunk);}else{pathQueue.forEach(sendPortLateBind!.send); pathQueue = [];}
     }
   }
 
@@ -107,25 +82,25 @@ class ObjectTracking {
     SendPort sPort = args[0];
     String pathToChunk = args[1];
     ReceivePort isolateRPort = ReceivePort();
-    //isolateRPort.listen((path) => pathQueue.add(path));
-    var events = StreamQueue<String>(isolateRPort.cast());
+    var chunksPathsEvents = StreamQueue<String>(isolateRPort.cast());
     sPort.send(isolateRPort.sendPort);
     while (pathToChunk.substring(pathToChunk.lastIndexOf(".")) == ".mp4") {
       ReceivePort workerPort = ReceivePort();
-      var workerIsolate = await Isolate.spawn(
-          detectChunkObjects, [pathToChunk, workerPort.sendPort]);
+      var workerIsolate = await FlutterIsolate.spawn(
+          workerIsolateInit, [pathToChunk, workerPort.sendPort]);
       await workerPort.last;
       workerIsolate.kill();
-      if(!await events.hasNext){break;}
-      pathToChunk = await events.next;
+      if(!await chunksPathsEvents.hasNext){break;}
+      pathToChunk = await chunksPathsEvents.next;
     }
-    events.cancel();
+    chunksPathsEvents.cancel();
+    isolateRPort.close();
     Isolate.current.kill();
   }
 
 
 
-  static Future<bool> detectChunkObjects(List<dynamic> args) async {
+  static Future<bool> workerIsolateInit(List<dynamic> args) async {
     try {
       ObjectTracking ot = ObjectTracking();
       String pathToChunk = args[0];
