@@ -85,15 +85,15 @@ class ObjectTracking {
     SendPort sPort = args[0];
     String pathToChunk = args[1];
     ReceivePort isolateRPort = ReceivePort();
-    var chunksPathsEvents = StreamQueue<String>(isolateRPort.cast());
+    var chunksPathsEvents = StreamQueue<String>(isolateRPort.asBroadcastStream().map((event) => event.toString()));
     sPort.send(isolateRPort.sendPort);
     while (pathToChunk.substring(pathToChunk.lastIndexOf(".")) == ".mp4") {
       ReceivePort workerPort = ReceivePort();
       var workerIsolate = await FlutterIsolate.spawn(
           workerIsolateInit, [pathToChunk, workerPort.sendPort]);
-      await workerPort.last;
+      await workerPort.first;
       workerIsolate.kill();
-      if(!await chunksPathsEvents.hasNext){break;}
+      if(!(await chunksPathsEvents.hasNext.timeout(const Duration(seconds: 2), onTimeout: ()=>false))){break;}
       pathToChunk = await chunksPathsEvents.next;
     }
     chunksPathsEvents.cancel();
@@ -130,10 +130,9 @@ class ObjectTracking {
       chunkNameNoExtension = chunkNameNoExtension.substring(
           0, chunkNameNoExtension.lastIndexOf('.'));
 
-      String backupPathToChunk = pathToChunk;
       File tempFileForOpenCV = File(pathToChunk);
       pathToChunk = "$EMULATED_PATH/od_${DateTime.now().millisecondsSinceEpoch}.mp4";
-      tempFileForOpenCV.copy(pathToChunk);
+      tempFileForOpenCV = await tempFileForOpenCV.copy(pathToChunk);
 
 
       // captures the frames of the video file
