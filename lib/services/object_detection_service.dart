@@ -69,6 +69,8 @@ class ObjectTracking {
       receivePort = ReceivePort();
       receivePort!.listen((sPortIsolate) {
         ObjectTracking.sendPortLateBind = sPortIsolate;
+        pathQueue.forEach(sendPortLateBind!.send);
+        pathQueue = [];
       });
       var managerIsolate = await FlutterIsolate.spawn(
           managerIsolateRoutine, [receivePort!.sendPort, pathToChunk]);
