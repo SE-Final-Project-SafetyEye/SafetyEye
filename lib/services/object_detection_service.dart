@@ -263,13 +263,13 @@ class ObjectTracking {
 
         MapEntry<String, String> id = MapEntry('objID', objID);
         MapEntry<String, String> xCoord =
-        MapEntry('xCoordinateLeft', x1.toString());
+        MapEntry('xCoordinateLeft', x1.toString().substring(0,5));
         MapEntry<String, String> yCoord =
-        MapEntry('yCoordinateBottom', y1.toString());
+        MapEntry('yCoordinateBottom', y1.toString().substring(0,5));
         MapEntry<String, String> width =
-        MapEntry('width', (x2 - x1).abs().toString());
+        MapEntry('width', (x2 - x1).abs().toString().substring(0,5));
         MapEntry<String, String> height =
-        MapEntry('height', (y2 - y1).abs().toString());
+        MapEntry('height', (y2 - y1).abs().toString().substring(0,5));
         MapEntry<String, String> label = MapEntry('label', cls);
         MapEntry<String, String> confidence =
         MapEntry('confidence', conf.toString().substring(0, 5));
