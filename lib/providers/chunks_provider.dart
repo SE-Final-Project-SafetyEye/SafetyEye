@@ -93,7 +93,7 @@ class ChunksProvider extends ChangeNotifier {
 
     //run Ai model on video
     _logger.i("********* Running Object Detection Model ***********");
-    // await uploadHandler.runObjectDetectionModel();
+    await uploadHandler.runObjectDetectionModel();
     _logger.i("********* Object Detection Model Completed - merging metadata ***********");
     File mergedMetadataFile = await uploadHandler.mergeMetadata();
     //sign metadata
