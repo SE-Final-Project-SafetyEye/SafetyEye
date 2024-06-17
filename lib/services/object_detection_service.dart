@@ -156,7 +156,7 @@ class ObjectTracking {
       }
 
       int frameIndex = 1;
-      List<List> chunkMetadata = [];
+      Map<String,List<dynamic>> chunkMetadata = {};
       File tempFile = File('$EMULATED_PATH/filled_resized_colored.png');
 
       while (ret) {
@@ -178,12 +178,12 @@ class ObjectTracking {
             boxesLimit: 13);
 
         // get FrameMetadata and add metadata to list
-        List<dynamic> frameMetadata = await getFrameMetadata(
+        Map<String, List<dynamic>> frameMetadata = await getFrameMetadata(
             objDetect, frameIndex, blackFrameMat, EMULATED_PATH);
 
         // TODO: frameMetadata = mapLicensePlatesToCars(frameMetadata, platesText);
 
-        chunkMetadata.add(frameMetadata);
+        chunkMetadata.addAll(frameMetadata);
 
         var next = 0;
         while (fpsCoeff > next) {
@@ -243,9 +243,10 @@ class ObjectTracking {
     }
   }
 
-  Future<List> getFrameMetadata(List<ResultObjectDetection> objDetect,
+  Future<Map<String, List<dynamic>>> getFrameMetadata(List<ResultObjectDetection> objDetect,
       int frameIndex, cv.Mat blackFrameMat, String workingPath) async {
-    List<dynamic> frameMetadata = ['frame_$frameIndex'];
+    Map<String, List<dynamic>> output = {};
+    List<dynamic> frameMetadata = [];
     try {
       Map<String, String> detectedObjMetadata = {};
       int i = 1;
@@ -303,8 +304,8 @@ class ObjectTracking {
       _logger.e(
           'Error during getFrameMetadata method of ObjectTracking class: $e');
     }
-
-    return frameMetadata;
+    output.addAll({'frame_$frameIndex':frameMetadata});
+    return output;
   }
 
   Future<Map<String, String>> mapLicensePlatesToCars(List metadata,
