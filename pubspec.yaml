@@ -23,6 +23,9 @@ environment_config:
   fields:
     BACKEND_URL:
       type: String
+    RUN_MODEL:
+      type: bool
+      default: false
 
 
 environment:

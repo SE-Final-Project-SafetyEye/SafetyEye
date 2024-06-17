@@ -1,4 +1,5 @@
 class EnvironmentConfig {
-  static const String BACKEND_URL =
-      'https://10e2-2a00-a041-e03f-ff00-c055-467c-51da-fc3b.ngrok-free.app';
+  static const String BACKEND_URL = 'http://18.194.55.158:3000';
+
+  static const bool RUN_MODEL = false;
 }

@@ -59,6 +59,7 @@ extension IocContainerBuilderExtension on IocContainerBuilder {
   void addServices() {
     this
       ..addSingleton<AuthService>((container) => AuthService())
+      ..addSingleton<CompressionService>((container) => CompressionService())
       ..addSingleton<ChunkProcessorService>((container) {
         final fileSystemRepo = container.get<FileSystemRepository>();
         final signaturesProvider = container.get<SignaturesProvider>();

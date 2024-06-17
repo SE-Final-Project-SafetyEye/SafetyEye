@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:logger/logger.dart';
@@ -29,26 +29,25 @@ class VideoRecordingProvider extends ChangeNotifier {
       required this.sensorsProvider,
       required this.authenticationProvider,
       required this.settingsProvider,
-      required this.fileSystemRepository,required this.chunkProcessorService});
+      required this.fileSystemRepository,
+      required this.chunkProcessorService});
 
   get camera => cameraController;
 
-  get isRecording =>
-      recording; //cameraController?.value.isRecordingVideo ?? false;
+  get isRecording => recording; //cameraController?.value.isRecordingVideo ?? false;
 
   get isInitialized => cameraController?.value.isInitialized ?? false;
 
   Future<void> initializeCamera() async {
     bool hasPermission = await permissions.checkAndRequestCameraPermissions();
     if (!hasPermission) {
-        throw Future.error("this is an error");
+      throw Future.error("this is an error");
     }
     if (isInitialized) {
       return;
     }
-    cameraController =
-        CameraController(permissions.cameras[0], ResolutionPreset.high, enableAudio: false);
-    recordMin = 0.15;//settingsProvider.settingsState.chunkDuration; //TODO: delete the integer
+    cameraController = CameraController(permissions.cameras[0], ResolutionPreset.high, enableAudio: false);
+    recordMin = settingsProvider.settingsState.chunkDuration / 60;
     try {
       await cameraController?.initialize();
     } catch (e) {
@@ -66,15 +65,13 @@ class VideoRecordingProvider extends ChangeNotifier {
   }
 
   Future<void> startRecording() async {
-    _logger.d(
-        "1 start recording: status ${cameraController?.value.isRecordingVideo}");
+    _logger.d("1 start recording: status ${cameraController?.value.isRecordingVideo}");
     if (!(cameraController?.value.isRecordingVideo ?? false)) {
       recording = true;
       notifyListeners();
       chunkNumber = 1;
       fileSystemRepository.startRecording();
-      _logger.d(
-          "2 start recording: status ${cameraController?.value.isRecordingVideo}");
+      _logger.d("2 start recording: status ${cameraController?.value.isRecordingVideo}");
       await recordRecursively();
     }
   }
@@ -84,10 +81,8 @@ class VideoRecordingProvider extends ChangeNotifier {
     if (recordMin > 0) {
       await cameraController?.startVideoRecording();
       sensorsProvider.startCollectMetadata();
-      _logger.d(
-          "2 start recording: status ${cameraController?.value.isRecordingVideo}");
-      await Future.delayed(
-          Duration(milliseconds: (recordMin * 60 * 1000).toInt()));
+      _logger.d("2 start recording: status ${cameraController?.value.isRecordingVideo}");
+      await Future.delayed(Duration(milliseconds: (recordMin * 60 * 1000).toInt()));
       if (cameraController!.value.isRecordingVideo) {
         stopRecording(true);
       }
@@ -95,16 +90,13 @@ class VideoRecordingProvider extends ChangeNotifier {
   }
 
   Future<void> stopRecording(bool isRecordRecursively) async {
-    _logger.d(
-        "1 stopped recording: status ${cameraController?.value.isRecordingVideo}");
+    _logger.d("1 stopped recording: status ${cameraController?.value.isRecordingVideo}");
     if (cameraController?.value.isRecordingVideo ?? false) {
       recording = isRecordRecursively;
       notifyListeners();
-      String jsonFile = await sensorsProvider
-          .stopCollectMetadata();
+      String jsonFile = await sensorsProvider.stopCollectMetadata();
       cameraController?.stopVideoRecording().then((tempFile) async {
-        _logger.d(
-            "stopped recording: status ${cameraController?.value.isRecordingVideo}");
+        _logger.d("stopped recording: status ${cameraController?.value.isRecordingVideo}");
         _logger.i("Start chunkProcessorService");
         _logger.i("2 stopped recording: status ${cameraController?.value.isRecordingVideo}");
         chunkProcessorService.processChunk(tempFile, chunkNumber,jsonFile);
@@ -125,8 +117,7 @@ class VideoRecordingProvider extends ChangeNotifier {
       // add highlight flag
       _logger.d("2 start recording: status ${cameraController?.value.isRecordingVideo}");
       _logger.d("3 start highlight: status true");
-    }
-    else if (cameraController?.value.isRecordingVideo ?? false) {
+    } else if (cameraController?.value.isRecordingVideo ?? false) {
       // validate highlight flag
       _logger.d("2 start highlight: status ?");
       // start another highlight chunk if possible
