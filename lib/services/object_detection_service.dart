@@ -25,21 +25,14 @@ const IOU_THRESHOLD = 0.5;
 
 final Logger _logger = Logger();
 
-// possible init method to set the values of 'consts' according to model type etc.
-// void initODModule() {
-//   try {
-//
-//   } on Exception catch (_) {
-//     // log the exception;
-//   }
-// }
+// TODO: consider init method to set the values of above 'consts' according to model type etc.
 
 
-
+// !!! large parts are commented out to preserve previous algorithm of 2-isolates parallel work.
 class ObjectTracking {
-  static List<String> pathQueue = [];
-  static ReceivePort? receivePort;
-  static SendPort? sendPortLateBind;
+  // static List<String> pathQueue = [];
+  // static ReceivePort? receivePort;
+  // static SendPort? sendPortLateBind;
 
 
 
@@ -63,45 +56,51 @@ class ObjectTracking {
   }
 
 
-  static void addWork(String pathToChunk) async {
+  static Future<void> addWork(String pathToChunk) async {
     //var isos = await FlutterIsolate.runningIsolates;
-    if ((await FlutterIsolate.runningIsolates).isEmpty) {
-      receivePort = ReceivePort();
-      receivePort!.listen((sPortIsolate) {
-        ObjectTracking.sendPortLateBind = sPortIsolate;
-        pathQueue.forEach(sendPortLateBind!.send);
-        pathQueue = [];
-      });
-      var managerIsolate = await FlutterIsolate.spawn(
-          managerIsolateRoutine, [receivePort!.sendPort, pathToChunk]);
-    } else {
-      pathQueue.add(pathToChunk);
-      if (sendPortLateBind != null) {
-        pathQueue.forEach(sendPortLateBind!.send);
-        pathQueue = [];
-      }
-    }
+    // if ((await FlutterIsolate.runningIsolates).isEmpty) {
+    //   receivePort = ReceivePort();
+    //   receivePort!.listen((sPortIsolate) {
+    //     ObjectTracking.sendPortLateBind = sPortIsolate;
+    //     pathQueue.forEach(sendPortLateBind!.send);
+    //     pathQueue = [];
+    //   });
+    //   var managerIsolate = await FlutterIsolate.spawn(
+    //       managerIsolateRoutine, [receivePort!.sendPort, pathToChunk]);
+    // } else {
+    //   pathQueue.add(pathToChunk);
+    //   if (sendPortLateBind != null) {
+    //     pathQueue.forEach(sendPortLateBind!.send);
+    //     pathQueue = [];
+    //   }
+    // }
+
+    ReceivePort receivePort = ReceivePort();
+    var workerIsolate = await FlutterIsolate.spawn(
+        workerIsolateInit, [pathToChunk, receivePort.sendPort]);
+    await receivePort.first;
+    receivePort.close();
   }
 
-  static Future<void> managerIsolateRoutine(List<dynamic> args) async {
-    SendPort sPort = args[0];
-    String pathToChunk = args[1];
-    ReceivePort isolateRPort = ReceivePort();
-    var chunksPathsEvents = StreamQueue<String>(isolateRPort.asBroadcastStream().map((event) => event.toString()));
-    sPort.send(isolateRPort.sendPort);
-    while (pathToChunk.substring(pathToChunk.lastIndexOf(".")) == ".mp4") {
-      ReceivePort workerPort = ReceivePort();
-      var workerIsolate = await FlutterIsolate.spawn(
-          workerIsolateInit, [pathToChunk, workerPort.sendPort]);
-      await workerPort.first;
-      workerIsolate.kill();
-      if(!(await chunksPathsEvents.hasNext.timeout(const Duration(seconds: 2), onTimeout: ()=>false))){break;}
-      pathToChunk = await chunksPathsEvents.next;
-    }
-    chunksPathsEvents.cancel();
-    isolateRPort.close();
-    Isolate.current.kill();
-  }
+  // static Future<void> managerIsolateRoutine(List<dynamic> args) async {
+  //   SendPort sPort = args[0];
+  //   String pathToChunk = args[1];
+  //   ReceivePort isolateRPort = ReceivePort();
+  //   var chunksPathsEvents = StreamQueue<String>(isolateRPort.asBroadcastStream().map((event) => event.toString()));
+  //   sPort.send(isolateRPort.sendPort);
+  //   while (pathToChunk.substring(pathToChunk.lastIndexOf(".")) == ".mp4") {
+  //     ReceivePort workerPort = ReceivePort();
+  //     var workerIsolate = await FlutterIsolate.spawn(
+  //         workerIsolateInit, [pathToChunk, workerPort.sendPort]);
+  //     await workerPort.first;
+  //     workerIsolate.kill();
+  //     if(!(await chunksPathsEvents.hasNext.timeout(const Duration(seconds: 2), onTimeout: ()=>false))){break;}
+  //     pathToChunk = await chunksPathsEvents.next;
+  //   }
+  //   chunksPathsEvents.cancel();
+  //   isolateRPort.close();
+  //   Isolate.current.kill();
+  // }
 
 
 

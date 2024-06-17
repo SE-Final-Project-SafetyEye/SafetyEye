@@ -164,7 +164,6 @@ class UploadHandler {
   }
 
   Future<void> runObjectDetectionModel() async {
-    ObjectTracking.addWork(video.path);
-
+    await ObjectTracking.addWork(video.path);
   }
 }
