@@ -69,8 +69,8 @@ class ChunksProvider extends ChangeNotifier {
     return fileSystemRepository.getThumbnailFile(thumbnails[videoIndex]!);
   }
 
-  Future<void> handleHighlightsButtonPress(int videoIndex) async {
-    fileSystemRepository.updateHighLight(chunksPaths[videoIndex]);
+  Future<bool> handleHighlightsButtonPress(int videoIndex) async {
+    return fileSystemRepository.updateHighLight(chunksPaths[videoIndex]);
   }
 
   Future<void> handleCloudUploadButtonPress(int videoIndex, {ProgressCallback? progressCallback}) async {

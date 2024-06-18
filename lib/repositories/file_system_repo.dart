@@ -235,7 +235,7 @@ class FileSystemRepository {
     }
   }
 
-  Future<void> updateHighLight(String chunksPath) async {
+  Future<bool> updateHighLight(String chunksPath) async {
     File file = File(chunksPath);
     Directory directory = file.parent;
     List<FileSystemEntity> files = directory.listSync();
@@ -252,7 +252,9 @@ class FileSystemRepository {
         // Write the updated JSON back to the file
         String updatedContents = jsonEncode(jsonData);
         await entity.writeAsString(updatedContents);
+        return jsonData['HighLight'];
       }
     }
+    return false;
   }
 }
