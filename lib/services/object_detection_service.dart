@@ -74,12 +74,15 @@ class ObjectTracking {
     //     pathQueue = [];
     //   }
     // }
-
-    ReceivePort receivePort = ReceivePort();
-    var workerIsolate = await FlutterIsolate.spawn(
-        workerIsolateInit, [pathToChunk, receivePort.sendPort]);
-    await receivePort.first;
-    receivePort.close();
+    try {
+      ReceivePort receivePort = ReceivePort();
+      var workerIsolate = await FlutterIsolate.spawn(
+          workerIsolateInit, [pathToChunk, receivePort.sendPort]);
+      await receivePort.first;
+      receivePort.close();
+    }on Exception catch(e){
+      _logger.e('Error during object detection model addWork: $e');
+    }
   }
 
   // static Future<void> managerIsolateRoutine(List<dynamic> args) async {
@@ -106,10 +109,9 @@ class ObjectTracking {
 
   static Future<bool> workerIsolateInit(List<dynamic> args) async {
     try {
-      ObjectTracking ot = ObjectTracking();
       String pathToChunk = args[0];
       SendPort sendCompletePort = args[1];
-      ot.detect([pathToChunk, sendCompletePort]);
+      ObjectTracking.detect([pathToChunk, sendCompletePort]);
     } on Exception catch (e) {
       _logger.e('Error in detectChunkObjects method of ObjectTracking class: $e');
       return false;
@@ -118,7 +120,7 @@ class ObjectTracking {
     return true;
   }
 
-  Future<void> detect(List<dynamic> args) async {
+  static Future<void> detect(List<dynamic> args) async {
     try {
       String pathToChunk = args[0];
       SendPort sendCompletePort = args[1];
@@ -211,7 +213,7 @@ class ObjectTracking {
     }
   }
 
-  Future<cv.Mat> preprocessImage(cv.Mat frame, double xRatio, double yRatio,
+  static Future<cv.Mat> preprocessImage(cv.Mat frame, double xRatio, double yRatio,
       double frameWidth, double frameHeight, String path) async {
     try {
       var interpolation = cv.INTER_AREA;
@@ -243,7 +245,7 @@ class ObjectTracking {
     }
   }
 
-  Future<Map<String, List<dynamic>>> getFrameMetadata(List<ResultObjectDetection> objDetect,
+  static Future<Map<String, List<dynamic>>> getFrameMetadata(List<ResultObjectDetection> objDetect,
       int frameIndex, cv.Mat blackFrameMat, String workingPath) async {
     Map<String, List<dynamic>> output = {};
     List<dynamic> frameMetadata = [];
@@ -321,7 +323,7 @@ class ObjectTracking {
     return out;
   }
 
-  Future<String> detectLicensePlateNumber(cv.Mat blackFrameMat,
+  static Future<String> detectLicensePlateNumber(cv.Mat blackFrameMat,
       ResultObjectDetection objDetect, String workingPath, String lpID) async {
     var recognizedText = 'not_recognized';
     try {

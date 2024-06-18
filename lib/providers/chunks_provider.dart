@@ -117,7 +117,7 @@ class ChunksProvider extends ChangeNotifier {
       metadataSig: metadataSig,
     );
 
-    backendService.uploadChunk(video, pics, metaData, uploadChunkSignaturesRequest, progressCallback).then((_) {
+    await backendService.uploadChunk(video, pics, metaData, uploadChunkSignaturesRequest, progressCallback).then((_) {
         //deleting files in the directory of the video chunk.
       fileSystemRepository.deleteDirectoryFiles(chunkPath);
       notifyListeners();

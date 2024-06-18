@@ -79,7 +79,7 @@ class BackendService {
         picturesSig: signaturesRequest.picturesSig,
         metadataSig: signaturesRequest.metadataSig,
         key: exchangeKey);
-    await api.uploadChunk(json.encoder.convert(sigRequest.toJson()), video,
+    return api.uploadChunk(json.encoder.convert(sigRequest.toJson()), video,
         pictures, metadata, progressCallback);
   }
 }
