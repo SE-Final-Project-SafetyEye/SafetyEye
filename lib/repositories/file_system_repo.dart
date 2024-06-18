@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -108,7 +109,7 @@ class FileSystemRepository {
           }
         }
       }
-    } catch (e,st) {
+    } catch (e, st) {
       _logger.e("Error getting original video list: $e,\n $st");
     }
     return videoFolders;
@@ -119,7 +120,8 @@ class FileSystemRepository {
     try {
       final videosDirectory = Directory(path);
 
-      await for (FileSystemEntity entity in videosDirectory.list(recursive: true)) {
+      await for (FileSystemEntity entity
+          in videosDirectory.list(recursive: true)) {
         if (entity is File && entity.path.endsWith(".mp4")) {
           String videoDirectory = entity.path;
           if (!videoDirectories.contains(videoDirectory)) {
@@ -137,13 +139,15 @@ class FileSystemRepository {
     return File(thumbnail);
   }
 
-  Future<File> downLoadChunk(List<int> chunkBytes, String journeyId, String chunkId) async {
+  Future<File> downLoadChunk(
+      List<int> chunkBytes, String journeyId, String chunkId) async {
     final dir = await getApplicationDocumentsDirectory();
     // spit name of chunk Id by _
-    String chunkNumber_number = chunkId.split('_').first;
+    String chunknumberNumber = chunkId.split('_').first;
     //find the chunk file number
-    String chunkNumber = chunkNumber_number.split('-').last;
-    final chunkFolder = Directory('${dir.path}/videos/$userId/$journeyId/$chunkNumber');
+    String chunkNumber = chunknumberNumber.split('-').last;
+    final chunkFolder =
+        Directory('${dir.path}/videos/$userId/$journeyId/$chunkNumber');
 
     //ensure directory exists
     if (!await chunkFolder.exists()) {
@@ -228,6 +232,27 @@ class FileSystemRepository {
       }
     } else {
       _logger.e('Directory not found');
+    }
+  }
+
+  Future<void> updateHighLight(String chunksPath) async {
+    File file = File(chunksPath);
+    Directory directory = file.parent;
+    List<FileSystemEntity> files = directory.listSync();
+    for (FileSystemEntity entity in files) {
+      if (entity is File && entity.path.endsWith('.json')) {
+        String contents = await entity.readAsString();
+        Map<String, dynamic> jsonData = jsonDecode(contents);
+
+        // Process the JSON data
+        if (jsonData.containsKey('HighLight')) {
+          jsonData['HighLight'] = !jsonData['HighLight'];
+        }
+
+        // Write the updated JSON back to the file
+        String updatedContents = jsonEncode(jsonData);
+        await entity.writeAsString(updatedContents);
+      }
     }
   }
 }

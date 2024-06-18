@@ -229,6 +229,13 @@ class _LocalChunkCardState extends State<LocalChunkCard> {
                     },
                     tooltip: 'Upload to Cloud',
                   ),
+                  const SizedBox(width: 8.0),
+                  IconButton(
+                    onPressed: () {
+                      chunks.deleteChunk(chunkIndex);
+                    },
+                    icon: const Icon(Icons.delete_outline),
+                  ),
                 ],
               ),
             ],
@@ -306,7 +313,6 @@ class _BackEndChunkCardState extends State<BackEndChunkCard> {
               setState(() {
                 isDownLoad = true;
               });
-
               // Ensure this part is asynchronous if onCloudIconPressed is a Future
               onCloudIconPressed(context, videoId, chunkIndex);
 
