@@ -24,7 +24,7 @@ const IOU_THRESHOLD = 0.5;
 
 final Logger _logger = Logger();
 
-// !!! large parts are commented out to preserve previous algorithm of 2-isolates parallel work.
+// some  parts are commented out are to preserve previous algorithm of 2-isolates parallel work.
 class ObjectTracking {
   // static List<String> pathQueue = [];
   // static ReceivePort? receivePort;
