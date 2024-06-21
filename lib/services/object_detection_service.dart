@@ -13,9 +13,8 @@ import 'dart:convert';
 import 'package:async/async.dart';
 import 'package:flutter_isolate/flutter_isolate.dart';
 
-// TODOs PLACED AT THE END OF THE FILE
 
-// consider to create a config file to setup those parameters
+// TODO: consider init method to set the values of above 'consts' according to model type etc, considering config file
 const DEV_NUM_OF_CHUNK_FRAMES = 60;
 const DEV_MODEL_MAX_FRAME_SIDE = 640;
 const CHUNK_FRAMES_INTERVAL = 0.25;
@@ -24,9 +23,6 @@ const DETECTION_COEFF = 0.4;
 const IOU_THRESHOLD = 0.5;
 
 final Logger _logger = Logger();
-
-// TODO: consider init method to set the values of above 'consts' according to model type etc.
-
 
 // !!! large parts are commented out to preserve previous algorithm of 2-isolates parallel work.
 class ObjectTracking {
