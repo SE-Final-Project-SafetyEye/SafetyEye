@@ -91,6 +91,7 @@ dependencies:
   google_mlkit_text_recognition: ^0.13.0
   opencv_dart: ^1.0.4
   flutter_isolate: ^2.0.5-pre
+  async: ^2.11.0
 
 dev_dependencies:
   retrofit_generator: ^8.1.0

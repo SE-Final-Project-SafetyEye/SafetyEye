@@ -183,16 +183,16 @@ class _LocalChunkCardState extends State<LocalChunkCard> {
             borderRadius: BorderRadius.circular(8.0),
             child: chunks.generateThumbnailIsNotEmpty(chunkIndex)
                 ? Image.file(
-                    chunks.getThumbnail(chunkIndex),
-                    width: 100,
-                    height: 56.25,
-                    fit: BoxFit.cover,
-                  )
+              chunks.getThumbnail(chunkIndex),
+              width: 100,
+              height: 56.25,
+              fit: BoxFit.cover,
+            )
                 : Container(
-                    width: 100,
-                    height: 56.25,
-                    color: Colors.grey, // Placeholder color
-                  ),
+              width: 100,
+              height: 56.25,
+              color: Colors.grey, // Placeholder color
+            ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -218,14 +218,17 @@ class _LocalChunkCardState extends State<LocalChunkCard> {
                         ? const Icon(Icons.cloud_upload_outlined)
                         : const Icon(Icons.cloud_upload),
                     onPressed: () async {
-                      setState(() {
-                        isUpload = true;
-                      });
-                      await chunks.handleCloudUploadButtonPress(chunkIndex,
-                          progressCallback: _progressCallback);
-                      setState(() {
-                        isUpload = false;
-                      });
+                      if (context.mounted) {
+                        setState(() {
+                          isUpload = true;
+                        });
+                      }
+                      await chunks.handleCloudUploadButtonPress(chunkIndex);
+                      if (context.mounted) {
+                        setState(() {
+                          isUpload = false;
+                        });
+                      }
                     },
                     tooltip: 'Upload to Cloud',
                   ),
@@ -237,7 +240,7 @@ class _LocalChunkCardState extends State<LocalChunkCard> {
           IconButton(
             onPressed: () {
               String videoPath =
-                  chunks.handlePlayButtonPress(context, chunkIndex);
+              chunks.handlePlayButtonPress(context, chunkIndex);
               _playVideo(context, videoPath);
             },
             icon: const Icon(Icons.play_arrow),
