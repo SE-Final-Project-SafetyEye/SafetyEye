@@ -129,7 +129,7 @@ class SensorsProvider extends ChangeNotifier {
       'Magnetometer': [],
       'Gyroscope': [],
       'GPS': [],
-      'HighLight': false
+      'Highlight': false
     };
 
     for (var data in _accelerometerEvents) {
