@@ -163,6 +163,7 @@ class _LocalChunkCardState extends State<LocalChunkCard> {
   late final ChunksProvider chunks;
   late final String videoId;
   late final int chunkIndex;
+  bool isHighLight = false;
 
   @override
   void initState() {
@@ -207,9 +208,16 @@ class _LocalChunkCardState extends State<LocalChunkCard> {
               Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.highlight),
-                    onPressed: () =>
-                        chunks.handleHighlightsButtonPress(chunkIndex),
+                    icon: isHighLight
+                        ? const Icon(Icons.brightness_high_sharp)
+                        : const Icon(Icons.highlight),
+                    onPressed: () async {
+                      bool result =
+                          await chunks.handleHighlightsButtonPress(chunkIndex);
+                      setState(() {
+                        isHighLight = result;
+                      });
+                    },
                     tooltip: 'Add Highlights',
                   ),
                   const SizedBox(width: 8.0),
@@ -231,6 +239,13 @@ class _LocalChunkCardState extends State<LocalChunkCard> {
                       }
                     },
                     tooltip: 'Upload to Cloud',
+                  ),
+                  const SizedBox(width: 8.0),
+                  IconButton(
+                    onPressed: () {
+                      chunks.deleteChunk(chunkIndex);
+                    },
+                    icon: const Icon(Icons.delete_outline),
                   ),
                 ],
               ),
@@ -309,7 +324,6 @@ class _BackEndChunkCardState extends State<BackEndChunkCard> {
               setState(() {
                 isDownLoad = true;
               });
-
               // Ensure this part is asynchronous if onCloudIconPressed is a Future
               onCloudIconPressed(context, videoId, chunkIndex);
 

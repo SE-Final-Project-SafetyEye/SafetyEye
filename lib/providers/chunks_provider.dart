@@ -69,7 +69,9 @@ class ChunksProvider extends ChangeNotifier {
     return fileSystemRepository.getThumbnailFile(thumbnails[videoIndex]!);
   }
 
-  Future<void> handleHighlightsButtonPress(int videoIndex) async {} //TODO:
+  Future<bool> handleHighlightsButtonPress(int videoIndex) async {
+    return fileSystemRepository.updateHighLight(chunksPaths[videoIndex]);
+  }
 
   Future<void> handleCloudUploadButtonPress(int videoIndex, {ProgressCallback? progressCallback}) async {
     // got all the files
@@ -138,5 +140,9 @@ class ChunksProvider extends ChangeNotifier {
     File downloadedFile = await backendService.downloadChunk(journeyId, chunksPaths[chunkIndex]); //TODO: check if works
     notifyListeners();
     return downloadedFile;
+  }
+
+  Future<void> deleteChunk(int chunkIndex) async {
+    fileSystemRepository.deleteDirectoryFiles(chunksPaths[chunkIndex]);
   }
 }
