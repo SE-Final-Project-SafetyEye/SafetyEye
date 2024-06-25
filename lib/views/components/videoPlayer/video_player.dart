@@ -1,6 +1,8 @@
-import 'package:flutter/material.dart';
+import 'dart:io';
 import 'package:chewie/chewie.dart';
+import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import 'package:path/path.dart' as path;
 
 class ChewieVideoPlayer extends StatefulWidget {
   final List<String> srcs;
@@ -21,14 +23,28 @@ class _ChewieVideoPlayerState extends State<ChewieVideoPlayer> {
   @override
   void initState() {
     super.initState();
-    initializePlayer();
+    if (widget.srcs.length == 1) {
+      _loadAdditionalVideos();
+    } else {
+      initializePlayer();
+    }
   }
 
-  @override
-  void dispose() {
-    _videoPlayerController.dispose();
-    _chewieController?.dispose();
-    super.dispose();
+  Future<void> _loadAdditionalVideos() async {
+    final videoPath = widget.srcs.first;
+    final directoryPath = path.dirname(videoPath);
+    final directory = Directory(directoryPath);
+    final videoFiles = directory.listSync().where((file) {
+      final extension = path.extension(file.path).toLowerCase();
+      return extension == '.mp4' || extension == '.mov' || extension == '.mkv';
+    }).map((file) => file.path).toList();
+
+    setState(() {
+      widget.srcs.clear();
+      widget.srcs.addAll(videoFiles);
+    });
+
+    initializePlayer();
   }
 
   Future<void> initializePlayer() async {
@@ -72,6 +88,13 @@ class _ChewieVideoPlayerState extends State<ChewieVideoPlayer> {
     _videoPlayerController.dispose();
     currPlayIndex = (currPlayIndex + 1) % widget.srcs.length;
     await initializePlayer();
+  }
+
+  @override
+  void dispose() {
+    _videoPlayerController.dispose();
+    _chewieController?.dispose();
+    super.dispose();
   }
 
   @override
