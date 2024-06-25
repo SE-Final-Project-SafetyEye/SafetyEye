@@ -7,10 +7,8 @@ import 'package:flutter_volume_controller/flutter_volume_controller.dart';
 import 'package:keep_screen_on/keep_screen_on.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
-import 'package:speech_to_text/speech_recognition_event.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
-import 'package:speech_to_text/speech_to_text_provider.dart';
 
 import '../../../providers/video_recording_provider.dart';
 
@@ -26,8 +24,6 @@ class RecordingPage extends StatefulWidget {
 class _RecordingPageState extends State<RecordingPage> {
   final Logger _logger = Logger();
   bool isRecording = false;
-  //late StreamSubscription<SpeechRecognitionEvent> _subscription;
-  //late SpeechToTextProvider speechProvider;
   late VideoRecordingProvider cameraProvider;
   late Future<CameraController> controllerFuture;
   final SpeechToText speech = SpeechToText();
@@ -47,7 +43,10 @@ class _RecordingPageState extends State<RecordingPage> {
   }
 
   Future<void> _handleSpeechResult(SpeechRecognitionResult result) async {
+
     _logger.i("_handleSpeechResult: result = $result");
+    _logger.i("Recognized words: ${result.recognizedWords}");
+
     cameraProvider =
         Provider.of<VideoRecordingProvider>(context, listen: false);
     var recognizedWords = result.recognizedWords.toLowerCase();
@@ -74,55 +73,31 @@ class _RecordingPageState extends State<RecordingPage> {
   }
 
   Future<void> _initializeSpeechRecognition() async {
-    bool available = await speech.initialize();
-    if ( available ) {
-      speech.listen( onResult: _handleSpeechResult, listenFor: const Duration(seconds: 6), pauseFor: const Duration(seconds: 10),listenOptions: speechListenOptions);
+    try {
+      bool available = await speech.initialize();
+      if (available) {
+        // TODO: totally disable app sounds -> below code does not mute the recording notifications
+        // await FlutterVolumeController.updateShowSystemUI(
+        //     false); // Hide system volume UI
+        // await FlutterVolumeController.setMute(true,
+        //     stream: AudioStream.alarm); // Set volume to 0 to silence feedback
+        _logger.d("Initializing voice recognition...");
+        speech.listen(onResult: _handleSpeechResult,
+            listenFor: const Duration(seconds: 6),
+            pauseFor: const Duration(seconds: 10),
+            listenOptions: speechListenOptions);
+      }
+      else {
+        _logger.w("The user has denied the use of speech recognition.");
+      }
+    }catch (error, stackTrace) {
+      _logger.e(error.toString(), stackTrace: stackTrace);
     }
-    else {
-      print("The user has denied the use of speech recognition.");
-    }
-
-    // speechProvider = Provider.of<SpeechToTextProvider>(context, listen: false);
-    // bool available = await speechProvider.initialize();
-    // if (available) {
-    //   await _subscribeToVoiceRecognition(speechProvider);
-    //   _startListening(speechProvider);
-    // } else {
-    //   _logger.w("The user has denied the use of speech recognition.");
-    // }
   }
 
-  // Future<void> _subscribeToVoiceRecognition(
-  //     SpeechToTextProvider speechProvider) async {
-  //   await FlutterVolumeController.updateShowSystemUI(
-  //       false); // Hide system volume UI
-  //   await FlutterVolumeController.setMute(true,
-  //       stream: AudioStream.alarm); // Set volume to 0 to silence feedback
-  //
-  //   _logger.d("Subscribing to voice recognition...");
-  //
-  //   speechProvider.stream.listen((event) async {
-  //     if (event.eventType == SpeechRecognitionEventType.finalRecognitionEvent) {
-  //       var result = event.recognitionResult!;
-  //       _logger.i("Final result: ${result.recognizedWords}");
-  //       await _handleSpeechResult(result);
-  //       _startListening(speechProvider); // Restart listening
-  //     } else if (event.eventType == SpeechRecognitionEventType.errorEvent) {
-  //       // _logger.e("Error: ${event.error?.errorMsg}");
-  //       _startListening(speechProvider); // Restart listening on error
-  //     }
-  //   });
-  // }
-
   void _restartListening() async {
-
-    // speechProvider.listen(
     //   listenFor: const Duration(seconds: 30),
     //   pauseFor: const Duration(seconds: 10),
-    //   partialResults: false,
-    //   onDevice: false,
-    //   listenMode: ListenMode.confirmation,
-    // );
     await speech.stop();
     speech.listen( onResult: _handleSpeechResult, listenFor: const Duration(seconds: 6), pauseFor: const Duration(seconds: 5),listenOptions: speechListenOptions);
     _timer!.reset();
@@ -137,7 +112,6 @@ class _RecordingPageState extends State<RecordingPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       speech.stop(); // Stop listening if the widget is disposed
       _timer?.cancel();
-      //_subscription.cancel();
     });
   }
 
@@ -196,7 +170,7 @@ class _RecordingPageState extends State<RecordingPage> {
               }
               _logger.i(
                   "Recording button pressed. is recording: ${cameraProvider.isRecording}, isRecordingState: $isRecording");
-              speech.stop();
+              // speech.stop();
               _restartListening();
             },
             icon: Icon(
