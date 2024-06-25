@@ -46,7 +46,7 @@ class VideoRecordingProvider extends ChangeNotifier {
     if (isInitialized) {
       return;
     }
-    cameraController = CameraController(permissions.cameras[0], ResolutionPreset.high, enableAudio: true);
+    cameraController = CameraController(permissions.cameras[0], ResolutionPreset.high, enableAudio: false);
     recordMin = settingsProvider.settingsState.chunkDuration / 60;
     try {
       await cameraController?.initialize();

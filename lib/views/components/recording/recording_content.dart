@@ -26,12 +26,13 @@ class RecordingPage extends StatefulWidget {
 class _RecordingPageState extends State<RecordingPage> {
   final Logger _logger = Logger();
   bool isRecording = false;
-  late StreamSubscription<SpeechRecognitionEvent> _subscription;
+  //late StreamSubscription<SpeechRecognitionEvent> _subscription;
   //late SpeechToTextProvider speechProvider;
   late VideoRecordingProvider cameraProvider;
   late Future<CameraController> controllerFuture;
   final SpeechToText speech = SpeechToText();
   RestartableTimer? _timer;
+  SpeechListenOptions speechListenOptions = SpeechListenOptions(partialResults: false, sampleRate: 44100);
 
   @override
   void initState() {
@@ -40,7 +41,7 @@ class _RecordingPageState extends State<RecordingPage> {
     controllerFuture = widget.videoRecordingProvider.initializeCamera().then((_) => widget.videoRecordingProvider.cameraController!);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _initializeSpeechRecognition();
-      _timer = RestartableTimer(const Duration(seconds: 10), _restartListening);
+      _timer = RestartableTimer(const Duration(seconds: 6), _restartListening);
     });
 
   }
@@ -75,7 +76,7 @@ class _RecordingPageState extends State<RecordingPage> {
   Future<void> _initializeSpeechRecognition() async {
     bool available = await speech.initialize();
     if ( available ) {
-      _restartListening();
+      speech.listen( onResult: _handleSpeechResult, listenFor: const Duration(seconds: 6), pauseFor: const Duration(seconds: 10),listenOptions: speechListenOptions);
     }
     else {
       print("The user has denied the use of speech recognition.");
@@ -114,6 +115,7 @@ class _RecordingPageState extends State<RecordingPage> {
   // }
 
   void _restartListening() async {
+
     // speechProvider.listen(
     //   listenFor: const Duration(seconds: 30),
     //   pauseFor: const Duration(seconds: 10),
@@ -122,7 +124,7 @@ class _RecordingPageState extends State<RecordingPage> {
     //   listenMode: ListenMode.confirmation,
     // );
     await speech.stop();
-    speech.listen( onResult: _handleSpeechResult, listenFor: const Duration(seconds: 10), pauseFor: const Duration(seconds: 10));
+    speech.listen( onResult: _handleSpeechResult, listenFor: const Duration(seconds: 6), pauseFor: const Duration(seconds: 5),listenOptions: speechListenOptions);
     _timer!.reset();
   }
 
@@ -135,7 +137,7 @@ class _RecordingPageState extends State<RecordingPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       speech.stop(); // Stop listening if the widget is disposed
       _timer?.cancel();
-      _subscription.cancel();
+      //_subscription.cancel();
     });
   }
 
