@@ -78,6 +78,7 @@ class _RecordingPageState extends State<RecordingPage> {
         // await FlutterVolumeController.updateShowSystemUI(false); // Hide system volume UI
         // await FlutterVolumeController.setMute(true, stream: AudioStream.alarm); // Set volume to 0 to silence feedback
         _logger.d("Initializing voice recognition...");
+        // listenFor and pauseFor are strictly equal to 5 due to android system voice listen duration
         speech.listen( onResult: _handleSpeechResult, listenFor: const Duration(seconds: 5), pauseFor: const Duration(seconds: 5),listenOptions: speechListenOptions);
       }
       else {
