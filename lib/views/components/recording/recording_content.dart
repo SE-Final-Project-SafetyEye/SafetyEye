@@ -75,10 +75,8 @@ class _RecordingPageState extends State<RecordingPage> {
       bool available = await speech.initialize(onStatus: listener);
       if (available) {
         // TODO: totally disable app sounds -> below code does not mute the recording notifications
-        // await FlutterVolumeController.updateShowSystemUI(
-        //     false); // Hide system volume UI
-        // await FlutterVolumeController.setMute(true,
-        //     stream: AudioStream.alarm); // Set volume to 0 to silence feedback
+        // await FlutterVolumeController.updateShowSystemUI(false); // Hide system volume UI
+        // await FlutterVolumeController.setMute(true, stream: AudioStream.alarm); // Set volume to 0 to silence feedback
         _logger.d("Initializing voice recognition...");
         speech.listen( onResult: _handleSpeechResult, listenFor: const Duration(seconds: 5), pauseFor: const Duration(seconds: 5),listenOptions: speechListenOptions);
       }
