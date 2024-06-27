@@ -27,19 +27,19 @@ class _RecordingPageState extends State<RecordingPage> {
   late VideoRecordingProvider cameraProvider;
   late Future<CameraController> controllerFuture;
   final SpeechToText speech = SpeechToText();
-  RestartableTimer? _timer;
-  SpeechListenOptions speechListenOptions = SpeechListenOptions(partialResults: false, sampleRate: 44100);
+  SpeechStatusListener? listener;
+  final SpeechListenOptions speechListenOptions = SpeechListenOptions(partialResults: false, sampleRate: 44100);
 
   @override
   void initState() {
     super.initState();
     KeepScreenOn.turnOn();
     controllerFuture = widget.videoRecordingProvider.initializeCamera().then((_) => widget.videoRecordingProvider.cameraController!);
+    cameraProvider = Provider.of<VideoRecordingProvider>(context, listen: false);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      listener = ((status) => {if(status == 'notListening') _restartListening()});
       await _initializeSpeechRecognition();
-      _timer = RestartableTimer(const Duration(seconds: 6), _restartListening);
     });
-
   }
 
   Future<void> _handleSpeechResult(SpeechRecognitionResult result) async {
@@ -47,8 +47,6 @@ class _RecordingPageState extends State<RecordingPage> {
     _logger.i("_handleSpeechResult: result = $result");
     _logger.i("Recognized words: ${result.recognizedWords}");
 
-    cameraProvider =
-        Provider.of<VideoRecordingProvider>(context, listen: false);
     var recognizedWords = result.recognizedWords.toLowerCase();
     var isStartEvent = recognizedWords.contains('start recording') ||
         recognizedWords.contains('start');
@@ -74,7 +72,7 @@ class _RecordingPageState extends State<RecordingPage> {
 
   Future<void> _initializeSpeechRecognition() async {
     try {
-      bool available = await speech.initialize();
+      bool available = await speech.initialize(onStatus: listener);
       if (available) {
         // TODO: totally disable app sounds -> below code does not mute the recording notifications
         // await FlutterVolumeController.updateShowSystemUI(
@@ -82,10 +80,7 @@ class _RecordingPageState extends State<RecordingPage> {
         // await FlutterVolumeController.setMute(true,
         //     stream: AudioStream.alarm); // Set volume to 0 to silence feedback
         _logger.d("Initializing voice recognition...");
-        speech.listen(onResult: _handleSpeechResult,
-            listenFor: const Duration(seconds: 6),
-            pauseFor: const Duration(seconds: 10),
-            listenOptions: speechListenOptions);
+        speech.listen( onResult: _handleSpeechResult, listenFor: const Duration(seconds: 5), pauseFor: const Duration(seconds: 5),listenOptions: speechListenOptions);
       }
       else {
         _logger.w("The user has denied the use of speech recognition.");
@@ -96,11 +91,9 @@ class _RecordingPageState extends State<RecordingPage> {
   }
 
   void _restartListening() async {
-    //   listenFor: const Duration(seconds: 30),
-    //   pauseFor: const Duration(seconds: 10),
     await speech.stop();
-    speech.listen( onResult: _handleSpeechResult, listenFor: const Duration(seconds: 6), pauseFor: const Duration(seconds: 5),listenOptions: speechListenOptions);
-    _timer!.reset();
+    // listenFor and pauseFor are strictly equal to 5 due to android system voice listen duration
+    speech.listen( onResult: _handleSpeechResult, listenFor: const Duration(seconds: 5), pauseFor: const Duration(seconds: 5),listenOptions: speechListenOptions);
   }
 
   @override
@@ -109,10 +102,8 @@ class _RecordingPageState extends State<RecordingPage> {
     KeepScreenOn.turnOff();
     FlutterVolumeController.setMute(false,
         stream: AudioStream.alarm); // Restore volume
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      speech.stop(); // Stop listening if the widget is disposed
-      _timer?.cancel();
-    });
+    speech.stop(); // Stop listening if the widget is disposed
+    listener = null;
   }
 
   @override
