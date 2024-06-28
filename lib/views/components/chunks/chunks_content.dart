@@ -265,11 +265,34 @@ class _LocalChunkCardState extends State<LocalChunkCard> {
                                 setState(() {
                                   isUpload = true;
                                 });
-                                await chunks
-                                    .handleCloudUploadButtonPress(chunkIndex);
-                                setState(() {
-                                  isUpload = false;
-                                });
+                                try {
+                                  await chunks
+                                      .handleCloudUploadButtonPress(chunkIndex);
+                                  setState(() {
+                                    isUpload = false;
+                                  });
+                                }
+                                catch(e){
+                                  setState(() {
+                                    isUpload = false;
+                                  });
+                                  return showDialog<void>(
+                                    context: context,
+                                    barrierDismissible: false, // user must tap button!
+                                    builder: (BuildContext context) {
+                                      return AlertDialog(
+                                        title: const Text('Chunk Already in the Cloud.'),
+                                        content: const SingleChildScrollView(),
+                                        actions: <Widget>[TextButton(
+                                          child: const Text('Close'),
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                          },
+                                        )],
+                                      );
+                                    },
+                                  );
+                                }
                               },
                         tooltip: 'Upload to Cloud',
                       ),

@@ -86,7 +86,7 @@ class ChunksProvider extends ChangeNotifier {
     // verify signatures
     _logger.i("********* Verifying Signatures ***********");
     UploadHandler uploadHandler = UploadHandler(signaturesProvider, fileSystemRepository, video, pics, metaData);
-    bool verifyResult = await uploadHandler.verifySignatures();
+    bool verifyResult  = await uploadHandler.verifySignatures();
     if (!verifyResult) {
       throw IntegrityException("Signature verification failed, video my be corrupt");
     } else {
