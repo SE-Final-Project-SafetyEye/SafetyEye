@@ -132,7 +132,7 @@ class _ChunksPageState extends State<ChunksPage> {
               child: Text(
                 widget.path,
                 style:
-                const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
             ListView.builder(
@@ -155,7 +155,8 @@ class _ChunksPageState extends State<ChunksPage> {
 
   void _playSelectedChunks() {
     final chunks = Provider.of<ChunksProvider>(context, listen: false);
-    final selectedPaths = selectedChunks.map((index) => chunks.chunksPaths[index]).toList();
+    final selectedPaths =
+        selectedChunks.map((index) => chunks.chunksPaths[index]).toList();
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -164,7 +165,6 @@ class _ChunksPageState extends State<ChunksPage> {
     );
   }
 }
-
 
 class LocalChunkCard extends StatefulWidget {
   final String videoId;
@@ -188,24 +188,28 @@ class LocalChunkCard extends StatefulWidget {
 
 class _LocalChunkCardState extends State<LocalChunkCard> {
   bool isUpload = false;
-  late final ChunksProvider chunks;
-  late final String videoId;
-  late final int chunkIndex;
   bool isHighLight = false;
+  late String videoId;
+  late int chunkIndex;
+  late ChunksProvider chunks;
+  late bool isSelected;
+  late ValueChanged<bool> onSelected;
 
   @override
   void initState() {
-    super.initState();
-    chunks = widget.chunks;
     videoId = widget.videoId;
     chunkIndex = widget.chunkIndex;
+    chunks = widget.chunks;
+    isSelected = widget.isSelected;
+    onSelected = widget.onSelected;
+    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.all(8.0),
-      color: widget.isSelected ? Colors.blue.withOpacity(0.3) : null,
+      color: isSelected ? Colors.blue.withOpacity(0.3) : null,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -213,16 +217,16 @@ class _LocalChunkCardState extends State<LocalChunkCard> {
             borderRadius: BorderRadius.circular(8.0),
             child: chunks.generateThumbnailIsNotEmpty(chunkIndex)
                 ? Image.file(
-              chunks.getThumbnail(chunkIndex),
-              width: 100,
-              height: 56.25,
-              fit: BoxFit.cover,
-            )
+                    chunks.getThumbnail(chunkIndex),
+                    width: 100,
+                    height: 56.25,
+                    fit: BoxFit.cover,
+                  )
                 : Container(
-              width: 100,
-              height: 56.25,
-              color: Colors.grey, // Placeholder color
-            ),
+                    width: 100,
+                    height: 56.25,
+                    color: Colors.grey,
+                  ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -242,7 +246,7 @@ class _LocalChunkCardState extends State<LocalChunkCard> {
                         : const Icon(Icons.highlight),
                     onPressed: () async {
                       bool result =
-                      await chunks.handleHighlightsButtonPress(chunkIndex);
+                          await chunks.handleHighlightsButtonPress(chunkIndex);
                       setState(() {
                         isHighLight = result;
                       });
@@ -250,24 +254,30 @@ class _LocalChunkCardState extends State<LocalChunkCard> {
                     tooltip: 'Add Highlights',
                   ),
                   const SizedBox(width: 8.0),
-                  IconButton(
-                    icon: isUpload
-                        ? const Icon(Icons.cloud_upload_outlined)
-                        : const Icon(Icons.cloud_upload),
-                    onPressed: () async {
-                      if (context.mounted) {
-                        setState(() {
-                          isUpload = true;
-                        });
-                      }
-                      await chunks.handleCloudUploadButtonPress(chunkIndex);
-                      if (context.mounted) {
-                        setState(() {
-                          isUpload = false;
-                        });
-                      }
-                    },
-                    tooltip: 'Upload to Cloud',
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.cloud_upload),
+                        onPressed: isUpload
+                            ? null
+                            : () async {
+                                setState(() {
+                                  isUpload = true;
+                                });
+                                await chunks
+                                    .handleCloudUploadButtonPress(chunkIndex);
+                                setState(() {
+                                  isUpload = false;
+                                });
+                              },
+                        tooltip: 'Upload to Cloud',
+                      ),
+                      if (isUpload)
+                        const CircularProgressIndicator(
+                          strokeWidth: 2.0,
+                        ),
+                    ],
                   ),
                   const SizedBox(width: 8.0),
                   IconButton(
@@ -283,9 +293,9 @@ class _LocalChunkCardState extends State<LocalChunkCard> {
           const Spacer(),
           IconButton(
             onPressed: () {
-              widget.onSelected(!widget.isSelected);
+              onSelected(!isSelected);
             },
-            icon: widget.isSelected
+            icon: isSelected
                 ? const Icon(Icons.check_box)
                 : const Icon(Icons.check_box_outline_blank),
             tooltip: 'Select chunk',
@@ -293,7 +303,7 @@ class _LocalChunkCardState extends State<LocalChunkCard> {
           IconButton(
             onPressed: () {
               String videoPath =
-              chunks.handlePlayButtonPress(context, chunkIndex);
+                  chunks.handlePlayButtonPress(context, chunkIndex);
               _playVideo(context, videoPath);
             },
             icon: const Icon(Icons.play_arrow),
@@ -314,7 +324,6 @@ class _LocalChunkCardState extends State<LocalChunkCard> {
   }
 }
 
-
 class BackEndChunkCard extends StatefulWidget {
   final String videoId;
   final int chunkIndex;
@@ -322,9 +331,9 @@ class BackEndChunkCard extends StatefulWidget {
 
   const BackEndChunkCard(
       {super.key,
-        required this.videoId,
-        required this.chunkIndex,
-        required this.chunks});
+      required this.videoId,
+      required this.chunkIndex,
+      required this.chunks});
 
   @override
   State<BackEndChunkCard> createState() => _BackEndChunkCardState();
@@ -354,33 +363,43 @@ class _BackEndChunkCardState extends State<BackEndChunkCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(width: 8.0),
-          IconButton(
-            icon: isDownLoad
-                ? const Icon(Icons.downloading)
-                : const Icon(Icons.cloud_download),
-            onPressed: () async {
-              setState(() {
-                isDownLoad = true;
-              });
-              // Ensure this part is asynchronous if onCloudIconPressed is a Future
-              onCloudIconPressed(context, videoId, chunkIndex);
-
-              setState(() {
-                isDownLoad = false;
-              });
-            },
-            tooltip: 'Download from Cloud',
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: isDownLoad
+                    ? const Icon(Icons.downloading)
+                    : const Icon(Icons.cloud_download),
+                onPressed: () async {
+                  setState(() {
+                    isDownLoad = true;
+                  });
+                  await onCloudIconPressed(context, videoId, chunkIndex);
+                  setState(() {
+                    isDownLoad = false;
+                  });
+                },
+                tooltip: 'Download from Cloud',
+              ),
+              if (isDownLoad)
+                const CircularProgressIndicator(
+                  strokeWidth: 2.0,
+                ),
+            ],
           ),
-          Text(chunks.chunksPaths[chunkIndex].split('_').first),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(chunks.chunksPaths[chunkIndex].split('_').first),
+          ),
         ],
       ),
     );
   }
 
-  void onCloudIconPressed(
-      BuildContext context, String journeyId, int chunkIndex) async {
+  Future<void> onCloudIconPressed(
+      BuildContext context, String videoId, int chunkIndex) async {
     try {
-      final file = await chunks.download(journeyId, chunkIndex);
+      final file = await chunks.download(videoId, chunkIndex);
       _logger.i("Finished downloading chunk");
       if (context.mounted) {
         _playVideo(context, file.path);
@@ -403,6 +422,6 @@ void _playVideo(BuildContext context, String videoPath) {
       context,
       MaterialPageRoute(
           builder: (context) => ChewieVideoPlayer(
-            srcs: [videoPath],
-          )));
+                srcs: [videoPath],
+              )));
 }
