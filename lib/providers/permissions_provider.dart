@@ -22,6 +22,8 @@ class PermissionsProvider extends ChangeNotifier {
           _logger.i('Location permission granted');
         }
       }
+      await checkAndRequestCameraPermissions();
+      await checkAndRequestVoicePermissions();
 
     } catch (error, stackTrace) {
       _logger.e(error.toString(), stackTrace: stackTrace);
