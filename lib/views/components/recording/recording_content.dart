@@ -1,15 +1,14 @@
 import 'dart:async';
 
+import 'package:async/async.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_volume_controller/flutter_volume_controller.dart';
 import 'package:keep_screen_on/keep_screen_on.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
-import 'package:speech_to_text/speech_recognition_event.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
-import 'package:speech_to_text/speech_to_text_provider.dart';
 
 import '../../../providers/video_recording_provider.dart';
 
@@ -25,26 +24,29 @@ class RecordingPage extends StatefulWidget {
 class _RecordingPageState extends State<RecordingPage> {
   final Logger _logger = Logger();
   bool isRecording = false;
-  late StreamSubscription<SpeechRecognitionEvent> _subscription;
-  late SpeechToTextProvider speechProvider;
   late VideoRecordingProvider cameraProvider;
   late Future<CameraController> controllerFuture;
+  final SpeechToText speech = SpeechToText();
+  SpeechStatusListener? listener;
+  final SpeechListenOptions speechListenOptions = SpeechListenOptions(partialResults: false, sampleRate: 44100);
 
   @override
   void initState() {
     super.initState();
     KeepScreenOn.turnOn();
     controllerFuture = widget.videoRecordingProvider.initializeCamera().then((_) => widget.videoRecordingProvider.cameraController!);
+    cameraProvider = Provider.of<VideoRecordingProvider>(context, listen: false);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await _initializeSpeechRecognition(context);
-
+      listener = ((status) => {if(status == 'notListening') _restartListening()});
+      await _initializeSpeechRecognition();
     });
   }
 
   Future<void> _handleSpeechResult(SpeechRecognitionResult result) async {
+
     _logger.i("_handleSpeechResult: result = $result");
-    cameraProvider =
-        Provider.of<VideoRecordingProvider>(context, listen: false);
+    _logger.i("Recognized words: ${result.recognizedWords}");
+
     var recognizedWords = result.recognizedWords.toLowerCase();
     var isStartEvent = recognizedWords.contains('start recording') ||
         recognizedWords.contains('start');
@@ -55,56 +57,42 @@ class _RecordingPageState extends State<RecordingPage> {
     if (isStartEvent) {
       _logger.i('Starting recording');
       if (!cameraProvider.isRecording) await cameraProvider.startRecording();
+      _restartListening();
     } else if (isStopEvent) {
       _logger.i('Stopping recording');
       if (cameraProvider.isRecording) cameraProvider.stopRecording(false);
+      _restartListening();
     } else if (isHighlightEvent) {
       _logger.i('Asked to highlight');
       await cameraProvider.highlight();
+      _restartListening();
     }
+
   }
 
-  Future<void> _initializeSpeechRecognition(BuildContext context) async {
-    speechProvider = Provider.of<SpeechToTextProvider>(context, listen: false);
-    bool available = await speechProvider.initialize();
-    if (available) {
-      await _subscribeToVoiceRecognition(speechProvider);
-      _startListening(speechProvider);
-    } else {
-      _logger.w("The user has denied the use of speech recognition.");
-    }
-  }
-
-  Future<void> _subscribeToVoiceRecognition(
-      SpeechToTextProvider speechProvider) async {
-    await FlutterVolumeController.updateShowSystemUI(
-        false); // Hide system volume UI
-    await FlutterVolumeController.setMute(true,
-        stream: AudioStream.alarm); // Set volume to 0 to silence feedback
-
-    _logger.d("Subscribing to voice recognition...");
-
-    _subscription = speechProvider.stream.listen((event) async {
-      if (event.eventType == SpeechRecognitionEventType.finalRecognitionEvent) {
-        var result = event.recognitionResult!;
-        _logger.i("Final result: ${result.recognizedWords}");
-        await _handleSpeechResult(result);
-        _startListening(speechProvider); // Restart listening
-      } else if (event.eventType == SpeechRecognitionEventType.errorEvent) {
-        // _logger.e("Error: ${event.error?.errorMsg}");
-        _startListening(speechProvider); // Restart listening on error
+  Future<void> _initializeSpeechRecognition() async {
+    try {
+      bool available = await speech.initialize(onStatus: listener);
+      if (available) {
+        // TODO: totally disable app sounds -> below code does not mute the recording notifications
+        // await FlutterVolumeController.updateShowSystemUI(false); // Hide system volume UI
+        // await FlutterVolumeController.setMute(true, stream: AudioStream.alarm); // Set volume to 0 to silence feedback
+        _logger.d("Initializing voice recognition...");
+        // listenFor and pauseFor are strictly equal to 5 due to android system voice listen duration
+        speech.listen( onResult: _handleSpeechResult, listenFor: const Duration(seconds: 5), pauseFor: const Duration(seconds: 5),listenOptions: speechListenOptions);
       }
-    });
+      else {
+        _logger.w("The user has denied the use of speech recognition.");
+      }
+    }catch (error, stackTrace) {
+      _logger.e(error.toString(), stackTrace: stackTrace);
+    }
   }
 
-  void _startListening(SpeechToTextProvider speechProvider) {
-    speechProvider.listen(
-      listenFor: const Duration(seconds: 30),
-      pauseFor: const Duration(seconds: 10),
-      partialResults: false,
-      onDevice: false,
-      listenMode: ListenMode.confirmation,
-    );
+  void _restartListening() async {
+    await speech.stop();
+    // listenFor and pauseFor are strictly equal to 5 due to android system voice listen duration
+    speech.listen( onResult: _handleSpeechResult, listenFor: const Duration(seconds: 5), pauseFor: const Duration(seconds: 5),listenOptions: speechListenOptions);
   }
 
   @override
@@ -113,10 +101,8 @@ class _RecordingPageState extends State<RecordingPage> {
     KeepScreenOn.turnOff();
     FlutterVolumeController.setMute(false,
         stream: AudioStream.alarm); // Restore volume
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      speechProvider.stop(); // Stop listening if the widget is disposed
-      _subscription.cancel();
-    });
+    speech.stop(); // Stop listening if the widget is disposed
+    listener = null;
   }
 
   @override
@@ -174,6 +160,8 @@ class _RecordingPageState extends State<RecordingPage> {
               }
               _logger.i(
                   "Recording button pressed. is recording: ${cameraProvider.isRecording}, isRecordingState: $isRecording");
+              // speech.stop();
+              _restartListening();
             },
             icon: Icon(
               cameraProvider.isRecording ? Icons.stop : Icons.circle,
