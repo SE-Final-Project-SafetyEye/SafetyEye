@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:logger/logger.dart';
@@ -18,10 +17,12 @@ class SensorsProvider extends ChangeNotifier {
   bool _run = false;
   final _streamSubscriptions = <StreamSubscription<dynamic>>[];
   Duration sensorInterval = SensorInterval.normalInterval;
+  bool isHighlight = false;
 
-  Future<void> startCollectMetadata() async {
+  Future<void> startCollectMetadata(bool isHighlight) async {
     _restart();
     _run = true;
+    this.isHighlight = isHighlight;
     _initState();
   }
 
@@ -34,10 +35,10 @@ class SensorsProvider extends ChangeNotifier {
   void _initState() {
     _streamSubscriptions.add(
       userAccelerometerEventStream(samplingPeriod: sensorInterval).listen(
-            (UserAccelerometerEvent event) {
+        (UserAccelerometerEvent event) {
           final now = DateTime.now();
           _UserAccelerometerData userAccelerometerData =
-          _UserAccelerometerData(event, now);
+              _UserAccelerometerData(event, now);
           _userAccelerometerEvents.add(userAccelerometerData);
         },
         onError: (e) {
@@ -49,7 +50,7 @@ class SensorsProvider extends ChangeNotifier {
 
     _streamSubscriptions.add(
       accelerometerEventStream(samplingPeriod: sensorInterval).listen(
-            (AccelerometerEvent event) {
+        (AccelerometerEvent event) {
           final now = DateTime.now();
           _AccelerometerData accelerometerData = _AccelerometerData(event, now);
           _accelerometerEvents.add(accelerometerData);
@@ -63,7 +64,7 @@ class SensorsProvider extends ChangeNotifier {
 
     _streamSubscriptions.add(
       gyroscopeEventStream(samplingPeriod: sensorInterval).listen(
-            (GyroscopeEvent event) {
+        (GyroscopeEvent event) {
           final now = DateTime.now();
           _GyroscopeData gyroscopeData = _GyroscopeData(event, now);
           _gyroscopeEvents.add(gyroscopeData);
@@ -77,7 +78,7 @@ class SensorsProvider extends ChangeNotifier {
 
     _streamSubscriptions.add(
       magnetometerEventStream(samplingPeriod: sensorInterval).listen(
-            (MagnetometerEvent event) {
+        (MagnetometerEvent event) {
           final now = DateTime.now();
           _MagnetometerData magnetometerData = _MagnetometerData(event, now);
           _magnetometerEvents.add(magnetometerData);
@@ -91,7 +92,6 @@ class SensorsProvider extends ChangeNotifier {
 
     _startGPSListener();
   }
-
 
   void _dispose() {
     for (var subscription in _streamSubscriptions) {
@@ -129,7 +129,7 @@ class SensorsProvider extends ChangeNotifier {
       'Magnetometer': [],
       'Gyroscope': [],
       'GPS': [],
-      'Highlight': false
+      'Highlight': isHighlight
     };
 
     for (var data in _accelerometerEvents) {
@@ -142,9 +142,9 @@ class SensorsProvider extends ChangeNotifier {
         },
       });
     }
-    for (var data in _userAccelerometerEvents){
+    for (var data in _userAccelerometerEvents) {
       dataMap['UserAccelerometer'].add({
-        'timestamp' : data.timeStamp.toIso8601String(),
+        'timestamp': data.timeStamp.toIso8601String(),
         'event': {
           'x': data.userAccelerometerEvent.x.toStringAsFixed(1),
           'y': data.userAccelerometerEvent.y.toStringAsFixed(1),
@@ -152,31 +152,31 @@ class SensorsProvider extends ChangeNotifier {
         }
       });
     }
-    for (var data in _magnetometerEvents){
+    for (var data in _magnetometerEvents) {
       dataMap['Magnetometer'].add({
-        'timestamp' : data.timestamp.toIso8601String(),
-        'event':{
+        'timestamp': data.timestamp.toIso8601String(),
+        'event': {
           'x': data.magnetometerEvent.x.toStringAsFixed(1),
           'y': data.magnetometerEvent.y.toStringAsFixed(1),
           'z': data.magnetometerEvent.z.toStringAsFixed(1),
         }
       });
     }
-    for (var data in _gyroscopeEvents){
+    for (var data in _gyroscopeEvents) {
       dataMap['Gyroscope'].add({
-      'timestamp' : data.timestamp.toIso8601String(),
-      'event':{
-        'x': data.gyroscopeEvent.x.toStringAsFixed(1),
-        'y': data.gyroscopeEvent.y.toStringAsFixed(1),
-        'z': data.gyroscopeEvent.z.toStringAsFixed(1),
-      }
+        'timestamp': data.timestamp.toIso8601String(),
+        'event': {
+          'x': data.gyroscopeEvent.x.toStringAsFixed(1),
+          'y': data.gyroscopeEvent.y.toStringAsFixed(1),
+          'z': data.gyroscopeEvent.z.toStringAsFixed(1),
+        }
       });
     }
 
-    for (var data in _currentPosition){
+    for (var data in _currentPosition) {
       dataMap['GPS'].add({
         'timestamp': data.timestamp.toIso8601String(),
-        'event':{
+        'event': {
           'latitude': data.position.latitude,
           'longitude': data.position.longitude,
         }
@@ -193,6 +193,10 @@ class SensorsProvider extends ChangeNotifier {
     _userAccelerometerEvents = [];
     _magnetometerEvents = [];
     _gyroscopeEvents = [];
+  }
+
+  void setIsHighlight(bool isHighlight) {
+    this.isHighlight = isHighlight;
   }
 }
 

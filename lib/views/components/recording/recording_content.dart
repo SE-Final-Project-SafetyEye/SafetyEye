@@ -56,7 +56,7 @@ class _RecordingPageState extends State<RecordingPage> {
 
     if (isStartEvent) {
       _logger.i('Starting recording');
-      if (!cameraProvider.isRecording) await cameraProvider.startRecording();
+      if (!cameraProvider.isRecording) await cameraProvider.startRecording(false);
       _restartListening();
     } else if (isStopEvent) {
       _logger.i('Stopping recording');
@@ -155,7 +155,7 @@ class _RecordingPageState extends State<RecordingPage> {
                 _logger.i("Recording stopped.");
               } else {
                 _logger.i("Starting recording...");
-                await cameraProvider.startRecording();
+                await cameraProvider.startRecording(false);
                 _logger.i("Recording started.");
               }
               _logger.i(
