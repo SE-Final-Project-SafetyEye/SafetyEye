@@ -13,21 +13,29 @@ class PermissionsProvider extends ChangeNotifier {
   Future<void> init() async {
     try {
       _cameras = await availableCameras();
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          _logger.w('User denied location permission.');
-        } else {
-          _logger.i('Location permission granted');
-        }
-      }
+
+      // every permission is listed in ./android/app/src/main/AndroidManifest.xml file
+      await checkAndRequestGeolocationPermissions();
       await checkAndRequestCameraPermissions();
       await checkAndRequestVoicePermissions();
 
     } catch (error, stackTrace) {
       _logger.e(error.toString(), stackTrace: stackTrace);
     }
+  }
+
+  Future<bool> checkAndRequestGeolocationPermissions() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        _logger.w('User denied location permission.');
+        return false;
+      } else {
+        _logger.i('Location permission granted');
+      }
+    }
+    return true;
   }
 
   Future<bool> checkAndRequestCameraPermissions() async {
@@ -40,6 +48,7 @@ class PermissionsProvider extends ChangeNotifier {
       return result.isGranted;
     }
   }
+
   Future<bool> checkAndRequestVoicePermissions() async{
     var status = await Permission.microphone.request();
     if (status.isGranted) {

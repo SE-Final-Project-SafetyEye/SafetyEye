@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:safety_eye_app/providers/journeys_provider.dart';
 import 'package:safety_eye_app/providers/providers.dart';
-
 import 'package:safety_eye_app/providers/settings_provider.dart';
 import 'package:safety_eye_app/views/components/journeys/journeys_content.dart';
 import 'package:safety_eye_app/views/components/recording/recording_content.dart';

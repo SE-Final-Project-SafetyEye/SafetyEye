@@ -3,6 +3,10 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-feature android:name="android.hardware.camera" android:required="true" />
+    <!-- Previous declaration informs the Google Play Store (and users)
+    that the app cannot function without camera -->
     <application
         android:label="Safety Eye"
         android:name="${applicationName}"
