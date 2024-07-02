@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_volume_controller/flutter_volume_controller.dart';
+import 'package:real_volume/real_volume.dart';
 import 'package:keep_screen_on/keep_screen_on.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
@@ -25,6 +25,7 @@ class _RecordingPageState extends State<RecordingPage> {
   late Future<CameraController> controllerFuture;
   final SpeechToText speech = SpeechToText();
   SpeechStatusListener? listener;
+  double? notificationVolume;
   final SpeechListenOptions speechListenOptions = SpeechListenOptions(partialResults: false, sampleRate: 44100);
 
   @override
@@ -35,8 +36,11 @@ class _RecordingPageState extends State<RecordingPage> {
     controllerFuture = widget.videoRecordingProvider.initializeCamera().then((_) => widget.videoRecordingProvider.cameraController!);
     cameraProvider = Provider.of<VideoRecordingProvider>(context, listen: false);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // await FlutterVolumeController.updateShowSystemUI(false); // Hide system volume UI
-      // await FlutterVolumeController.setMute(true, stream: AudioStream.system); // Set volume to 0 to silence feedback
+
+      // Mute NOTIFICATION volume to silence speech_to_text microphone feedback with hiding system volume UI
+      notificationVolume = (await RealVolume.getCurrentVol(StreamType.NOTIFICATION)) ?? 0.0;
+      await RealVolume.setVolume(0.0, showUI: false, streamType: StreamType.NOTIFICATION);
+
       listener = ((status) => {if(status == 'notListening') _restartListening()});
       await _initializeSpeechRecognition();
     });
@@ -90,8 +94,6 @@ class _RecordingPageState extends State<RecordingPage> {
     await speech.stop();
     // listenFor and pauseFor are strictly equal to 5 due to android system voice listen duration
     speech.listen( onResult: _handleSpeechResult, listenFor: const Duration(seconds: 5), pauseFor: const Duration(seconds: 5),listenOptions: speechListenOptions);
-
-
   }
 
   @override
@@ -100,8 +102,7 @@ class _RecordingPageState extends State<RecordingPage> {
     KeepScreenOn.turnOff();
     speech.stop(); // Stop listening if the widget is disposed
     listener = null;
-    // FlutterVolumeController.setMute(false, stream: AudioStream.system);
-    // FlutterVolumeController.updateShowSystemUI(true); // restore system volume UI
+    RealVolume.setVolume(notificationVolume!, showUI: false, streamType: StreamType.NOTIFICATION); //restore system NOTIFICATION volume
   }
 
   @override

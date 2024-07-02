@@ -1264,6 +1264,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.2.5"
+  real_volume:
+    dependency: "direct main"
+    description:
+      name: real_volume
+      sha256: "62eed4f0e79f5f18f8ade65073043e1566c10e35e01b3c75ff60462d6f76bcdc"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.8"
   retrofit:
     dependency: "direct main"
     description:

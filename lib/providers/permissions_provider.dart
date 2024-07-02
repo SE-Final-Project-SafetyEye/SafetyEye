@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:logger/logger.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:real_volume/real_volume.dart';
 
 class PermissionsProvider extends ChangeNotifier {
   late List<CameraDescription> _cameras;
@@ -19,10 +20,24 @@ class PermissionsProvider extends ChangeNotifier {
       await checkAndRequestCameraPermissions();
       await checkAndRequestVoicePermissions();
 
+      // await checkAndRequestDoNotDisturbPermissions(); // may be required for real_volume plugin functionality
+
+
     } catch (error, stackTrace) {
       _logger.e(error.toString(), stackTrace: stackTrace);
     }
   }
+
+
+  Future<bool> checkAndRequestDoNotDisturbPermissions() async {
+    bool? isPermissionGranted = await RealVolume.isPermissionGranted();
+    if (!isPermissionGranted!) {
+      // Opens Do Not Disturb Access settings to grant the access
+      await RealVolume.openDoNotDisturbSettings();
+    }
+    return true;
+  }
+
 
   Future<bool> checkAndRequestGeolocationPermissions() async {
     LocationPermission permission = await Geolocator.checkPermission();
