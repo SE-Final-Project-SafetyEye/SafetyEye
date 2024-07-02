@@ -62,7 +62,7 @@ class MyApp extends StatelessWidget {
     final video = Provider.of<VideoRecordingProvider>(context, listen: false);
 
     return FutureBuilder(
-      future: permissionsProvider.init(),
+      future: permissionsProvider.init(context),
       builder: (context, snapshot) {
         return StreamBuilder(
             stream: authProvider.currentUserStream,
