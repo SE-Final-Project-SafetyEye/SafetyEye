@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_exit_app/flutter_exit_app.dart';
 import 'package:camera/camera.dart';
@@ -7,7 +6,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:logger/logger.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:real_volume/real_volume.dart';
-import 'package:safety_eye_app/main.dart';
 
 class PermissionsProvider extends ChangeNotifier {
   late List<CameraDescription> _cameras;
@@ -15,53 +13,23 @@ class PermissionsProvider extends ChangeNotifier {
 
   List<CameraDescription> get cameras => _cameras;
 
-  Future<void> init(BuildContext context) async {
+  Future<bool> init() async {
+    bool allGranted = false;
     try {
       _cameras = await availableCameras();
-
       // TODO: validate if all permissions granted - if not - exit the app.
-      bool allGranted = true;
-      // every permission is listed in ./android/app/src/main/AndroidManifest.xml file
-      allGranted = (await checkAndRequestGeolocationPermissions()) && (await checkAndRequestCameraPermissions()) && (await checkAndRequestVoicePermissions());
-      // await checkAndRequestDoNotDisturbPermissions(); // may be required for real_volume plugin functionality
-      if(!allGranted) {
 
-        if(context.mounted) {
-          await exitAppNoPermissions(context);
-        }else{
-          FlutterExitApp.exitApp(iosForceExit: true);
-        }
-        return;
-      }
+      // every permission is listed in ./android/app/src/main/AndroidManifest.xml file
+      allGranted = (await checkAndRequestGeolocationPermissions()) &&
+          (await checkAndRequestCameraPermissions()) &&
+          (await checkAndRequestVoicePermissions());
+      // await checkAndRequestDoNotDisturbPermissions(); // may be required for real_volume plugin functionality
+
 
     } catch (error, stackTrace) {
       _logger.e(error.toString(), stackTrace: stackTrace);
     }
-  }
-
-
-  Future<void> exitAppNoPermissions(BuildContext context) async {
-    Widget okButton = TextButton(
-      child: Text("OK"),
-      onPressed: () { },
-    );
-
-    AlertDialog alert = AlertDialog(
-      title: Text("My title"),
-      content: Text("This is my message."),
-      actions: [
-        okButton,
-      ],
-    );
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return alert;
-      },
-    );
-
-    FlutterExitApp.exitApp(iosForceExit: true);
+    return allGranted;
   }
 
 
@@ -101,11 +69,14 @@ class PermissionsProvider extends ChangeNotifier {
   }
 
   Future<bool> checkAndRequestVoicePermissions() async{
-    var status = await Permission.microphone.request();
+    var status = await Permission.microphone.status;
     if (status.isGranted) {
       _logger.i('microphone permission granted');
     } else {
+      status = await Permission.microphone.request();
+      if(!status.isGranted){
       _logger.w('User denied microphone permission.');
+      }
     }
     return status.isGranted;
   }

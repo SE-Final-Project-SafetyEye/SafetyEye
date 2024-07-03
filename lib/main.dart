@@ -21,6 +21,12 @@ import 'package:safety_eye_app/views/screens/home_screen.dart';
 import 'package:speech_to_text/speech_to_text_provider.dart';
 import 'environment_config.dart';
 import 'firebase_options.dart';
+import 'package:flutter_exit_app/flutter_exit_app.dart';
+import 'package:permission_handler/permission_handler.dart';
+
+
+
+final navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   log(EnvironmentConfig.BACKEND_URL);
@@ -62,8 +68,13 @@ class MyApp extends StatelessWidget {
     final video = Provider.of<VideoRecordingProvider>(context, listen: false);
 
     return FutureBuilder(
-      future: permissionsProvider.init(context),
+      future: permissionsProvider.init(),
       builder: (context, snapshot) {
+        if(snapshot.hasData && !snapshot.data!){
+          return const MaterialApp(
+            home: AlertNoPermissions(),
+          );
+        }
         return StreamBuilder(
             stream: authProvider.currentUserStream,
             builder: (context, AsyncSnapshot<User?> snapshot) {
@@ -97,3 +108,48 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+
+class AlertNoPermissions extends StatelessWidget {
+  const AlertNoPermissions({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text("Permission error"),
+      content: const Text(
+          "SafetyEye demands all the requested permissions for its correct functionality."),
+      actions: [
+        TextButton(
+          child: const Text("OK"),
+          onPressed: () {openAppSettings();FlutterExitApp.exitApp(iosForceExit: true);},
+        ),
+      ],
+    );
+  }
+}
+
+
+
+
+// void showAlertDialog() async {
+//   Widget okButton = TextButton(
+//     child: Text("OK"),
+//     onPressed: () { },
+//   );
+//
+//   AlertDialog alert = AlertDialog(
+//     title: Text("Permission error"),
+//     content: Text("SafetyEye demands all the requested permissions for its correct functionality."),
+//     actions: [
+//       okButton,
+//     ],
+//   );
+//
+//   showDialog(
+//     context: navigatorKey.currentContext!,
+//     builder: (context) {
+//       return alert;
+//     },
+//   );
+// }
