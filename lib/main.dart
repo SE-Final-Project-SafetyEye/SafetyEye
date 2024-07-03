@@ -128,28 +128,3 @@ class AlertNoPermissions extends StatelessWidget {
     );
   }
 }
-
-
-
-
-// void showAlertDialog() async {
-//   Widget okButton = TextButton(
-//     child: Text("OK"),
-//     onPressed: () { },
-//   );
-//
-//   AlertDialog alert = AlertDialog(
-//     title: Text("Permission error"),
-//     content: Text("SafetyEye demands all the requested permissions for its correct functionality."),
-//     actions: [
-//       okButton,
-//     ],
-//   );
-//
-//   showDialog(
-//     context: navigatorKey.currentContext!,
-//     builder: (context) {
-//       return alert;
-//     },
-//   );
-// }
