@@ -25,9 +25,6 @@ import 'package:flutter_exit_app/flutter_exit_app.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 
-
-final navigatorKey = GlobalKey<NavigatorState>();
-
 void main() async {
   log(EnvironmentConfig.BACKEND_URL);
   WidgetsFlutterBinding.ensureInitialized();

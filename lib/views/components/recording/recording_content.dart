@@ -5,6 +5,7 @@ import 'package:real_volume/real_volume.dart';
 import 'package:keep_screen_on/keep_screen_on.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
+import 'package:safety_eye_app/views/screens/home_screen.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import '../../../providers/video_recording_provider.dart';
@@ -49,7 +50,8 @@ class _RecordingPageState extends State<RecordingPage> {
   Future<void> _handleSpeechResult(SpeechRecognitionResult result) async {
 
     _logger.i("_handleSpeechResult: result = $result");
-    _logger.i("Recognized words: ${result.recognizedWords}");
+
+    GlobalKey().currentContext;
 
     var recognizedWords = result.recognizedWords.toLowerCase();
     var isStartEvent = recognizedWords.contains('start recording') ||
@@ -103,6 +105,7 @@ class _RecordingPageState extends State<RecordingPage> {
     speech.stop(); // Stop listening if the widget is disposed
     listener = null;
     RealVolume.setVolume(notificationVolume!, showUI: false, streamType: StreamType.NOTIFICATION); //restore system NOTIFICATION volume
+
   }
 
   @override

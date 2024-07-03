@@ -16,15 +16,13 @@ class PermissionsProvider extends ChangeNotifier {
     bool allGranted = false;
     try {
       _cameras = await availableCameras();
-      // TODO: validate if all permissions granted - if not - exit the app.
 
       // every permission is listed in ./android/app/src/main/AndroidManifest.xml file
       allGranted = (await checkAndRequestGeolocationPermissions()) &&
           (await checkAndRequestCameraPermissions()) &&
           (await checkAndRequestVoicePermissions());
+
       // await checkAndRequestDoNotDisturbPermissions(); // may be required for real_volume plugin functionality
-
-
     } catch (error, stackTrace) {
       _logger.e(error.toString(), stackTrace: stackTrace);
     }
