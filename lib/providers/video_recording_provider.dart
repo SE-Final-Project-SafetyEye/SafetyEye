@@ -64,7 +64,7 @@ class VideoRecordingProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> startRecording() async {
+  Future<void> startRecording(bool isHighlight) async {
     _logger.d("1 start recording: status ${cameraController?.value.isRecordingVideo}");
     if (!(cameraController?.value.isRecordingVideo ?? false)) {
       recording = true;
@@ -72,15 +72,15 @@ class VideoRecordingProvider extends ChangeNotifier {
       chunkNumber = 1;
       fileSystemRepository.startRecording();
       _logger.d("2 start recording: status ${cameraController?.value.isRecordingVideo}");
-      await recordRecursively();
+      await recordRecursively(isHighlight);
     }
   }
 
-  Future<void> recordRecursively() async {
+  Future<void> recordRecursively(bool isHighlight) async {
     _logger.i("1 recordRecursively, chunkNumber: $chunkNumber");
     if (recordMin > 0) {
       await cameraController?.startVideoRecording();
-      sensorsProvider.startCollectMetadata();
+      sensorsProvider.startCollectMetadata(isHighlight);
       _logger.d("2 start recording: status ${cameraController?.value.isRecordingVideo}");
       await Future.delayed(Duration(milliseconds: (recordMin * 60 * 1000).toInt()));
       if (cameraController!.value.isRecordingVideo) {
@@ -103,7 +103,7 @@ class VideoRecordingProvider extends ChangeNotifier {
         _logger.i("stop chunkProcessorService");
         chunkNumber++;
         if (isRecordRecursively) {
-          await recordRecursively();
+          await recordRecursively(false);
         }
       });
     }
@@ -113,13 +113,14 @@ class VideoRecordingProvider extends ChangeNotifier {
   Future<void> highlight() async {
     _logger.d("1 highlight - status recording ${cameraController?.value.isRecordingVideo}");
     if (!(cameraController?.value.isRecordingVideo ?? false)) {
-      await startRecording();
+      await startRecording(true);
       // add highlight flag
       _logger.d("2 start recording: status ${cameraController?.value.isRecordingVideo}");
       _logger.d("3 start highlight: status true");
     } else if (cameraController?.value.isRecordingVideo ?? false) {
       // validate highlight flag
       _logger.d("2 start highlight: status ?");
+      sensorsProvider.setIsHighlight(true);
       // start another highlight chunk if possible
       _logger.d("3 start highlight: status true");
     }
