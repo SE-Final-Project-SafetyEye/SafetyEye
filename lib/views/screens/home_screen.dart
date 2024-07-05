@@ -16,10 +16,10 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({ required this.settingsProvider, required this.journeysProvider, required this.videoRecordingProvider, super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends State<HomeScreen> {
   final List<String> _pageTitles = const ['Recording', 'Journeys', 'Settings'];
   final Logger _logger = Logger();
   final PageController _pageController = PageController();
@@ -35,7 +35,9 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
   }
 
-  int _currentIndex = 0;
+  static int _currentIndex = 0;
+
+  static int get currentIndex => _currentIndex;
 
   void onItemTap(int index) {
     _logger.i('onTap: moving to page with index ${_pageTitles[index]}');

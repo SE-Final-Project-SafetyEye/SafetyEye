@@ -36,13 +36,12 @@ class _RecordingPageState extends State<RecordingPage> {
 
     controllerFuture = widget.videoRecordingProvider.initializeCamera().then((_) => widget.videoRecordingProvider.cameraController!);
     cameraProvider = Provider.of<VideoRecordingProvider>(context, listen: false);
+    listener = ((status) => {if(status == 'notListening') _restartListening()});
     WidgetsBinding.instance.addPostFrameCallback((_) async {
 
       // Mute NOTIFICATION volume to silence speech_to_text microphone feedback with hiding system volume UI
       notificationVolume = (await RealVolume.getCurrentVol(StreamType.NOTIFICATION)) ?? 0.0;
       await RealVolume.setVolume(0.0, showUI: false, streamType: StreamType.NOTIFICATION);
-
-      listener = ((status) => {if(status == 'notListening') _restartListening()});
       await _initializeSpeechRecognition();
     });
   }
@@ -51,7 +50,7 @@ class _RecordingPageState extends State<RecordingPage> {
 
     _logger.i("_handleSpeechResult: result = $result");
 
-    GlobalKey().currentContext;
+    if(HomeScreenState.currentIndex != 0){return;}
 
     var recognizedWords = result.recognizedWords.toLowerCase();
     var isStartEvent = recognizedWords.contains('start recording') ||
@@ -102,14 +101,15 @@ class _RecordingPageState extends State<RecordingPage> {
   void dispose() {
     super.dispose();
     KeepScreenOn.turnOff();
-    speech.stop(); // Stop listening if the widget is disposed
-    listener = null;
-    RealVolume.setVolume(notificationVolume!, showUI: false, streamType: StreamType.NOTIFICATION); //restore system NOTIFICATION volume
-
+    speech.statusListener = null;
+    speech.stop().then((_) =>
+        RealVolume.setVolume(notificationVolume!, showUI: false, streamType: StreamType.NOTIFICATION)); // Stop listening if the widget is disposed
+     //restore system NOTIFICATION volume
   }
 
   @override
   Widget build(BuildContext context) {
+    speech.statusListener = listener;
     final cameraProvider =
         Provider.of<VideoRecordingProvider>(context, listen: true);
     if (cameraProvider.isInitialized) {
