@@ -1,15 +1,13 @@
 import 'dart:async';
-
-import 'package:async/async.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_volume_controller/flutter_volume_controller.dart';
+import 'package:real_volume/real_volume.dart';
 import 'package:keep_screen_on/keep_screen_on.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
+import 'package:safety_eye_app/views/screens/home_screen.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
-
 import '../../../providers/video_recording_provider.dart';
 
 class RecordingPage extends StatefulWidget {
@@ -28,15 +26,22 @@ class _RecordingPageState extends State<RecordingPage> {
   late Future<CameraController> controllerFuture;
   final SpeechToText speech = SpeechToText();
   SpeechStatusListener? listener;
+  double? notificationVolume;
   final SpeechListenOptions speechListenOptions = SpeechListenOptions(partialResults: false, sampleRate: 44100);
 
   @override
   void initState() {
     super.initState();
     KeepScreenOn.turnOn();
+
     controllerFuture = widget.videoRecordingProvider.initializeCamera().then((_) => widget.videoRecordingProvider.cameraController!);
     cameraProvider = Provider.of<VideoRecordingProvider>(context, listen: false);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+
+      // Mute NOTIFICATION volume to silence speech_to_text microphone feedback with hiding system volume UI
+      notificationVolume = (await RealVolume.getCurrentVol(StreamType.NOTIFICATION)) ?? 0.0;
+      await RealVolume.setVolume(0.0, showUI: false, streamType: StreamType.NOTIFICATION);
+
       listener = ((status) => {if(status == 'notListening') _restartListening()});
       await _initializeSpeechRecognition();
     });
@@ -45,7 +50,8 @@ class _RecordingPageState extends State<RecordingPage> {
   Future<void> _handleSpeechResult(SpeechRecognitionResult result) async {
 
     _logger.i("_handleSpeechResult: result = $result");
-    _logger.i("Recognized words: ${result.recognizedWords}");
+
+    GlobalKey().currentContext;
 
     var recognizedWords = result.recognizedWords.toLowerCase();
     var isStartEvent = recognizedWords.contains('start recording') ||
@@ -74,9 +80,6 @@ class _RecordingPageState extends State<RecordingPage> {
     try {
       bool available = await speech.initialize(onStatus: listener);
       if (available) {
-        // TODO: totally disable app sounds -> below code does not mute the recording notifications
-        // await FlutterVolumeController.updateShowSystemUI(false); // Hide system volume UI
-        // await FlutterVolumeController.setMute(true, stream: AudioStream.alarm); // Set volume to 0 to silence feedback
         _logger.d("Initializing voice recognition...");
         // listenFor and pauseFor are strictly equal to 5 due to android system voice listen duration
         speech.listen( onResult: _handleSpeechResult, listenFor: const Duration(seconds: 5), pauseFor: const Duration(seconds: 5),listenOptions: speechListenOptions);
@@ -99,10 +102,10 @@ class _RecordingPageState extends State<RecordingPage> {
   void dispose() {
     super.dispose();
     KeepScreenOn.turnOff();
-    FlutterVolumeController.setMute(false,
-        stream: AudioStream.alarm); // Restore volume
     speech.stop(); // Stop listening if the widget is disposed
     listener = null;
+    RealVolume.setVolume(notificationVolume!, showUI: false, streamType: StreamType.NOTIFICATION); //restore system NOTIFICATION volume
+
   }
 
   @override
