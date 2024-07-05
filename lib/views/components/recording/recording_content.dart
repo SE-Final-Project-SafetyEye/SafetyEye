@@ -36,7 +36,7 @@ class _RecordingPageState extends State<RecordingPage> {
 
     controllerFuture = widget.videoRecordingProvider.initializeCamera().then((_) => widget.videoRecordingProvider.cameraController!);
     cameraProvider = Provider.of<VideoRecordingProvider>(context, listen: false);
-    listener = ((status) => {if(status == 'notListening') _restartListening()});
+    listener = ((status) => {if(status == 'notListening') _restartListening()}); // listener for speech recognition events
     WidgetsBinding.instance.addPostFrameCallback((_) async {
 
       // Mute NOTIFICATION volume to silence speech_to_text microphone feedback with hiding system volume UI
@@ -101,10 +101,10 @@ class _RecordingPageState extends State<RecordingPage> {
   void dispose() {
     super.dispose();
     KeepScreenOn.turnOff();
-    speech.statusListener = null;
+    speech.statusListener = null; // required for disable listening on other pages except the RecordingPage
+    // Stop listening if the widget is disposed + restore system NOTIFICATION volume
     speech.stop().then((_) =>
-        RealVolume.setVolume(notificationVolume!, showUI: false, streamType: StreamType.NOTIFICATION)); // Stop listening if the widget is disposed
-     //restore system NOTIFICATION volume
+        RealVolume.setVolume(notificationVolume!, showUI: false, streamType: StreamType.NOTIFICATION));
   }
 
   @override
