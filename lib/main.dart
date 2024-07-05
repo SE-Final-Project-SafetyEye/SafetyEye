@@ -67,7 +67,7 @@ class MyApp extends StatelessWidget {
     return FutureBuilder(
       future: permissionsProvider.init(),
       builder: (context, snapshot) {
-        if(snapshot.hasData && !snapshot.data!){
+        if(snapshot.hasData && snapshot.data == false){
           return const MaterialApp(
             home: AlertNoPermissions(),
           );

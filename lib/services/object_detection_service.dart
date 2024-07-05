@@ -138,13 +138,14 @@ class ObjectTracking {
       final cap = cv.VideoCapture.fromFile(pathToChunk);
       var fps = cap.get(cv.CAP_PROP_FPS);
 
-      int fpsCoeff = min((fps / 4), fps).toInt(); // for retrieving only 4 fps
-
+      int fpsCoeff = min((fps / 4), fps).toInt(); // for retrieving only 4 fps - jumps to every (fps/4)_th frame
+      
       var (ret, frame) = cap.read();
 
-      double frameHeight = cap.get(cv.CAP_PROP_FRAME_HEIGHT);
-      double frameWidth = cap.get(cv.CAP_PROP_FRAME_WIDTH);
-
+      // opencv rotates the image so we rotate it later - hence the height and width are exchanged
+      double frameHeight = cap.get(cv.CAP_PROP_FRAME_WIDTH);
+      double frameWidth = cap.get(cv.CAP_PROP_FRAME_HEIGHT);
+      
       double xRatio = 1;
       double yRatio = 1;
       if (frameWidth > frameHeight) {
@@ -158,6 +159,8 @@ class ObjectTracking {
       File tempFile = File('$EMULATED_PATH/filled_resized_colored.png');
 
       while (ret) {
+        frame = cv.rotate(frame, cv.ROTATE_90_CLOCKWISE);
+
         var blackFrameMat = await preprocessImage(
             frame, xRatio, yRatio, frameWidth, frameHeight, EMULATED_PATH);
 
@@ -223,6 +226,7 @@ class ObjectTracking {
           fy: yRatio * (DEV_MODEL_MAX_FRAME_SIDE / (frameHeight)),
           interpolation: interpolation);
 
+
       int top = 0;
       int bottom = DEV_MODEL_MAX_FRAME_SIDE - resized.height;
       int left = 0;
@@ -233,6 +237,7 @@ class ObjectTracking {
 
       var filled_resized_colored = cv.cvtColor(
           filled_resized, cv.COLOR_BGR2RGB);
+
       return filled_resized_colored;
     } on Exception catch (e) {
       _logger.e(

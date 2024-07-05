@@ -30,16 +30,6 @@ class PermissionsProvider extends ChangeNotifier {
   }
 
 
-  Future<bool> checkAndRequestDoNotDisturbPermissions() async {
-    bool? isPermissionGranted = await RealVolume.isPermissionGranted();
-    if (!isPermissionGranted!) {
-      // Opens Do Not Disturb Access settings to grant the access
-      await RealVolume.openDoNotDisturbSettings();
-    }
-    return (await RealVolume.isPermissionGranted()) == true;
-  }
-
-
   Future<bool> checkAndRequestGeolocationPermissions() async {
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
@@ -77,4 +67,13 @@ class PermissionsProvider extends ChangeNotifier {
     }
     return status.isGranted;
   }
+}
+
+Future<bool> checkAndRequestDoNotDisturbPermissions() async {
+  bool? isPermissionGranted = await RealVolume.isPermissionGranted();
+  if (!isPermissionGranted!) {
+    // Opens Do Not Disturb Access settings to grant the access
+    await RealVolume.openDoNotDisturbSettings();
+  }
+  return (await RealVolume.isPermissionGranted()) == true;
 }
