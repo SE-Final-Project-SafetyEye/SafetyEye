@@ -85,11 +85,17 @@ class ObjectTracking {
       tempFileForOpenCV = await tempFileForOpenCV.copy(pathToChunk);
 
       File jsonFile =
-      File('$EMULATED_PATH/obj_detect_metadata_$chunkNameNoExtension.json');
+      await File('$EMULATED_PATH/obj_detect_metadata_$chunkNameNoExtension.json').create(exclusive: false);
 
-      File stateRecover = File('$EMULATED_PATH/object_detection_recovery.txt');
-      await stateRecover.writeAsString(
-          "\n$pathToChunk\n${jsonFile.path}\n;0", mode: FileMode.append);
+      String recoveryPath = File(EMULATED_PATH).parent.parent.path;
+      File stateRecover = await File('$recoveryPath/object_detection_recovery.txt').create(exclusive: false);
+      if((await stateRecover.length()) != 0) {
+        await stateRecover.writeAsString(
+            "\n$pathToChunk\n${jsonFile.path}\n;0", mode: FileMode.append);
+      }else{
+        await stateRecover.writeAsString(
+            "$pathToChunk\n${jsonFile.path}\n;0");
+      }
       List<String> lines = await stateRecover.readAsLines();
       lines.insertAll(0, lines.sublist(lines.length - 3));
       lines.removeRange(lines.length - 3, lines.length);
@@ -108,7 +114,7 @@ class ObjectTracking {
 
         await ObjectTracking.detect(chunkData);
 
-        lines.removeRange(lines.length - 3, lines
+        lines.removeRange(lines.length - 2, lines
             .length); // removes detected chunk data: [pathToChunk, pathToDetectionsJSON, ;i1;i2;...;in]
         final updatedRecoverData = lines.join('\n');
         stateRecover.writeAsString(
@@ -117,7 +123,7 @@ class ObjectTracking {
       sendCompletePort.send("done");
     } on Exception catch (e) {
       _logger.e(
-          'Error in detectChunkObjects method of ObjectTracking class: $e');
+          'Error in workerIsolateInit method of ObjectTracking class: $e');
       return false;
     }
 
@@ -166,7 +172,10 @@ class ObjectTracking {
         frameIndex++;
       }
 
-      Map<String,List<dynamic>> chunkMetadata = jsonDecode(await jsonFile.readAsString());
+      Map<String,List<dynamic>> chunkMetadata = {};
+      if((await jsonFile.length()) != 0){
+        chunkMetadata = jsonDecode(await jsonFile.readAsString());
+      }
       File tempFile = File('$EMULATED_PATH/filled_resized_colored.png');
 
       while (ret) {
@@ -200,6 +209,8 @@ class ObjectTracking {
         chunkMetadata.addAll(frameMetadata);
         var jsonText = jsonEncode(chunkMetadata);
         jsonFile.writeAsString(jsonText);
+
+        recoveryFile.writeAsString(';$frameIndex', mode:FileMode.append);
 
         var next = 0;
         while (fpsCoeff > next) {
