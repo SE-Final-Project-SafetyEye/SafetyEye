@@ -10,7 +10,6 @@ import 'package:image/image.dart' as img;
 import 'package:opencv_dart/opencv_dart.dart' as cv;
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'dart:convert';
-import 'package:async/async.dart';
 import 'package:flutter_isolate/flutter_isolate.dart';
 
 
@@ -24,13 +23,8 @@ const IOU_THRESHOLD = 0.5;
 
 final Logger _logger = Logger();
 
-// some  parts are commented out are to preserve previous algorithm of 2-isolates parallel work.
+// In the end of the class some parts are commented out to preserve previous algorithm of 2-isolates parallel work.
 class ObjectTracking {
-  // static List<String> pathQueue = [];
-  // static ReceivePort? receivePort;
-  // static SendPort? sendPortLateBind;
-
-
 
   // loading a detection model from a .torchscript file.
   static Future<ModelObjectDetection?> initModel() async {
@@ -53,23 +47,6 @@ class ObjectTracking {
 
 
   static Future<void> addWork(String pathToChunk) async {
-    //var isos = await FlutterIsolate.runningIsolates;
-    // if ((await FlutterIsolate.runningIsolates).isEmpty) {
-    //   receivePort = ReceivePort();
-    //   receivePort!.listen((sPortIsolate) {
-    //     ObjectTracking.sendPortLateBind = sPortIsolate;
-    //     pathQueue.forEach(sendPortLateBind!.send);
-    //     pathQueue = [];
-    //   });
-    //   var managerIsolate = await FlutterIsolate.spawn(
-    //       managerIsolateRoutine, [receivePort!.sendPort, pathToChunk]);
-    // } else {
-    //   pathQueue.add(pathToChunk);
-    //   if (sendPortLateBind != null) {
-    //     pathQueue.forEach(sendPortLateBind!.send);
-    //     pathQueue = [];
-    //   }
-    // }
     try {
       ReceivePort receivePort = ReceivePort();
       var workerIsolate = await FlutterIsolate.spawn(
@@ -81,35 +58,72 @@ class ObjectTracking {
     }
   }
 
-  // static Future<void> managerIsolateRoutine(List<dynamic> args) async {
-  //   SendPort sPort = args[0];
-  //   String pathToChunk = args[1];
-  //   ReceivePort isolateRPort = ReceivePort();
-  //   var chunksPathsEvents = StreamQueue<String>(isolateRPort.asBroadcastStream().map((event) => event.toString()));
-  //   sPort.send(isolateRPort.sendPort);
-  //   while (pathToChunk.substring(pathToChunk.lastIndexOf(".")) == ".mp4") {
-  //     ReceivePort workerPort = ReceivePort();
-  //     var workerIsolate = await FlutterIsolate.spawn(
-  //         workerIsolateInit, [pathToChunk, workerPort.sendPort]);
-  //     await workerPort.first;
-  //     workerIsolate.kill();
-  //     if(!(await chunksPathsEvents.hasNext.timeout(const Duration(seconds: 2), onTimeout: ()=>false))){break;}
-  //     pathToChunk = await chunksPathsEvents.next;
-  //   }
-  //   chunksPathsEvents.cancel();
-  //   isolateRPort.close();
-  //   Isolate.current.kill();
-  // }
 
-
+  // on receiving a path add it to the end of file with frame #0
+  // workerInit until file is not empty:
+    // takes the first line from file and call the detect method with path and frame#
+        // start to detect when passing the frame # and concat to detection file
+  // send done
 
   static Future<bool> workerIsolateInit(List<dynamic> args) async {
     try {
       String pathToChunk = args[0];
       SendPort sendCompletePort = args[1];
-      ObjectTracking.detect([pathToChunk, sendCompletePort]);
+
+      String chunkNameNoExtension =
+      pathToChunk.substring(pathToChunk.lastIndexOf('/') + 1);
+      chunkNameNoExtension = chunkNameNoExtension.substring(
+          0, chunkNameNoExtension.lastIndexOf('.'));
+
+      String EMULATED_PATH =
+      pathToChunk.substring(0, pathToChunk.lastIndexOf('/'));
+
+      File tempFileForOpenCV = File(pathToChunk);
+      pathToChunk = "$EMULATED_PATH/od_${DateTime
+          .now()
+          .millisecondsSinceEpoch}.mp4";
+      tempFileForOpenCV = await tempFileForOpenCV.copy(pathToChunk);
+
+      File jsonFile =
+      await File('$EMULATED_PATH/obj_detect_metadata_$chunkNameNoExtension.json').create(exclusive: false);
+
+      String recoveryPath = File(EMULATED_PATH).parent.parent.path;
+      File stateRecover = await File('$recoveryPath/object_detection_recovery.txt').create(exclusive: false);
+      if((await stateRecover.length()) != 0) {
+        await stateRecover.writeAsString(
+            "\n$pathToChunk\n${jsonFile.path}\n;0", mode: FileMode.append);
+      }else{
+        await stateRecover.writeAsString(
+            "$pathToChunk\n${jsonFile.path}\n;0");
+      }
+      List<String> lines = await stateRecover.readAsLines();
+      lines.insertAll(0, lines.sublist(lines.length - 3));
+      lines.removeRange(lines.length - 3, lines.length);
+
+      while (lines.isNotEmpty) {
+        while(lines.length % 3 > 0){
+          lines.removeLast();
+        }
+        String lastLine = lines.removeLast();
+        var lastDetectedFrameIndex = lastLine.substring(
+            lastLine.lastIndexOf(';') + 1);
+        List<String> chunkData = lines.sublist(
+            lines.length - 2); // [pathToChunk, pathToDetectionsJSON]
+        chunkData.add(lastDetectedFrameIndex);
+        chunkData.add(stateRecover.path);
+
+        await ObjectTracking.detect(chunkData);
+
+        lines.removeRange(lines.length - 2, lines
+            .length); // removes detected chunk data: [pathToChunk, pathToDetectionsJSON, ;i1;i2;...;in]
+        final updatedRecoverData = lines.join('\n');
+        stateRecover.writeAsString(
+            updatedRecoverData); // update the file with the new data
+      }
+      sendCompletePort.send("done");
     } on Exception catch (e) {
-      _logger.e('Error in detectChunkObjects method of ObjectTracking class: $e');
+      _logger.e(
+          'Error in workerIsolateInit method of ObjectTracking class: $e');
       return false;
     }
 
@@ -118,33 +132,31 @@ class ObjectTracking {
 
   static Future<void> detect(List<dynamic> args) async {
     try {
+
+
+      // add received
+
       String pathToChunk = args[0];
-      SendPort sendCompletePort = args[1];
+      File jsonFile  = File(args[1]);
+      int lastDetectedFrame = int.parse(args[2]);
+      File recoveryFile = File(args[3]);
+
       ModelObjectDetection objectModel = (await initModel())!;
       String EMULATED_PATH =
       pathToChunk.substring(0, pathToChunk.lastIndexOf('/'));
-
-      String chunkNameNoExtension =
-      pathToChunk.substring(pathToChunk.lastIndexOf('/') + 1);
-      chunkNameNoExtension = chunkNameNoExtension.substring(
-          0, chunkNameNoExtension.lastIndexOf('.'));
-
-      File tempFileForOpenCV = File(pathToChunk);
-      pathToChunk = "$EMULATED_PATH/od_${DateTime.now().millisecondsSinceEpoch}.mp4";
-      tempFileForOpenCV = await tempFileForOpenCV.copy(pathToChunk);
-
 
       // captures the frames of the video file
       final cap = cv.VideoCapture.fromFile(pathToChunk);
       var fps = cap.get(cv.CAP_PROP_FPS);
 
-      int fpsCoeff = min((fps / 4), fps).toInt(); // for retrieving only 4 fps
-
+      int fpsCoeff = min((fps / 4), fps).toInt(); // for retrieving only 4 fps - jumps to every (fps/4)_th frame
+      
       var (ret, frame) = cap.read();
 
-      double frameHeight = cap.get(cv.CAP_PROP_FRAME_HEIGHT);
-      double frameWidth = cap.get(cv.CAP_PROP_FRAME_WIDTH);
-
+      // opencv rotates the image so we rotate it later - hence the height and width are exchanged
+      double frameHeight = cap.get(cv.CAP_PROP_FRAME_WIDTH);
+      double frameWidth = cap.get(cv.CAP_PROP_FRAME_HEIGHT);
+      
       double xRatio = 1;
       double yRatio = 1;
       if (frameWidth > frameHeight) {
@@ -154,10 +166,22 @@ class ObjectTracking {
       }
 
       int frameIndex = 1;
+
+      while(frameIndex < lastDetectedFrame){
+        (ret, frame) = cap.read();
+        frameIndex++;
+      }
+
       Map<String,List<dynamic>> chunkMetadata = {};
+      if((await jsonFile.length()) != 0){
+        chunkMetadata = jsonDecode(await jsonFile.readAsString());
+      }
       File tempFile = File('$EMULATED_PATH/filled_resized_colored.png');
 
       while (ret) {
+
+        frame = cv.rotate(frame, cv.ROTATE_90_CLOCKWISE);
+
         var blackFrameMat = await preprocessImage(
             frame, xRatio, yRatio, frameWidth, frameHeight, EMULATED_PATH);
 
@@ -181,7 +205,12 @@ class ObjectTracking {
 
         // TODO: frameMetadata = mapLicensePlatesToCars(frameMetadata, platesText);
 
+
         chunkMetadata.addAll(frameMetadata);
+        var jsonText = jsonEncode(chunkMetadata);
+        jsonFile.writeAsString(jsonText);
+
+        recoveryFile.writeAsString(';$frameIndex', mode:FileMode.append);
 
         var next = 0;
         while (fpsCoeff > next) {
@@ -197,12 +226,9 @@ class ObjectTracking {
       }
       tempFile.delete();
       cap.release();
-      var jsonText = jsonEncode(chunkMetadata);
-      tempFile =
-          File('$EMULATED_PATH/obj_detect_metadata_$chunkNameNoExtension.json');
-      await tempFile.writeAsString(jsonText);
-      await tempFileForOpenCV.delete();
-      sendCompletePort.send("done");
+
+      await File(pathToChunk).delete();
+
     } on Exception catch (e) {
       _logger.e(
           'Error during main detect() method of ObjectTracking class: $e');
@@ -223,6 +249,7 @@ class ObjectTracking {
           fy: yRatio * (DEV_MODEL_MAX_FRAME_SIDE / (frameHeight)),
           interpolation: interpolation);
 
+
       int top = 0;
       int bottom = DEV_MODEL_MAX_FRAME_SIDE - resized.height;
       int left = 0;
@@ -233,6 +260,7 @@ class ObjectTracking {
 
       var filled_resized_colored = cv.cvtColor(
           filled_resized, cv.COLOR_BGR2RGB);
+
       return filled_resized_colored;
     } on Exception catch (e) {
       _logger.e(
@@ -424,3 +452,51 @@ Future<cv.Mat> drawRectanglesCV(
 
   return out;
 }
+
+
+// ============================================================================
+// ====================== 2-isolates parallel work logic ======================
+
+// static List<String> pathQueue = [];
+// static ReceivePort? receivePort;
+// static SendPort? sendPortLateBind;
+
+// static Future<void> managerIsolateRoutine(List<dynamic> args) async {
+//   SendPort sPort = args[0];
+//   String pathToChunk = args[1];
+//   ReceivePort isolateRPort = ReceivePort();
+//   var chunksPathsEvents = StreamQueue<String>(isolateRPort.asBroadcastStream().map((event) => event.toString()));
+//   sPort.send(isolateRPort.sendPort);
+//   while (pathToChunk.substring(pathToChunk.lastIndexOf(".")) == ".mp4") {
+//     ReceivePort workerPort = ReceivePort();
+//     var workerIsolate = await FlutterIsolate.spawn(
+//         workerIsolateInit, [pathToChunk, workerPort.sendPort]);
+//     await workerPort.first;
+//     workerIsolate.kill();
+//     if(!(await chunksPathsEvents.hasNext.timeout(const Duration(seconds: 2), onTimeout: ()=>false))){break;}
+//     pathToChunk = await chunksPathsEvents.next;
+//   }
+//   chunksPathsEvents.cancel();
+//   isolateRPort.close();
+//   Isolate.current.kill();
+// }
+
+//static Future<void> addWork(String pathToChunk) async {
+//var isos = await FlutterIsolate.runningIsolates;
+// if ((await FlutterIsolate.runningIsolates).isEmpty) {
+//   receivePort = ReceivePort();
+//   receivePort!.listen((sPortIsolate) {
+//     ObjectTracking.sendPortLateBind = sPortIsolate;
+//     pathQueue.forEach(sendPortLateBind!.send);
+//     pathQueue = [];
+//   });
+//   var managerIsolate = await FlutterIsolate.spawn(
+//       managerIsolateRoutine, [receivePort!.sendPort, pathToChunk]);
+// } else {
+//   pathQueue.add(pathToChunk);
+//   if (sendPortLateBind != null) {
+//     pathQueue.forEach(sendPortLateBind!.send);
+//     pathQueue = [];
+//   }
+// }
+//}
