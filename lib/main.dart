@@ -119,7 +119,13 @@ class AlertNoPermissions extends StatelessWidget {
       actions: [
         TextButton(
           child: const Text("OK"),
-          onPressed: () {openAppSettings();FlutterExitApp.exitApp(iosForceExit: true);},
+          onPressed: () {
+            openAppSettings();
+            if (Theme.of(context).platform != TargetPlatform.iOS) {
+              //FlutterExitApp.exitApp(iosForceExit: true);
+              FlutterExitApp.exitApp();
+            }
+          },
         ),
       ],
     );
