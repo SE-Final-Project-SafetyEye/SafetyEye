@@ -132,14 +132,17 @@ class ObjectTracking {
 
   static Future<void> detect(List<dynamic> args) async {
     try {
-
-
       // add received
 
       String pathToChunk = args[0];
-      File jsonFile  = File(args[1]);
+      File jsonFile = await File(args[1]).create(exclusive: false);
       int lastDetectedFrame = int.parse(args[2]);
       File recoveryFile = File(args[3]);
+
+      if (!(await File(pathToChunk).exists())) {
+        await jsonFile.delete();
+        return;
+      }
 
       ModelObjectDetection objectModel = (await initModel())!;
       String EMULATED_PATH =
@@ -149,14 +152,15 @@ class ObjectTracking {
       final cap = cv.VideoCapture.fromFile(pathToChunk);
       var fps = cap.get(cv.CAP_PROP_FPS);
 
-      int fpsCoeff = min((fps / 4), fps).toInt(); // for retrieving only 4 fps - jumps to every (fps/4)_th frame
-      
+      int fpsCoeff = min((fps / 4), fps)
+          .toInt(); // for retrieving only 4 fps - jumps to every (fps/4)_th frame
+
       var (ret, frame) = cap.read();
 
       // opencv rotates the image so we rotate it later - hence the height and width are exchanged
       double frameHeight = cap.get(cv.CAP_PROP_FRAME_WIDTH);
       double frameWidth = cap.get(cv.CAP_PROP_FRAME_HEIGHT);
-      
+
       double xRatio = 1;
       double yRatio = 1;
       if (frameWidth > frameHeight) {
@@ -167,19 +171,18 @@ class ObjectTracking {
 
       int frameIndex = 1;
 
-      while(frameIndex < lastDetectedFrame){
+      while (frameIndex < lastDetectedFrame) {
         (ret, frame) = cap.read();
         frameIndex++;
       }
 
-      Map<String,List<dynamic>> chunkMetadata = {};
-      if((await jsonFile.length()) != 0){
+      Map<String, List<dynamic>> chunkMetadata = {};
+      if ((await jsonFile.length()) != 0) {
         chunkMetadata = jsonDecode(await jsonFile.readAsString());
       }
       File tempFile = File('$EMULATED_PATH/filled_resized_colored.png');
 
       while (ret) {
-
         frame = cv.rotate(frame, cv.ROTATE_90_CLOCKWISE);
 
         var blackFrameMat = await preprocessImage(
@@ -210,7 +213,7 @@ class ObjectTracking {
         var jsonText = jsonEncode(chunkMetadata);
         jsonFile.writeAsString(jsonText);
 
-        recoveryFile.writeAsString(';$frameIndex', mode:FileMode.append);
+        recoveryFile.writeAsString(';$frameIndex', mode: FileMode.append);
 
         var next = 0;
         while (fpsCoeff > next) {
@@ -228,7 +231,6 @@ class ObjectTracking {
       cap.release();
 
       await File(pathToChunk).delete();
-
     } on Exception catch (e) {
       _logger.e(
           'Error during main detect() method of ObjectTracking class: $e');
