@@ -333,10 +333,10 @@ packages:
     dependency: "direct main"
     description:
       name: dio
-      sha256: "77befdddf51050e1635a04d2bcfff230089ce7294e642d00da58cd079c0de0c8"
+      sha256: e17f6b3097b8c51b72c74c9f071a605c47bcc8893839bd66732457a5ebe73714
       url: "https://pub.dev"
     source: hosted
-    version: "5.5.0"
+    version: "5.5.0+1"
   dio_web_adapter:
     dependency: transitive
     description:
@@ -680,6 +680,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.1"
+  google_mlkit_image_labeling:
+    dependency: "direct main"
+    description:
+      name: google_mlkit_image_labeling
+      sha256: a312f55199ae4550694326018d81b24158a54c2a831bec2ef0ba0b9611edcde8
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.12.0"
   google_mlkit_text_recognition:
     dependency: "direct main"
     description:
@@ -1060,10 +1068,10 @@ packages:
     dependency: "direct main"
     description:
       name: opencv_dart
-      sha256: "8c1a051a49183f22e41d193e1135124a1f91e74ba93964824611a7d9f1c830d4"
+      sha256: "3b92432952a66cf5dcae74a6aa21a2b3dc3055e3c8684e998df7421fbc75b0ff"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.10+1"
+    version: "1.1.0"
   package_config:
     dependency: transitive
     description:
