@@ -25,14 +25,9 @@ class VideoRecordingProvider extends ChangeNotifier {
   late FileSystemRepository fileSystemRepository;
   late ChunkProcessorService chunkProcessorService;
   bool recording = false;
+  bool photoDetection = false;
   int chunkNumber = 1;
   late double recordMin;
-  final _orientations = {
-    DeviceOrientation.portraitUp: 0,
-    DeviceOrientation.landscapeLeft: 90,
-    DeviceOrientation.portraitDown: 180,
-    DeviceOrientation.landscapeRight: 270,
-  };
   final List<String> vehicles = [
     'car',
     'truck',
@@ -50,7 +45,8 @@ class VideoRecordingProvider extends ChangeNotifier {
     'construction vehicle',
     'garbage truck',
   ];
-
+  late ImageLabeler _imageLabeler;
+  late LocalLabelerOptions labelerOptions;
 
   VideoRecordingProvider({
     required this.permissions,
@@ -73,6 +69,9 @@ class VideoRecordingProvider extends ChangeNotifier {
     if (isInitialized) {
       return;
     }
+    const path = 'assets/object_labeler.tflite';
+    final modelPath = await getAssetPath(path);
+    labelerOptions = LocalLabelerOptions(modelPath: modelPath);
     final cameras = await availableCameras();
     cameraController = CameraController(
       cameras[0], // Use first available camera
@@ -100,6 +99,9 @@ class VideoRecordingProvider extends ChangeNotifier {
       _logger.i("Timer.periodic photo detection round");
       if (!cameraController!.value.isRecordingVideo) {
         await _captureAndDetectImage();
+        if (cameraController!.value.isRecordingVideo) {
+          timer.cancel();
+        }
       } else {
         timer.cancel();
       }
@@ -108,49 +110,51 @@ class VideoRecordingProvider extends ChangeNotifier {
 
   Future<void> _captureAndDetectImage() async {
     try {
+      if (!photoDetection) {
+        photoDetection = true;
 
-      // Capture the image
-      final XFile? imageFile = await cameraController?.takePicture();
+        // Capture the image
+        final XFile? imageFile = await cameraController?.takePicture();
 
-      if (imageFile == null) return;
+        if (imageFile == null) return;
 
-      // Ensure the file exists
-      final file = File(imageFile.path);
-      if (!await file.exists() || await file.length() == 0) {
-        throw Exception('The asset does not exist or has empty data.');
-      }
-
-      // Process the image
-      final inputImage = InputImage.fromFile(file);
-      const path = 'assets/object_labeler.tflite';
-      final modelPath = await getAssetPath(path);
-      final options =
-          LocalLabelerOptions(modelPath: modelPath);
-
-      final imageLabeler = ImageLabeler(options: options);
-
-      final List<ImageLabel> labels =
-          await imageLabeler.processImage(inputImage);
-
-
-      // Log the detected labels
-      for (ImageLabel label in labels) {
-        final String text = label.label;
-        final double confidence = label.confidence;
-        _logger.i('Detected: $text with confidence: $confidence');
-        if(vehicles.contains(text.toLowerCase()) && confidence > 0.80){
-          startRecording(false);
+        // Ensure the file exists
+        final file = File(imageFile.path);
+        if (!await file.exists() || await file.length() == 0) {
+          throw Exception('The asset does not exist or has empty data.');
         }
-      }
 
-      imageLabeler.close();
-      file.delete();
+        // Process the image
+        final inputImage = InputImage.fromFile(file);
+
+        _imageLabeler = ImageLabeler(options: labelerOptions);
+        // Label detection
+        final List<ImageLabel> labels = await _imageLabeler.processImage(inputImage);
+
+        // Log the detected labels
+        for (ImageLabel label in labels) {
+          final String text = label.label;
+          final double confidence = label.confidence;
+          _logger.i('Detected: $text with confidence: $confidence');
+
+          // Check if detected label matches any vehicle and confidence is above 0.80
+          for (String vehicle in vehicles) {
+            if (text.toLowerCase().contains(vehicle) && confidence > 0.80) {
+              startRecording(false);
+              break;
+            }
+          }
+        }
+        _imageLabeler.close();
+        file.delete();
+      }
     } catch (e) {
       _logger.e('Error capturing and detecting image: $e');
     } finally {
-// Reset flag when capture is complete
+      photoDetection = false;
     }
   }
+
 
   Future<String> getAssetPath(String asset) async {
     final path = await getLocalPath(asset);
@@ -166,66 +170,6 @@ class VideoRecordingProvider extends ChangeNotifier {
 
   Future<String> getLocalPath(String path) async {
     return '${(await getApplicationSupportDirectory()).path}/$path';
-  }
-
-  InputImage? _inputImageFromCameraImage(XFile imageFile) {
-    try {
-      final bytes = File(imageFile.path).readAsBytesSync();
-
-      // Check if preview size is available
-      if (cameraController?.value.previewSize == null) {
-        throw Exception('Camera preview size is null');
-      }
-
-      // Get preview size and format
-      final previewSize = cameraController!.value.previewSize!;
-      final format = Platform.isAndroid
-          ? InputImageFormat.nv21 // Use NV21 format for Android
-          : InputImageFormat.bgra8888; // Use BGRA8888 format for iOS
-
-      // Calculate bytes per row based on format
-      final bytesPerRow = (format == InputImageFormat.nv21)
-          ? (previewSize.width * 3 / 2).toInt() // NV21 has 1.5 bytes per pixel
-          : previewSize.width.toInt() * 4; // BGRA8888 has 4 bytes per pixel
-
-      // Determine rotation based on device orientation
-      InputImageRotation? rotation;
-      final sensorOrientation = cameraController?.description.sensorOrientation;
-      if (Platform.isIOS) {
-        rotation = InputImageRotationValue.fromRawValue(sensorOrientation!);
-      } else if (Platform.isAndroid) {
-        var rotationCompensation =
-            _orientations[cameraController!.value.deviceOrientation];
-        if (rotationCompensation == null) return null;
-        if (cameraController?.description.lensDirection ==
-            CameraLensDirection.front) {
-          // front-facing camera
-          rotationCompensation =
-              (sensorOrientation! + rotationCompensation) % 360;
-        } else {
-          // back-facing camera
-          rotationCompensation =
-              (sensorOrientation! - rotationCompensation + 360) % 360;
-        }
-        rotation = InputImageRotationValue.fromRawValue(rotationCompensation);
-      }
-      if (rotation == null) return null;
-
-      // Create InputImage instance
-      return InputImage.fromBytes(
-        bytes: Uint8List.fromList(bytes),
-        metadata: InputImageMetadata(
-          size:
-              Size(previewSize.width.toDouble(), previewSize.height.toDouble()),
-          format: format,
-          bytesPerRow: bytesPerRow,
-          rotation: rotation,
-        ),
-      );
-    } catch (e) {
-      _logger.e('Error creating InputImage: $e');
-      return null;
-    }
   }
 
   Future<void> startRecording(bool isHighlight) async {
