@@ -95,7 +95,7 @@ class VideoRecordingProvider extends ChangeNotifier {
   }
 
   void _startImageCaptureTimer() {
-    Timer.periodic(const Duration(seconds: 5), (Timer timer) async {
+    Timer.periodic(const Duration(seconds: 20), (Timer timer) async {
       _logger.i("Timer.periodic photo detection round");
       if (!cameraController!.value.isRecordingVideo) {
         await _captureAndDetectImage();
@@ -139,9 +139,9 @@ class VideoRecordingProvider extends ChangeNotifier {
 
           // Check if detected label matches any vehicle and confidence is above 0.80
           for (String vehicle in vehicles) {
-            if (text.toLowerCase().contains(vehicle) && confidence > 0.80) {
+            if (text.toLowerCase().contains(vehicle)) {
               startRecording(false);
-              break;
+              return;
             }
           }
         }
