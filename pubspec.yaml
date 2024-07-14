@@ -89,6 +89,7 @@ dependencies:
   image: ^4.1.7
   pytorch_lite: ^4.2.5
   google_mlkit_text_recognition: ^0.13.0
+  google_mlkit_image_labeling: ^0.12.0
   opencv_dart: ^1.1.0
   flutter_isolate: ^2.0.5-pre
   async: ^2.11.0
@@ -159,3 +160,4 @@ flutter:
     - lib/poc/semi_app/
     - assets/labels.txt
     - assets/yolov8s_LP_TS_220224v1.torchscript
+    - assets/object_labeler.tflite
